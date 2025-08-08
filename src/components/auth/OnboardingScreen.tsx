@@ -1,5 +1,5 @@
 import React from 'react'
-import { ArrowRight, Brain, BarChart3, Users, Zap, Shield, Clock, TrendingUp, CheckCircle, Star, Award, Target } from 'lucide-react'
+import { ArrowRight, Brain, BarChart3, Users, Zap, Shield, Clock, TrendingUp, CheckCircle, Star, Award, Target, Package } from 'lucide-react'
 
 interface OnboardingScreenProps {
   onGetStarted: () => void
@@ -14,16 +14,16 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
       highlight: "Aumente vendas em até 35%"
     },
     {
-      icon: <BarChart3 className="w-8 h-8 text-green-600" />,
-      title: "Relatórios Inteligentes",
-      description: "Dashboards em tempo real com insights acionáveis para decisões estratégicas",
-      highlight: "Economize 15h/semana"
+      icon: <Package className="w-8 h-8 text-green-600" />,
+      title: "Gestão de Estoque e Produtos",
+      description: "Controle completo de inventário com alertas automáticos de estoque baixo e análise de performance de produtos",
+      highlight: "Reduza perdas em 50%"
     },
     {
-      icon: <TrendingUp className="w-8 h-8 text-purple-600" />,
-      title: "Automação Completa",
-      description: "Processos automatizados que eliminam tarefas repetitivas e erros manuais",
-      highlight: "Reduza custos em 40%"
+      icon: <BarChart3 className="w-8 h-8 text-purple-600" />,
+      title: "Vendas Inteligentes",
+      description: "Sistema de vendas integrado com controle de clientes, histórico de compras e análise de performance",
+      highlight: "Aumente conversão em 40%"
     }
   ]
 
@@ -34,19 +34,19 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
       description: "Clientes relatam retorno do investimento em menos de 3 meses"
     },
     {
-      icon: <Shield className="w-6 h-6 text-green-600" />,
-      title: "Segurança Total",
-      description: "Dados protegidos com criptografia bancária e backup automático"
+      icon: <Package className="w-6 h-6 text-green-600" />,
+      title: "Controle de Estoque Inteligente",
+      description: "Alertas automáticos, previsão de demanda e otimização de compras"
     },
     {
-      icon: <Clock className="w-6 h-6 text-purple-600" />,
-      title: "Implementação Rápida",
-      description: "Sistema funcionando em menos de 24 horas, sem complicações"
+      icon: <TrendingUp className="w-6 h-6 text-purple-600" />,
+      title: "Análise de Performance",
+      description: "Identifique produtos mais rentáveis e otimize seu mix de vendas"
     },
     {
-      icon: <Award className="w-6 h-6 text-amber-600" />,
-      title: "Suporte Premium",
-      description: "Equipe especializada disponível para garantir seu sucesso"
+      icon: <Shield className="w-6 h-6 text-amber-600" />,
+      title: "Integração Total",
+      description: "Estoque, vendas e financeiro trabalhando em perfeita sincronia"
     }
   ]
 
@@ -105,7 +105,11 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
               </h2>
               <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-8">
                 O único ERP que combina gestão empresarial completa com IA avançada. 
-                Aumente suas vendas, reduza custos e tome decisões mais inteligentes com dados em tempo real.
+                Sistema completo de gestão empresarial com IA avançada para estoque, vendas e análises preditivas.
+                Gestão Integrada: Do Estoque ao Faturamento
+              </p>
+              <p className="text-xl text-gray-600">
+                Controle completo do seu negócio com foco em produtos, vendas e lucratividade
               </p>
               
               {/* Value Proposition */}
@@ -391,14 +395,14 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: <Users className="w-6 h-6" />, title: "Gestão de Clientes", desc: "CRM completo com histórico de compras" },
-              { icon: <BarChart3 className="w-6 h-6" />, title: "Vendas Inteligentes", desc: "PDV integrado com análise de performance" },
-              { icon: <TrendingUp className="w-6 h-6" />, title: "Controle Financeiro", desc: "Fluxo de caixa e DRE automatizados" },
-              { icon: <Brain className="w-6 h-6" />, title: "Insights de IA", desc: "Previsões e recomendações personalizadas" },
-              { icon: <Shield className="w-6 h-6" />, title: "Segurança Total", desc: "Dados protegidos com criptografia bancária" },
-              { icon: <Clock className="w-6 h-6" />, title: "Automação", desc: "Processos automatizados que economizam tempo" },
-              { icon: <Award className="w-6 h-6" />, title: "Relatórios Avançados", desc: "Análises detalhadas para decisões estratégicas" },
-              { icon: <Zap className="w-6 h-6" />, title: "Performance", desc: "Sistema rápido e responsivo em qualquer dispositivo" }
+              { icon: <Package className="w-6 h-6" />, title: "Gestão de Estoque", desc: "Controle completo de inventário com alertas automáticos" },
+              { icon: <BarChart3 className="w-6 h-6" />, title: "Catálogo de Produtos", desc: "Organize produtos com preços, custos e margens" },
+              { icon: <Users className="w-6 h-6" />, title: "Gestão de Clientes", desc: "CRM completo com histórico de compras e fidelização" },
+              { icon: <TrendingUp className="w-6 h-6" />, title: "Vendas Inteligentes", desc: "PDV integrado com análise de performance em tempo real" },
+              { icon: <Brain className="w-6 h-6" />, title: "Insights de IA", desc: "Previsões de demanda e recomendações estratégicas" },
+              { icon: <Shield className="w-6 h-6" />, title: "Controle Financeiro", desc: "Fluxo de caixa, contas a pagar e receber automatizados" },
+              { icon: <Award className="w-6 h-6" />, title: "Relatórios Avançados", desc: "Análises detalhadas de lucratividade por produto" },
+              { icon: <Zap className="w-6 h-6" />, title: "Automação Total", desc: "Processos integrados que eliminam trabalho manual" }
             ].map((feature, index) => (
               <div 
                 key={index}
