@@ -113,7 +113,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
               </p>
               
               {/* Value Proposition */}
-              <div className="flex flex-wrap justify-center gap-6 mb-12">
+              <div className="flex flex-wrap justify-center gap-6 mb-12 mt-8">
                 <div className="flex items-center bg-white rounded-full px-6 py-3 shadow-md">
                   <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
                   <span className="font-semibold text-gray-900">Aumento de 35% nas vendas</span>
