@@ -104,8 +104,9 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
                 </span>
               </h2>
               <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-8">
-                Sistema completo de gestão empresarial com IA avançada para estoque, vendas e análises preditivas. 
-                Controle inteligente do seu inventário com alertas automáticos e previsão de demanda.
+                O único ERP que combina gestão empresarial completa com IA avançada. 
+                Sistema completo de gestão empresarial com IA avançada para estoque, vendas e análises preditivas.
+                Gestão Integrada: Do Estoque ao Faturamento
               </p>
               <p className="text-xl text-gray-600">
                 Controle completo do seu negócio com foco em produtos, vendas e lucratividade
@@ -167,10 +168,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h3 className="text-3xl font-bold text-gray-900 mb-4">
-              Por que mais de 1.000 empresas escolheram o ERP Smart?
+              Por que o ERP Smart é Perfeito para Gestão de Produtos?
             </h3>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Tecnologia de ponta que transforma dados em resultados reais para seu negócio
+              Plataforma especializada em gestão de estoque, catálogo de produtos e otimização de vendas com IA
             </p>
           </div>
 
