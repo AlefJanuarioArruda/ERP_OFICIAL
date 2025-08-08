@@ -104,9 +104,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
                 </span>
               </h2>
               <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-8">
-                O único ERP que combina gestão empresarial completa com IA avançada. 
-                Sistema completo de gestão empresarial com IA avançada para estoque, vendas e análises preditivas.
-                Gestão Integrada: Do Estoque ao Faturamento
+                Sistema completo de gestão empresarial com IA avançada para estoque, vendas e análises preditivas. 
+                Controle inteligente do seu inventário com alertas automáticos e previsão de demanda.
               </p>
               <p className="text-xl text-gray-600">
                 Controle completo do seu negócio com foco em produtos, vendas e lucratividade
