@@ -74,6 +74,13 @@ export const Success: React.FC = () => {
                 <div className="flex items-center justify-center md:justify-start">
                   <Calendar className="w-5 h-5 text-purple-600 mr-2" />
                   <span className="text-gray-700">
+                    <strong>Valor:</strong> {formatPrice(product.price)}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-center md:justify-start md:col-span-2">
+                  <Calendar className="w-5 h-5 text-green-600 mr-2" />
+                  <span className="text-gray-700">
                     <strong>Renovação:</strong> {product.interval === 'year' ? 'Anual' : 'Mensal'}
                   </span>
                 </div>
