@@ -43,7 +43,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       case 'Plano Mensal':
         return <Zap className="w-6 h-6 text-blue-600" />;
       case 'Plano Semestral':
-        return <Star className="w-6 h-6 text-purple-600" />;
+        return <Star className="w-6 h-6 text-green-600" />;
       case 'Plano Anual':
         return <Crown className="w-6 h-6 text-amber-600" />;
       default:
@@ -52,18 +52,18 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   };
 
   const getCardStyle = (productName: string) => {
-    if (productName === 'Plano Semestral') {
-      return 'border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50 transform scale-105';
+    if (productName === 'Plano Anual') {
+      return 'border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 transform scale-105';
     }
     return 'border border-gray-200 bg-white';
   };
 
   const getPopularBadge = (productName: string) => {
-    if (productName === 'Plano Semestral') {
+    if (productName === 'Plano Anual') {
       return (
         <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-          <span className="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-1 rounded-full text-xs font-medium">
-            Mais Popular
+          <span className="bg-gradient-to-r from-amber-600 to-orange-600 text-white px-3 py-1 rounded-full text-xs font-medium">
+            Melhor Valor
           </span>
         </div>
       );
@@ -115,7 +115,12 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                     </span>
                     {product.interval === 'year' && (
                       <div className="text-sm text-green-600 font-medium mt-1">
-                        Economize 2 meses!
+                        Economize mais de R$ 30/mês!
+                      </div>
+                    )}
+                    {product.name === 'Plano Semestral' && (
+                      <div className="text-sm text-green-600 font-medium mt-1">
+                        Melhor custo-benefício!
                       </div>
                     )}
                   </div>
@@ -152,8 +157,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   onClick={() => handleSubscribe(product.priceId)}
                   disabled={loadingPriceId === product.priceId}
                   className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 ${
-                    product.name === 'Plano Semestral'
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700'
+                    product.name === 'Plano Anual'
+                      ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-700 hover:to-orange-700'
                       : 'bg-gray-900 text-white hover:bg-gray-800'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >

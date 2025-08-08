@@ -11,34 +11,34 @@ export interface StripeProduct {
 
 export const stripeProducts: StripeProduct[] = [
   {
-    id: 'prod_SmuQU2jNMB7UT5',
-    priceId: 'price_1RrKbb2LIhrob5CcVzLCY4bb',
-    name: 'Plano Anual',
-    description: 'Acesso completo ao ERP Smart por 12 meses com desconto especial',
-    mode: 'subscription',
-    price: 69990, // R$ 699.90 in cents
-    currency: 'brl',
-    interval: 'year'
-  },
-  {
-    id: 'prod_SmuPGRU6PiFg9F',
-    priceId: 'price_1RrKau2LIhrob5Cc2ebLQ39z',
+    id: 'prod_Spd8ywFKVVz3xZ',
+    priceId: 'price_1RtxscRyTupwgwOOkhNcILCM',
     name: 'Plano Semestral',
-    description: 'Acesso completo ao ERP Smart por 6 meses',
+    description: 'Acesso completo ao ERP Smart por 6 meses com melhor custo-benefício',
     mode: 'subscription',
-    price: 34990, // R$ 349.90 in cents
+    price: 33990, // R$ 339.90 in cents
     currency: 'brl',
     interval: 'month'
   },
   {
-    id: 'prod_SmrYTaw1sxvCNr',
-    priceId: 'price_1RrHpa2LIhrob5CcdfQKImKv',
+    id: 'prod_Spd8crH2AN5efk',
+    priceId: 'price_1RtxsARyTupwgwOO31bFKE6N',
     name: 'Plano Mensal',
-    description: 'Acesso completo ao ERP Smart por 1 mês',
+    description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
     mode: 'subscription',
     price: 5990, // R$ 59.90 in cents
     currency: 'brl',
     interval: 'month'
+  },
+  {
+    id: 'prod_Spd7F9eq5wAMJ7',
+    priceId: 'price_1RtxrdRyTupwgwOO6wxulMvw',
+    name: 'Plano Anual',
+    description: 'Acesso completo ao ERP Smart por 12 meses com máximo desconto',
+    mode: 'subscription',
+    price: 68990, // R$ 689.90 in cents
+    currency: 'brl',
+    interval: 'year'
   }
 ];
 
