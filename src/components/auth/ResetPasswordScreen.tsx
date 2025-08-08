@@ -1,0 +1,298 @@
+import React, { useState, useEffect } from 'react'
+import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react'
+import { useAuth } from '../../hooks/useAuth'
+
+interface ResetPasswordScreenProps {
+  onBack: () => void
+}
+
+export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack }) => {
+  const { updateProfile } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+
+  const [formData, setFormData] = useState({
+    password: '',
+    confirmPassword: ''
+  })
+
+  // Extract access token from URL hash on component mount
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1))
+      const token = params.get('access_token')
+      const type = params.get('type')
+      
+      if (token && type === 'recovery') {
+        setAccessToken(token)
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname)
+      }
+    }
+  }, [])
+
+  const validateForm = () => {
+    if (!formData.password) {
+      setError('Nova senha é obrigatória')
+      return false
+    }
+    
+    if (formData.password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres')
+      return false
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError('As senhas não coincidem')
+      return false
+    }
+    
+    return true
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!validateForm()) return
+    if (!accessToken) {
+      setError('Token de recuperação inválido ou expirado')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+
+    try {
+      const result = await updateProfile({ 
+        password: formData.password 
+      })
+      
+      if (result.success) {
+        setSuccess(true)
+        // Redirect to login after 3 seconds
+        setTimeout(() => {
+          onBack()
+        }, 3000)
+      } else {
+        setError(result.error || 'Erro ao redefinir senha')
+      }
+    } catch (error) {
+      setError('Erro inesperado ao redefinir senha')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Success state
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Senha Redefinida!</h1>
+            <p className="text-gray-600 mb-8">
+              Sua senha foi alterada com sucesso. Você será redirecionado para a tela de login em alguns segundos.
+            </p>
+            
+            <button
+              onClick={onBack}
+              className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+            >
+              Ir para Login
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // No access token - invalid or expired link
+  if (!accessToken) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-8 h-8 text-red-600" />
+            </div>
+            
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Link Inválido</h1>
+            <p className="text-gray-600 mb-8">
+              Este link de recuperação de senha é inválido ou expirou. Por favor, solicite um novo link de recuperação.
+            </p>
+            
+            <button
+              onClick={onBack}
+              className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+            >
+              Voltar ao Login
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Back Button */}
+        <button
+          onClick={onBack}
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Voltar
+        </button>
+
+        {/* Reset Password Card */}
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-8 h-8 text-blue-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Redefinir Senha</h1>
+            <p className="text-gray-600">
+              Digite sua nova senha para acessar sua conta
+            </p>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start">
+                <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Reset Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nova Senha *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={(e) => {
+                    setFormData({ ...formData, password: e.target.value })
+                    if (error) setError('')
+                  }}
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="••••••••"
+                  required
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+              {formData.password && formData.password.length > 0 && (
+                <div className="mt-2 text-xs text-gray-500">
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${formData.password.length >= 6 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <span>Pelo menos 6 caracteres</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirmar Nova Senha *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={formData.confirmPassword}
+                  onChange={(e) => {
+                    setFormData({ ...formData, confirmPassword: e.target.value })
+                    if (error) setError('')
+                  }}
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder="••••••••"
+                  required
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+              {formData.confirmPassword && formData.password && (
+                <div className="mt-2 text-xs">
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      formData.password === formData.confirmPassword ? 'bg-green-500' : 'bg-red-500'
+                    }`}></div>
+                    <span className={
+                      formData.password === formData.confirmPassword ? 'text-green-600' : 'text-red-600'
+                    }>
+                      {formData.password === formData.confirmPassword ? 'Senhas coincidem' : 'Senhas não coincidem'}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Redefinindo...
+                </div>
+              ) : (
+                'Redefinir Senha'
+              )}
+            </button>
+          </form>
+
+          {/* Security Info */}
+          <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Segurança:</strong> Após redefinir sua senha, você será automaticamente logado e redirecionado para o sistema.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8 text-sm text-gray-500">
+          <p>Lembrou da senha?{' '}
+            <button
+              onClick={onBack}
+              className="text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              Voltar ao login
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
