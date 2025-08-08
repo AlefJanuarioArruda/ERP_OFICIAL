@@ -120,7 +120,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
                 </div>
                 <div className="flex items-center bg-white rounded-full px-6 py-3 shadow-md">
                   <CheckCircle className="w-5 h-5 text-purple-500 mr-2" />
-                  <span className="font-semibold text-gray-900">ROI em 3 meses</span>
+                  <span className="font-semibold text-gray-900">A partir de R$ 59,90/mês</span>
                 </div>
               </div>
 
@@ -471,7 +471,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
             <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-8 text-gray-300">
               <div className="flex items-center">
                 <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
-                <span>14 dias grátis</span>
+                <span>Teste gratuito</span>
               </div>
               <div className="flex items-center">
                 <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
@@ -483,7 +483,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
               </div>
               <div className="flex items-center">
                 <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
-                <span>Garantia de satisfação</span>
+                <span>Cancele quando quiser</span>
               </div>
             </div>
           </div>
