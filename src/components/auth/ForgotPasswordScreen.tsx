@@ -40,8 +40,25 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
             
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Email Enviado!</h1>
             <p className="text-gray-600 mb-8">
-              Enviamos instruções para redefinir sua senha para <strong>{email}</strong>. 
-              Verifique sua caixa de entrada e pasta de spam.
+              Enviamos um link seguro para redefinir sua senha para:
+            </p>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <p className="font-semibold text-blue-900">{email}</p>
+            </div>
+            
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
+              <h3 className="font-semibold text-green-900 mb-2">📧 Próximos Passos:</h3>
+              <div className="text-sm text-green-800 space-y-1">
+                <p>1. Verifique sua caixa de entrada</p>
+                <p>2. Clique no link "Redefinir Senha"</p>
+                <p>3. Crie sua nova senha</p>
+                <p>4. Será automaticamente logado</p>
+              </div>
+            </div>
+            
+            <p className="text-sm text-gray-500 mb-6">
+              <strong>⚠️ Não encontrou o email?</strong> Verifique sua pasta de spam ou lixo eletrônico.
             </p>
             
             <button
@@ -51,9 +68,8 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
               Voltar ao Login
             </button>
             
-            <p className="text-sm text-gray-500 mt-4">
-              <strong>Importante:</strong> O link de recuperação expira em 1 hora. Se não recebeu o email, 
-              verifique sua pasta de spam ou solicite um novo link.
+            <p className="text-xs text-gray-400 mt-4">
+              Precisa de ajuda? Entre em contato conosco pelo suporte.
             </p>
           </div>
         </div>
@@ -80,9 +96,9 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Mail className="w-8 h-8 text-blue-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Esqueceu sua senha?</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Recuperar Senha</h1>
             <p className="text-gray-600">
-              Digite seu email e enviaremos instruções para redefinir sua senha
+              Digite seu email e enviaremos um link seguro para redefinir sua senha
             </p>
           </div>
 
@@ -97,17 +113,21 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
+                Email da Conta
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (error) setError('')
+                  }}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  placeholder="seu@email.com"
+                  placeholder="Digite o email da sua conta"
                   required
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -120,18 +140,27 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
               {loading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Enviando...
+                  Enviando Link...
                 </div>
               ) : (
-                'Enviar Instruções'
+                'Enviar Link de Recuperação'
               )}
             </button>
           </form>
 
           {/* Additional Info */}
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+            <div className="flex items-center mb-2">
+              <Mail className="w-4 h-4 text-blue-600 mr-2" />
+              <span className="font-medium text-blue-900">Como Funciona</span>
+            </div>
             <p className="text-sm text-blue-800">
-              <strong>Dica:</strong> As instruções de recuperação expiram em 1 hora por motivos de segurança.
+              1. Você receberá um email com link seguro<br/>
+              2. Clique no link para criar nova senha<br/>
+              3. Será automaticamente logado no sistema
+            </p>
+            <p className="text-xs text-blue-600 mt-2">
+              ⏰ O link expira em 1 hora por segurança
             </p>
           </div>
         </div>

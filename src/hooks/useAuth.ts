@@ -146,11 +146,11 @@ export const useAuthProvider = (): AuthContextType => {
       
       // Use production domain if available, otherwise current domain
       const redirectDomain = currentDomain.includes('localhost') || currentDomain.includes('127.0.0.1') 
-        ? 'https://tubular-concha-571dec.netlify.app' // Your production domain
+        ? currentDomain // Use current domain for development
         : currentDomain
       
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${redirectDomain}/reset-password`,
+        redirectTo: `${redirectDomain}/#type=recovery`,
       })
 
       if (error) {

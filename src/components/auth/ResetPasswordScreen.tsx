@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Brain } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import { supabase } from '../../lib/supabase'
 
 interface ResetPasswordScreenProps {
   onBack: () => void
 }
 
 export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack }) => {
-  const { updateProfile } = useAuth()
+  const { updateProfile, signIn } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [loggingIn, setLoggingIn] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string>('')
 
   const [formData, setFormData] = useState({
     password: '',
@@ -30,11 +33,24 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
       
       if (token && type === 'recovery') {
         setAccessToken(token)
+        // Get user email from the token to use for auto-login
+        getUserEmailFromToken(token)
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname)
       }
     }
   }, [])
+
+  const getUserEmailFromToken = async (token: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser(token)
+      if (user?.email) {
+        setUserEmail(user.email)
+      }
+    } catch (error) {
+      console.error('Error getting user from token:', error)
+    }
+  }
 
   const validateForm = () => {
     if (!formData.password) {
@@ -68,18 +84,42 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     setError('')
 
     try {
-      const result = await updateProfile({ 
-        password: formData.password 
-      })
+      // Update password using Supabase auth directly with the recovery token
+      const { error: updateError } = await supabase.auth.updateUser(
+        { password: formData.password },
+        { accessToken }
+      )
       
-      if (result.success) {
+      if (!updateError) {
         setSuccess(true)
-        // Redirect to login after 3 seconds
-        setTimeout(() => {
-          onBack()
-        }, 3000)
+        
+        // Auto-login after password reset
+        if (userEmail) {
+          setLoggingIn(true)
+          
+          // Small delay to ensure password is updated
+          setTimeout(async () => {
+            const loginResult = await signIn(userEmail, formData.password)
+            
+            if (loginResult.success) {
+              // User will be automatically redirected to dashboard by auth state change
+              console.log('Auto-login successful')
+            } else {
+              // If auto-login fails, redirect to login page after showing success
+              setTimeout(() => {
+                onBack()
+              }, 2000)
+            }
+            setLoggingIn(false)
+          }, 1000)
+        } else {
+          // Fallback: redirect to login after 3 seconds if no email
+          setTimeout(() => {
+            onBack()
+          }, 3000)
+        }
       } else {
-        setError(result.error || 'Erro ao redefinir senha')
+        setError('Erro ao redefinir senha. Tente novamente.')
       }
     } catch (error) {
       setError('Erro inesperado ao redefinir senha')
@@ -94,21 +134,47 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-8 h-8 text-white" />
             </div>
             
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Senha Redefinida!</h1>
-            <p className="text-gray-600 mb-8">
-              Sua senha foi alterada com sucesso. Você será redirecionado para a tela de login em alguns segundos.
-            </p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              🎉 Senha Redefinida com Sucesso!
+            </h1>
             
-            <button
-              onClick={onBack}
-              className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
-            >
-              Ir para Login
-            </button>
+            {loggingIn ? (
+              <div className="mb-8">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+                <p className="text-gray-600">
+                  Fazendo login automaticamente na sua conta...
+                </p>
+              </div>
+            ) : (
+              <p className="text-gray-600 mb-8">
+                Sua senha foi alterada com sucesso! {userEmail ? 'Você será logado automaticamente.' : 'Você será redirecionado para o login.'}
+              </p>
+            )}
+            
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6">
+              <div className="flex items-center justify-center mb-2">
+                <Brain className="w-5 h-5 text-blue-600 mr-2" />
+                <span className="font-semibold text-gray-900">ERP Smart</span>
+              </div>
+              <p className="text-sm text-gray-600">
+                Bem-vindo de volta! Sua conta está segura e pronta para uso.
+              </p>
+            </div>
+            
+            {!loggingIn && (
+              <button
+                onClick={onBack}
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+              >
+                {userEmail ? 'Ir para o Sistema' : 'Ir para Login'}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -125,16 +191,22 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
             
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Link Inválido</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Link Inválido ou Expirado</h1>
             <p className="text-gray-600 mb-8">
-              Este link de recuperação de senha é inválido ou expirou. Por favor, solicite um novo link de recuperação.
+              Este link de recuperação de senha é inválido ou expirou. Links de recuperação são válidos por apenas 1 hora por motivos de segurança.
             </p>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+              <p className="text-sm text-amber-800">
+                <strong>💡 Dica:</strong> Solicite um novo link de recuperação na tela de login para continuar.
+              </p>
+            </div>
             
             <button
               onClick={onBack}
               className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
             >
-              Voltar ao Login
+              Solicitar Novo Link
             </button>
           </div>
         </div>
@@ -161,9 +233,9 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Lock className="w-8 h-8 text-blue-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Redefinir Senha</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Criar Nova Senha</h1>
             <p className="text-gray-600">
-              Digite sua nova senha para acessar sua conta
+              Digite sua nova senha para acessar sua conta com segurança
             </p>
           </div>
 
@@ -193,7 +265,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
                     if (error) setError('')
                   }}
                   className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  placeholder="••••••••"
+                  placeholder="Digite sua nova senha"
                   required
                   autoComplete="new-password"
                 />
@@ -229,7 +301,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
                     if (error) setError('')
                   }}
                   className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  placeholder="••••••••"
+                  placeholder="Confirme sua nova senha"
                   required
                   autoComplete="new-password"
                 />
@@ -265,18 +337,22 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
               {loading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Redefinindo...
+                  Redefinindo Senha...
                 </div>
               ) : (
-                'Redefinir Senha'
+                'Confirmar Nova Senha'
               )}
             </button>
           </form>
 
           {/* Security Info */}
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+            <div className="flex items-center mb-2">
+              <Lock className="w-4 h-4 text-blue-600 mr-2" />
+              <span className="font-medium text-blue-900">Segurança Garantida</span>
+            </div>
             <p className="text-sm text-blue-800">
-              <strong>Segurança:</strong> Após redefinir sua senha, você será automaticamente logado e redirecionado para o sistema.
+              Após confirmar sua nova senha, você será automaticamente logado e redirecionado para o dashboard do sistema.
             </p>
           </div>
         </div>
@@ -288,7 +364,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
               onClick={onBack}
               className="text-blue-600 hover:text-blue-700 transition-colors"
             >
-              Voltar ao login
+              Fazer login
             </button>
           </p>
         </div>
