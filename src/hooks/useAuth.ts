@@ -145,7 +145,7 @@ export const useAuthProvider = (): AuthContextType => {
       const currentDomain = window.location.origin
       
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${currentDomain}/#type=recovery&access_token=PLACEHOLDER`,
+        redirectTo: `${currentDomain}/reset-password#type=recovery&access_token=PLACEHOLDER`,
       })
 
       if (error) {
