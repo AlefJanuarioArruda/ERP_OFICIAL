@@ -144,13 +144,8 @@ export const useAuthProvider = (): AuthContextType => {
       // Get the current domain for redirect URL
       const currentDomain = window.location.origin
       
-      // Use production domain if available, otherwise current domain
-      const redirectDomain = currentDomain.includes('localhost') || currentDomain.includes('127.0.0.1') 
-        ? currentDomain // Use current domain for development
-        : currentDomain
-      
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${redirectDomain}/#type=recovery`,
+        redirectTo: `${currentDomain}/#type=recovery&access_token=PLACEHOLDER`,
       })
 
       if (error) {

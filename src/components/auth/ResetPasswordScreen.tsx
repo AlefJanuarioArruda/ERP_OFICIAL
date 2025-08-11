@@ -8,7 +8,7 @@ interface ResetPasswordScreenProps {
 }
 
 export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack }) => {
-  const { updateProfile, signIn } = useAuth()
+  const { signIn } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -233,9 +233,9 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Lock className="w-8 h-8 text-blue-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Criar Nova Senha</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Redefinir Senha</h1>
             <p className="text-gray-600">
-              Digite sua nova senha para acessar sua conta com segurança
+              Digite sua nova senha para acessar sua conta
             </p>
           </div>
 
@@ -331,7 +331,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !formData.password || !formData.confirmPassword || formData.password !== formData.confirmPassword}
               className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {loading ? (
@@ -352,7 +352,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
               <span className="font-medium text-blue-900">Segurança Garantida</span>
             </div>
             <p className="text-sm text-blue-800">
-              Após confirmar sua nova senha, você será automaticamente logado e redirecionado para o dashboard do sistema.
+              Após confirmar sua nova senha, você será automaticamente logado e redirecionado para o sistema.
             </p>
           </div>
         </div>

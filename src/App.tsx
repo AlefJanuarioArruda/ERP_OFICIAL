@@ -34,7 +34,7 @@ function AppContent() {
     
     if (urlParams.get('session_id') && window.location.pathname === '/') {
       setCurrentPage('success')
-    } else if (hash && hash.includes('type=recovery')) {
+    } else if (hash && hash.includes('type=recovery') && hash.includes('access_token')) {
       setAuthScreen('reset-password')
     }
   }, [])
