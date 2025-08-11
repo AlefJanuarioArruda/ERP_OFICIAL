@@ -84,13 +84,13 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     setError('')
 
     try {
-      // Atualiza a senha usando token de recuperação passado no segundo parâmetro
-      const { error: updateError } = await supabase.auth.updateUser(
-        { password: formData.password },
-        { accessToken: accessToken }
+      // Usando a API do Supabase para redefinir a senha com o accessToken
+      const { user, error: updateError } = await supabase.auth.api.updateUser(
+        accessToken,
+        { password: formData.password }
       )
 
-      if (!updateError) {
+      if (!updateError && user) {
         setSuccess(true)
 
         // Auto-login após reset de senha
@@ -116,7 +116,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
         }
       } else {
         console.error('Erro ao redefinir senha:', updateError)
-        setError(`Erro ao redefinir senha: ${updateError.message}`)
+        setError(`Erro ao redefinir senha: ${updateError?.message || 'Erro desconhecido'}`)
       }
     } catch (error) {
       console.error('Erro inesperado ao redefinir senha:', error)
@@ -126,8 +126,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     }
   }
 
-  // -- Abaixo continua seu layout, mensagens de sucesso, erro, e formulário -- //
-  
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -179,6 +177,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
       </div>
     )
   }
+
 
   if (!accessToken) {
     return (
