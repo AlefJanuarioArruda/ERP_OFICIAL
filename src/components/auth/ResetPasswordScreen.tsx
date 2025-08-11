@@ -86,8 +86,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     try {
       // Update password using Supabase auth directly with the recovery token
       const { error: updateError } = await supabase.auth.updateUser(
-        { password: formData.password },
-        { accessToken }
+        { password: formData.password }
       )
       
       if (!updateError) {
