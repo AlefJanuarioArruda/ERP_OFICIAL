@@ -51,6 +51,20 @@ function AppContent() {
     )
   }
 
+  // PRIORITY: Check for password reset link FIRST, before authentication check
+  const hash = window.location.hash
+  if (hash && hash.includes('type=recovery') && hash.includes('access_token')) {
+    return (
+      <ResetPasswordScreen
+        onBack={() => {
+          setAuthScreen('login')
+          // Clean up URL
+          window.history.replaceState({}, document.title, window.location.pathname)
+        }}
+      />
+    )
+  }
+
   // Show auth screens if user is not authenticated
   if (!isAuthenticated) {
     switch (authScreen) {
@@ -81,13 +95,6 @@ function AppContent() {
       case 'forgot-password':
         return (
           <ForgotPasswordScreen
-            onBack={() => setAuthScreen('login')}
-          />
-        )
-      
-      case 'reset-password':
-        return (
-          <ResetPasswordScreen
             onBack={() => setAuthScreen('login')}
           />
         )
