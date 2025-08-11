@@ -23,7 +23,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     confirmPassword: ''
   })
 
-  // Extract access token from URL hash on component mount
+  // Extrai access token do hash da URL ao montar o componente
   useEffect(() => {
     const hash = window.location.hash
     if (hash) {
@@ -33,9 +33,9 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
       
       if (token && type === 'recovery') {
         setAccessToken(token)
-        // Get user email from the token to use for auto-login
+        // Busca email do usuário usando o token de recuperação para auto-login
         getUserEmailFromToken(token)
-        // Clean up URL
+        // Limpa URL para evitar token exposto na barra
         window.history.replaceState({}, document.title, window.location.pathname)
       }
     }
@@ -48,7 +48,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
         setUserEmail(user.email)
       }
     } catch (error) {
-      console.error('Error getting user from token:', error)
+      console.error('Erro ao obter usuário pelo token:', error)
     }
   }
 
@@ -73,7 +73,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) return
     if (!accessToken) {
       setError('Token de recuperação inválido ou expirado')
@@ -84,39 +84,25 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     setError('')
 
     try {
-      // Set session with recovery token to authenticate the updateUser call
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: ''
-      })
-
-      if (sessionError) {
-        setError(`Erro ao iniciar sessão para reset: ${sessionError.message}`)
-        setLoading(false)
-        return
-      }
-
-      // Update password now with authenticated session
+      // Atualiza a senha usando token de recuperação passado no segundo parâmetro
       const { error: updateError } = await supabase.auth.updateUser(
-        { password: formData.password }
+        { password: formData.password },
+        { accessToken: accessToken }
       )
-      
+
       if (!updateError) {
         setSuccess(true)
-        
-        // Auto-login after password reset
+
+        // Auto-login após reset de senha
         if (userEmail) {
           setLoggingIn(true)
-          
-          // Small delay to ensure password is updated
+
           setTimeout(async () => {
             const loginResult = await signIn(userEmail, formData.password)
-            
+
             if (loginResult.success) {
-              // User will be automatically redirected to dashboard by auth state change
-              console.log('Auto-login successful')
+              console.log('Login automático realizado com sucesso')
             } else {
-              // If auto-login fails, redirect to login page after showing success
               setTimeout(() => {
                 onBack()
               }, 2000)
@@ -124,24 +110,24 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
             setLoggingIn(false)
           }, 1000)
         } else {
-          // Fallback: redirect to login after 3 seconds if no email
           setTimeout(() => {
             onBack()
           }, 3000)
         }
       } else {
-        console.error('Password reset error:', updateError)
+        console.error('Erro ao redefinir senha:', updateError)
         setError(`Erro ao redefinir senha: ${updateError.message}`)
       }
     } catch (error) {
-      console.error('Unexpected password reset error:', error)
+      console.error('Erro inesperado ao redefinir senha:', error)
       setError(`Erro inesperado ao redefinir senha: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
     } finally {
       setLoading(false)
     }
   }
 
-  // Success state
+  // -- Abaixo continua seu layout, mensagens de sucesso, erro, e formulário -- //
+  
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -194,7 +180,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     )
   }
 
-  // No access token - invalid or expired link
   if (!accessToken) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -230,7 +215,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Back Button */}
         <button
           onClick={onBack}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors"
@@ -239,9 +223,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
           Voltar
         </button>
 
-        {/* Reset Password Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-          {/* Header */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Lock className="w-8 h-8 text-blue-600" />
@@ -252,7 +234,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
             </p>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <div className="flex items-start">
@@ -262,7 +243,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
             </div>
           )}
 
-          {/* Reset Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -358,7 +338,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
             </button>
           </form>
 
-          {/* Security Info */}
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <div className="flex items-center mb-2">
               <Lock className="w-4 h-4 text-blue-600 mr-2" />
@@ -370,7 +349,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
           </div>
         </div>
 
-        {/* Footer */}
         <div className="text-center mt-8 text-sm text-gray-500">
           <p>Lembrou da senha?{' '}
             <button
