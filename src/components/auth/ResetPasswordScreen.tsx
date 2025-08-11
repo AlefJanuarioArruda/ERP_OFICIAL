@@ -85,11 +85,16 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
     try {
       // Usando a API do Supabase para redefinir a senha com o accessToken
-      const { user, error: updateError } = await supabase.auth.update({
+      const { user, error: updateError } = await supabase.auth.api.updateUser(accessToken, {
         password: formData.password
       })
 
-      if (!updateError && user) {
+      if (updateError) {
+        setError(`Erro ao redefinir senha: ${updateError?.message || 'Erro desconhecido'}`)
+        return
+      }
+
+      if (user) {
         setSuccess(true)
 
         // Auto-login após reset de senha
@@ -113,9 +118,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
             onBack()
           }, 3000)
         }
-      } else {
-        console.error('Erro ao redefinir senha:', updateError)
-        setError(`Erro ao redefinir senha: ${updateError?.message || 'Erro desconhecido'}`)
       }
     } catch (error) {
       console.error('Erro inesperado ao redefinir senha:', error)
