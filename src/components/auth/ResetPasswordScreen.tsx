@@ -85,10 +85,9 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
     try {
       // Usando a API do Supabase para redefinir a senha com o accessToken
-      const { user, error: updateError } = await supabase.auth.api.updateUser(
-        accessToken,
-        { password: formData.password }
-      )
+      const { user, error: updateError } = await supabase.auth.update({
+        password: formData.password
+      })
 
       if (!updateError && user) {
         setSuccess(true)
@@ -178,7 +177,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     )
   }
 
-
   if (!accessToken) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
@@ -224,139 +222,72 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Lock className="w-8 h-8 text-blue-600" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Redefinir Senha</h1>
-            <p className="text-gray-600">
-              Digite sua nova senha para acessar sua conta
-            </p>
+            <h1 className="text-2xl font-bold text-gray-900">Redefinir Senha</h1>
           </div>
 
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-start">
-                <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
-                <p className="text-red-600 text-sm">{error}</p>
-              </div>
+            <div className="text-red-600 text-sm text-center mb-4">
+              <AlertCircle className="inline-block mr-2" />
+              {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nova Senha *
-              </label>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-sm text-gray-600 font-semibold mb-2">Nova Senha</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type={showPassword ? 'text' : 'password'}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.password}
-                  onChange={(e) => {
+                  onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
-                    if (error) setError('')
-                  }}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  placeholder="Digite sua nova senha"
+                  }
                   required
-                  autoComplete="new-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-3 text-gray-500"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
-              {formData.password && formData.password.length > 0 && (
-                <div className="mt-2 text-xs text-gray-500">
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${formData.password.length >= 6 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                    <span>Pelo menos 6 caracteres</span>
-                  </div>
-                </div>
-              )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirmar Nova Senha *
-              </label>
+            <div className="mb-4">
+              <label className="block text-sm text-gray-600 font-semibold mb-2">Confirmar Senha</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={formData.confirmPassword}
-                  onChange={(e) => {
+                  onChange={(e) =>
                     setFormData({ ...formData, confirmPassword: e.target.value })
-                    if (error) setError('')
-                  }}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                  placeholder="Confirme sua nova senha"
+                  }
                   required
-                  autoComplete="new-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-3 text-gray-500"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showConfirmPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
-              {formData.confirmPassword && formData.password && (
-                <div className="mt-2 text-xs">
-                  <div className="flex items-center space-x-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      formData.password === formData.confirmPassword ? 'bg-green-500' : 'bg-red-500'
-                    }`}></div>
-                    <span className={
-                      formData.password === formData.confirmPassword ? 'text-green-600' : 'text-red-600'
-                    }>
-                      {formData.password === formData.confirmPassword ? 'Senhas coincidem' : 'Senhas não coincidem'}
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
 
             <button
               type="submit"
-              disabled={loading || !formData.password || !formData.confirmPassword || formData.password !== formData.confirmPassword}
-              className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 disabled:opacity-50"
             >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Redefinindo Senha...
-                </div>
-              ) : (
-                'Confirmar Nova Senha'
-              )}
+              {loading ? 'Redefinindo...' : 'Redefinir Senha'}
             </button>
           </form>
-
-          <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-            <div className="flex items-center mb-2">
-              <Lock className="w-4 h-4 text-blue-600 mr-2" />
-              <span className="font-medium text-blue-900">Segurança Garantida</span>
-            </div>
-            <p className="text-sm text-blue-800">
-              Após confirmar sua nova senha, você será automaticamente logado e redirecionado para o sistema.
-            </p>
-          </div>
-        </div>
-
-        <div className="text-center mt-8 text-sm text-gray-500">
-          <p>Lembrou da senha?{' '}
-            <button
-              onClick={onBack}
-              className="text-blue-600 hover:text-blue-700 transition-colors"
-            >
-              Fazer login
-            </button>
-          </p>
         </div>
       </div>
     </div>
