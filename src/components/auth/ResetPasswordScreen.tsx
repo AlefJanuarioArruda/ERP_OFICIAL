@@ -43,7 +43,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
   const getUserEmailFromToken = async (token: string) => {
     try {
-      const { data: { user } } = await supabase.auth.api.getUser(token)
+      const { data: { user } } = await supabase.auth.getUser(token)
       if (user?.email) {
         setUserEmail(user.email)
       }
@@ -85,15 +85,16 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
     try {
       // Usando a API do Supabase para redefinir a senha com o accessToken
-      const { data, error: updateError } = await supabase.auth.api
-        .resetPasswordForEmail(userEmail, { token: accessToken, newPassword: formData.password })
+      const { user, error: updateError } = await supabase.auth.api.updateUser(accessToken, {
+        password: formData.password
+      })
 
       if (updateError) {
         setError(`Erro ao redefinir senha: ${updateError.message}`)
         return
       }
 
-      if (data) {
+      if (user) {
         setSuccess(true)
 
         // Auto-login após reset de senha
