@@ -30,7 +30,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
       const params = new URLSearchParams(hash.substring(1))
       const token = params.get('access_token')
       const type = params.get('type')
-      
+
       if (token && type === 'recovery') {
         setAccessToken(token)
         // Busca email do usuário usando o token de recuperação para auto-login
@@ -43,7 +43,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
   const getUserEmailFromToken = async (token: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser(token)
+      const { data: { user } } = await supabase.auth.api.getUser(token)
       if (user?.email) {
         setUserEmail(user.email)
       }
@@ -57,17 +57,17 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
       setError('Nova senha é obrigatória')
       return false
     }
-    
+
     if (formData.password.length < 6) {
       setError('A senha deve ter pelo menos 6 caracteres')
       return false
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError('As senhas não coincidem')
       return false
     }
-    
+
     return true
   }
 
@@ -85,16 +85,15 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
     try {
       // Usando a API do Supabase para redefinir a senha com o accessToken
-      const { user, error: updateError } = await supabase.auth.api.updateUser(accessToken, {
-        password: formData.password
-      })
+      const { data, error: updateError } = await supabase.auth.api
+        .resetPasswordForEmail(userEmail, { token: accessToken, newPassword: formData.password })
 
       if (updateError) {
-        setError(`Erro ao redefinir senha: ${updateError?.message || 'Erro desconhecido'}`)
+        setError(`Erro ao redefinir senha: ${updateError.message}`)
         return
       }
 
-      if (user) {
+      if (data) {
         setSuccess(true)
 
         // Auto-login após reset de senha
@@ -135,11 +134,11 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
             <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-8 h-8 text-white" />
             </div>
-            
+
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
               🎉 Senha Redefinida com Sucesso!
             </h1>
-            
+
             {loggingIn ? (
               <div className="mb-8">
                 <div className="flex items-center justify-center mb-4">
@@ -154,7 +153,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
                 Sua senha foi alterada com sucesso! {userEmail ? 'Você será logado automaticamente.' : 'Você será redirecionado para o login.'}
               </p>
             )}
-            
+
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6">
               <div className="flex items-center justify-center mb-2">
                 <Brain className="w-5 h-5 text-blue-600 mr-2" />
@@ -164,7 +163,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
                 Bem-vindo de volta! Sua conta está segura e pronta para uso.
               </p>
             </div>
-            
+
             {!loggingIn && (
               <button
                 onClick={onBack}
@@ -187,18 +186,18 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
-            
+
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Link Inválido ou Expirado</h1>
             <p className="text-gray-600 mb-8">
               Este link de recuperação de senha é inválido ou expirou. Links de recuperação são válidos por apenas 1 hora por motivos de segurança.
             </p>
-            
+
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-amber-800">
                 <strong>💡 Dica:</strong> Solicite um novo link de recuperação na tela de login para continuar.
               </p>
             </div>
-            
+
             <button
               onClick={onBack}
               className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
