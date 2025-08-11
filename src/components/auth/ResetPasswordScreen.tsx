@@ -84,7 +84,19 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     setError('')
 
     try {
-      // Update password using Supabase auth directly with the recovery token
+      // Set session with recovery token to authenticate the updateUser call
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: ''
+      })
+
+      if (sessionError) {
+        setError(`Erro ao iniciar sessão para reset: ${sessionError.message}`)
+        setLoading(false)
+        return
+      }
+
+      // Update password now with authenticated session
       const { error: updateError } = await supabase.auth.updateUser(
         { password: formData.password }
       )
