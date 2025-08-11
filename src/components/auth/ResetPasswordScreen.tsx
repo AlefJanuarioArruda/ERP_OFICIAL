@@ -119,10 +119,12 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
           }, 3000)
         }
       } else {
-        setError(updateError.message)
+        console.error('Password reset error:', updateError)
+        setError(`Erro ao redefinir senha: ${updateError.message}`)
       }
     } catch (error) {
-      setError('Erro inesperado ao redefinir senha')
+      console.error('Unexpected password reset error:', error)
+      setError(`Erro inesperado ao redefinir senha: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
     } finally {
       setLoading(false)
     }
