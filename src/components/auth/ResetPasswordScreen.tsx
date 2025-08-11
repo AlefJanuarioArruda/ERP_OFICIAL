@@ -119,7 +119,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
           }, 3000)
         }
       } else {
-        setError('Erro ao redefinir senha. Tente novamente.')
+        setError(updateError.message)
       }
     } catch (error) {
       setError('Erro inesperado ao redefinir senha')
