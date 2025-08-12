@@ -23,16 +23,27 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
   });
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const accessToken = urlParams.get('access_token');
-    const refreshToken = urlParams.get('refresh_token');
-    const type = urlParams.get('type');
+    // Tentar extrair parâmetros do fragmento (#)
+    let hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+    let accessToken = hashParams.get('access_token');
+    let refreshToken = hashParams.get('refresh_token');
+    let type = hashParams.get('type');
 
-    console.log('URL Params:', {
+    // Se não encontrar no fragmento, tentar na query string
+    if (!accessToken || !refreshToken || !type) {
+      const queryParams = new URLSearchParams(window.location.search);
+      accessToken = queryParams.get('access_token');
+      refreshToken = queryParams.get('refresh_token');
+      type = queryParams.get('type');
+    }
+
+    console.log('Parâmetros extraídos:', {
       accessToken,
       refreshToken,
       type,
       fullUrl: window.location.href,
+      hash: window.location.hash,
+      search: window.location.search,
     });
 
     if (type !== 'recovery' || !accessToken || !refreshToken) {
@@ -40,6 +51,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
       return;
     }
 
+    // Configura a sessão com o token de recuperação
     supabase.auth.setSession({
       access_token: accessToken,
       refresh_token: refreshToken,
