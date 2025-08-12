@@ -1,13 +1,8 @@
 import React, { useState } from 'react'
-import { ArrowLeft, Mail, CheckCircle } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
+import { ArrowLeft, Mail, CheckCircle } from 'lucide-react'
 
-/**
- * Configuração do Supabase diretamente no componente
- * Certifique-se de ter criado as variáveis de ambiente:
- * NEXT_PUBLIC_SUPABASE_URL
- * NEXT_PUBLIC_SUPABASE_ANON_KEY
- */
+// Inicialize seu cliente Supabase usando as variáveis de ambiente
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -23,30 +18,21 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
 
-  const resetPassword = async (email: string) => {
-    // Envia o link com redirecionamento para a tela de reset
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://legendary-otter-a68fb4.netlify.app/reset-password'
-    })
-    if (error) {
-      return { success: false, error: error.message }
-    }
-    return { success: true }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
-    const result = await resetPassword(email)
-    
-    if (result.success) {
-      setSuccess(true)
+    // Chama o Supabase para enviar email de reset de senha
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://legendary-otter-a68fb4.netlify.app/reset-password'
+    })
+
+    if (error) {
+      setError(error.message)
     } else {
-      setError(result.error || 'Erro ao enviar email')
+      setSuccess(true)
     }
-    
     setLoading(false)
   }
 
@@ -58,16 +44,16 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
-            
+
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Email Enviado!</h1>
             <p className="text-gray-600 mb-8">
               Enviamos um link seguro para redefinir sua senha para:
             </p>
-            
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
               <p className="font-semibold text-blue-900">{email}</p>
             </div>
-            
+
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
               <h3 className="font-semibold text-green-900 mb-2">📧 Próximos Passos:</h3>
               <div className="text-sm text-green-800 space-y-1">
@@ -77,18 +63,18 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
                 <p>4. Será automaticamente logado</p>
               </div>
             </div>
-            
+
             <p className="text-sm text-gray-500 mb-6">
               <strong>⚠️ Não encontrou o email?</strong> Verifique sua pasta de spam ou lixo eletrônico.
             </p>
-            
+
             <button
               onClick={onBack}
               className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
             >
               Voltar ao Login
             </button>
-            
+
             <p className="text-xs text-gray-400 mt-4">
               Precisa de ajuda? Entre em contato conosco pelo suporte.
             </p>
@@ -101,7 +87,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Back Button */}
+        {/* Botão voltar */}
         <button
           onClick={onBack}
           className="flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors"
@@ -110,9 +96,9 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
           Voltar
         </button>
 
-        {/* Reset Password Card */}
+        {/* Card formulário */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-          {/* Header */}
+          {/* Cabeçalho */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Mail className="w-8 h-8 text-blue-600" />
@@ -123,14 +109,14 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
             </p>
           </div>
 
-          {/* Error Message */}
+          {/* Mensagem de erro */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
 
-          {/* Reset Form */}
+          {/* Formulário */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -169,7 +155,7 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
             </button>
           </form>
 
-          {/* Additional Info */}
+          {/* Informações adicionais */}
           <div className="mt-8 p-4 bg-blue-50 rounded-lg">
             <div className="flex items-center mb-2">
               <Mail className="w-4 h-4 text-blue-600 mr-2" />
@@ -188,7 +174,8 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
 
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-gray-500">
-          <p>Lembrou da senha?{' '}
+          <p>
+            Lembrou da senha?{' '}
             <button
               onClick={onBack}
               className="text-blue-600 hover:text-blue-700 transition-colors"
