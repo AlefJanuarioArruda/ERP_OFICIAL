@@ -1,287 +1,199 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Brain } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
-import { supabase } from '../../lib/supabase';
+import React, { useState, useEffect } from 'react'
+import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Brain } from 'lucide-react'
+import { useAuth } from '../../hooks/useAuth'
+import { supabase } from '../../lib/supabase'
 
 interface ResetPasswordScreenProps {
-  onBack: () => void;
+  onBack: () => void
 }
 
 export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack }) => {
-  const { signIn } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [loggingIn, setLoggingIn] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string>('');
+  const { signIn } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const [loggingIn, setLoggingIn] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [userEmail, setUserEmail] = useState<string>('')
 
   const [formData, setFormData] = useState({
     password: '',
     confirmPassword: ''
-  });
+  })
 
-  // Extract access token from URL hash on component mount
+  // Obtém o usuário logado automaticamente via Supabase
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash) {
-      const params = new URLSearchParams(hash.substring(1));
-      const token = params.get('access_token');
-      const type = params.get('type');
-      
-      if (token && type === 'recovery') {
-        setAccessToken(token);
-        getUserEmailFromToken(token);
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.email) {
+        setUserEmail(session.user.email)
       }
-    }
-  }, []);
-
-  const getUserEmailFromToken = async (token: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser(token);
-      if (user?.email) {
-        setUserEmail(user.email);
-      }
-    } catch (error) {
-      console.error('Error getting user from token:', error);
-    }
-  };
+    })
+  }, [])
 
   const validateForm = () => {
     if (!formData.password) {
-      setError('Nova senha é obrigatória');
-      return false;
+      setError('Nova senha é obrigatória')
+      return false
     }
-    
     if (formData.password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
-      return false;
+      setError('A senha deve ter pelo menos 6 caracteres')
+      return false
     }
-    
     if (formData.password !== formData.confirmPassword) {
-      setError('As senhas não coincidem');
-      return false;
+      setError('As senhas não coincidem')
+      return false
     }
-    
-    return true;
-  };
+    return true
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    if (!accessToken) {
-      setError('Token de recuperação inválido ou expirado');
-      return;
-    }
+    e.preventDefault()
+    if (!validateForm()) return
 
-    setLoading(true);
-    setError('');
+    setLoading(true)
+    setError('')
 
     try {
-      // Usar o token de recuperação diretamente para atualizar a senha
-      const { error: resetError } = await supabase.auth.api
-        .updateUser(accessToken, { password: formData.password });
+      // Atualiza senha usando sessão já ativa
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: formData.password
+      })
 
-      if (resetError) {
-        setError(`Erro ao redefinir senha: ${resetError.message}`);
-      } else {
-        setSuccess(true);
-        
+      if (!updateError) {
+        setSuccess(true)
+
+        // Auto login após reset
         if (userEmail) {
-          setLoggingIn(true);
+          setLoggingIn(true)
           setTimeout(async () => {
-            const loginResult = await signIn(userEmail, formData.password);
-            if (loginResult.success) {
-              console.log('Auto-login bem-sucedido');
-            } else {
-              setTimeout(() => {
-                onBack();
-              }, 2000);
+            const loginResult = await signIn(userEmail, formData.password)
+            if (!loginResult.success) {
+              setTimeout(() => onBack(), 2000)
             }
-            setLoggingIn(false);
-          }, 1000);
+            setLoggingIn(false)
+          }, 1000)
         } else {
-          setTimeout(() => {
-            onBack();
-          }, 3000);
+          setTimeout(() => onBack(), 3000)
         }
+      } else {
+        setError(`Erro ao redefinir senha: ${updateError.message}`)
       }
-    } catch (error) {
-      console.error('Erro inesperado ao redefinir senha:', error);
-      setError(`Erro inesperado ao redefinir senha: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    } catch (err) {
+      setError(`Erro inesperado ao redefinir senha: ${err instanceof Error ? err.message : 'Erro desconhecido'}`)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  // Success state
+  // Tela de sucesso
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-white" />
-            </div>
-            
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              🎉 Senha Redefinida com Sucesso!
-            </h1>
-            
-            {loggingIn ? (
-              <div className="mb-8">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-                <p className="text-gray-600">
-                  Fazendo login automaticamente na sua conta...
-                </p>
-              </div>
-            ) : (
-              <p className="text-gray-600 mb-8">
-                Sua senha foi alterada com sucesso! {userEmail ? 'Você será logado automaticamente.' : 'Você será redirecionado para o login.'}
-              </p>
-            )}
-            
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-center mb-2">
-                <Brain className="w-5 h-5 text-blue-600 mr-2" />
-                <span className="font-semibold text-gray-900">ERP Smart</span>
-              </div>
-              <p className="text-sm text-gray-600">
-                Bem-vindo de volta! Sua conta está segura e pronta para uso.
-              </p>
-            </div>
-            
-            {!loggingIn && (
-              <button
-                onClick={onBack}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
-              >
-                {userEmail ? 'Ir para o Sistema' : 'Ir para Login'}
-              </button>
-            )}
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-8 h-8 text-white" />
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // No access token - invalid or expired link
-  if (!accessToken) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <AlertCircle className="w-8 h-8 text-red-600" />
-            </div>
-            
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Link Inválido ou Expirado</h1>
-            <p className="text-gray-600 mb-8">
-              Este link de recuperação de senha é inválido ou expirou. Links de recuperação são válidos por apenas 1 hora por motivos de segurança.
-            </p>
-            
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-              <p className="text-sm text-amber-800">
-                <strong>💡 Dica:</strong> Solicite um novo link de recuperação na tela de login para continuar.
-              </p>
-            </div>
-            
+          <h1 className="text-2xl font-bold mb-4">🎉 Senha Redefinida!</h1>
+          {loggingIn ? (
+            <p>Entrando automaticamente...</p>
+          ) : (
+            <p>{userEmail ? 'Você será logado automaticamente.' : 'Redirecionando para login...'}</p>
+          )}
+          {!loggingIn && (
             <button
               onClick={onBack}
-              className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
+              className="w-full mt-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg"
             >
-              Solicitar Novo Link
+              Ir para Login
             </button>
-          </div>
+          )}
         </div>
       </div>
-    );
+    )
   }
 
+  // Formulário principal
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Back Button */}
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
         <button
           onClick={onBack}
-          className="flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors"
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-8"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Voltar
         </button>
 
-        {/* Reset Password Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Lock className="w-8 h-8 text-blue-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">Redefinir Senha</h1>
-            <p className="text-gray-600 mb-4">Digite sua nova senha abaixo.</p>
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-8 h-8 text-blue-600" />
           </div>
-          
-          {/* Form */}
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-gray-700">Nova Senha</label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-3"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5 text-gray-600" /> : <Eye className="w-5 h-5 text-gray-600" />}
-                </button>
-              </div>
-            </div>
-            <div className="mb-6">
-              <label className="block text-gray-700">Confirmar Senha</label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-3"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5 text-gray-600" /> : <Eye className="w-5 h-5 text-gray-600" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Error Message */}
-            {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
-
-            <button
-              type="submit"
-              className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300"
-              disabled={loading}
-            >
-              {loading ? 'Redefinindo...' : 'Redefinir Senha'}
-            </button>
-          </form>
+          <h1 className="text-2xl font-bold mb-2">Redefinir Senha</h1>
+          <p className="text-gray-600">Digite sua nova senha</p>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <AlertCircle className="w-5 h-5 text-red-500 inline mr-2" />
+            <span className="text-red-600 text-sm">{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Nova senha */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Nova Senha *</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="w-full pl-3 pr-12 py-3 border rounded-lg"
+                placeholder="Digite sua nova senha"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2"
+              >
+                {showPassword ? <EyeOff /> : <Eye />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirmar senha */}
+          <div>
+            <label className="block text-sm font-medium mb-2">Confirmar Senha *</label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                className="w-full pl-3 pr-12 py-3 border rounded-lg"
+                placeholder="Confirme sua nova senha"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2"
+              >
+                {showConfirmPassword ? <EyeOff /> : <Eye />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || formData.password !== formData.confirmPassword}
+            className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg"
+          >
+            {loading ? 'Redefinindo...' : 'Confirmar Nova Senha'}
+          </button>
+        </form>
       </div>
     </div>
-  );
-};
+  )
+}
