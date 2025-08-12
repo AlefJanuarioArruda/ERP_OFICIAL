@@ -139,23 +139,24 @@ export const useAuthProvider = (): AuthContextType => {
     await supabase.auth.signOut()
   }
 
-const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
+  const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
   try {
     // Get the current domain for redirect URL
     const currentDomain = window.location.origin;
-
-    // Enviar o pedido de reset
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      // Aqui, estamos obtendo o access_token e refresh_token de data
-      redirectTo: `${currentDomain}/reset-password#type=recovery&access_token=${data?.access_token}&refresh_token=${data?.refresh_token}`
+    
+    // Verificar o redirecionamento
+    const redirectTo = `${currentDomain}/reset-password?access_token=`;
+    console.log('Redirecting to:', redirectTo);
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo,
     });
 
-    // Se ocorrer erro no Supabase, retorna o erro traduzido
     if (error) {
+      console.error('Error while sending reset email:', error.message);
       return { success: false, error: translateAuthError(error.message) };
     }
 
-    // Se o reset for bem-sucedido
     return { success: true };
   } catch (error) {
     console.error('Reset password error:', error);
