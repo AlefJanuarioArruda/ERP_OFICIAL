@@ -23,55 +23,49 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
   });
 
   useEffect(() => {
-    // Tentar extrair parâmetros do fragmento (#)
-    let hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
-    let accessToken = hashParams.get('access_token');
-    let refreshToken = hashParams.get('refresh_token');
-    let type = hashParams.get('type');
+  // Tentar extrair parâmetros do fragmento (#)
+  let hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+  let accessToken = hashParams.get('access_token');
+  let refreshToken = hashParams.get('refresh_token');
+  let type = hashParams.get('type');
 
-    // Se não encontrar no fragmento, tentar na query string
-    if (!accessToken || !refreshToken || !type) {
-      const queryParams = new URLSearchParams(window.location.search);
-      accessToken = queryParams.get('access_token');
-      refreshToken = queryParams.get('refresh_token');
-      type = queryParams.get('type');
-    }
+  // Se não encontrar no fragmento, tentar na query string
+  if (!accessToken || !refreshToken || !type) {
+    const queryParams = new URLSearchParams(window.location.search);
+    accessToken = queryParams.get('access_token');
+    refreshToken = queryParams.get('refresh_token');
+    type = queryParams.get('type');
+  }
 
-    console.log('Parâmetros extraídos:', {
-      accessToken,
-      refreshToken,
-      type,
-      fullUrl: window.location.href,
-      hash: window.location.hash,
-      search: window.location.search,
-    });
+  console.log('Parâmetros extraídos:', { accessToken, refreshToken, type });
 
-    if (type !== 'recovery' || !accessToken || !refreshToken) {
-      setError('Link de recuperação inválido ou incompleto. Verifique o link recebido no e-mail.');
+  // Verifica se o link de recuperação é válido
+  if (type !== 'recovery' || !accessToken || !refreshToken) {
+    setError('Link de recuperação inválido ou incompleto. Verifique o link recebido no e-mail.');
+    return;
+  }
+
+  // Configura a sessão com o token de recuperação
+  supabase.auth.setSession({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  }).then(({ data, error }) => {
+    console.log('Sessão configurada:', data);
+    if (error) {
+      setError(`Erro ao configurar sessão: ${error.message}`);
       return;
     }
+    if (data.session?.user?.email) {
+      setUserEmail(data.session.user.email);
+    } else {
+      setError('Não foi possível obter informações do usuário. O token pode estar inválido.');
+    }
+  }).catch((err) => {
+    console.error('Erro inesperado ao configurar sessão:', err);
+    setError('Erro inesperado ao processar o link de recuperação.');
+  });
+}, []);
 
-    // Configura a sessão com o token de recuperação
-    supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    }).then(({ data, error }) => {
-      console.log('Sessão configurada:', data);
-      console.log('Erro na configuração da sessão:', error);
-      if (error) {
-        setError(`Erro ao configurar sessão: ${error.message}`);
-        return;
-      }
-      if (data.session?.user?.email) {
-        setUserEmail(data.session.user.email);
-      } else {
-        setError('Não foi possível obter informações do usuário. O token pode estar inválido.');
-      }
-    }).catch((err) => {
-      console.error('Erro inesperado ao configurar sessão:', err);
-      setError('Erro inesperado ao processar o link de recuperação.');
-    });
-  }, []);
 
   const validateForm = () => {
     if (!formData.password) {
