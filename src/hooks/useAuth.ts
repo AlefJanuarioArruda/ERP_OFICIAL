@@ -139,25 +139,30 @@ export const useAuthProvider = (): AuthContextType => {
     await supabase.auth.signOut()
   }
 
-  const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      // Get the current domain for redirect URL
-      const currentDomain = window.location.origin
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${currentDomain}/reset-password#type=recovery&access_token=PLACEHOLDER`,
-      })
+const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    // Get the current domain for redirect URL
+    const currentDomain = window.location.origin;
 
-      if (error) {
-        return { success: false, error: translateAuthError(error.message) }
-      }
+    // Enviar o pedido de reset
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      // Aqui, estamos obtendo o access_token e refresh_token de data
+      redirectTo: `${currentDomain}/reset-password#type=recovery&access_token=${data?.access_token}&refresh_token=${data?.refresh_token}`
+    });
 
-      return { success: true }
-    } catch (error) {
-      console.error('Reset password error:', error)
-      return { success: false, error: 'Erro de conexão. Verifique sua internet e tente novamente.' }
+    // Se ocorrer erro no Supabase, retorna o erro traduzido
+    if (error) {
+      return { success: false, error: translateAuthError(error.message) };
     }
+
+    // Se o reset for bem-sucedido
+    return { success: true };
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return { success: false, error: 'Erro de conexão. Verifique sua internet e tente novamente.' };
   }
+};
+
 
   const updateProfile = async (updates: any): Promise<{ success: boolean; error?: string }> => {
     try {
