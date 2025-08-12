@@ -1,17 +1,38 @@
 import React, { useState } from 'react'
 import { ArrowLeft, Mail, CheckCircle } from 'lucide-react'
-import { useAuth } from '../../hooks/useAuth'
+import { createClient } from '@supabase/supabase-js'
+
+/**
+ * Configuração do Supabase diretamente no componente
+ * Certifique-se de ter criado as variáveis de ambiente:
+ * NEXT_PUBLIC_SUPABASE_URL
+ * NEXT_PUBLIC_SUPABASE_ANON_KEY
+ */
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 interface ForgotPasswordScreenProps {
   onBack: () => void
 }
 
 export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBack }) => {
-  const { resetPassword } = useAuth()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+
+  const resetPassword = async (email: string) => {
+    // Envia o link com redirecionamento para a tela de reset
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://legendary-otter-a68fb4.netlify.app/reset-password'
+    })
+    if (error) {
+      return { success: false, error: error.message }
+    }
+    return { success: true }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
