@@ -23,24 +23,21 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
   });
 
 useEffect(() => {
-  let hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
-  let accessToken = hashParams.get('access_token');
-  let refreshToken = hashParams.get('refresh_token');
-  let type = hashParams.get('type');
+  // Obtendo parâmetros da query string (não da hash)
+  let urlParams = new URLSearchParams(window.location.search);
+  let accessToken = urlParams.get('access_token');
+  let type = urlParams.get('type');
 
-  console.log('Parâmetros extraídos:', { accessToken, refreshToken, type });
+  console.log('Parâmetros extraídos:', { accessToken, type });
 
-  // Verifique se todos os parâmetros estão presentes
-  if (!accessToken || !refreshToken || type !== 'recovery') {
+  // Verifique se o parâmetro de acesso está presente e se o tipo é "recovery"
+  if (!accessToken || type !== 'recovery') {
     setError('Link de recuperação inválido ou incompleto. Verifique o link recebido no e-mail.');
     return;
   }
 
-  // Configura a sessão com os tokens de recuperação
-  supabase.auth.setSession({
-    access_token: accessToken,
-    refresh_token: refreshToken,
-  }).then(({ data, error }) => {
+  // Configura a sessão com o access_token
+  supabase.auth.setSession({ access_token: accessToken }).then(({ data, error }) => {
     if (error) {
       setError(`Erro ao configurar sessão: ${error.message}`);
       return;
@@ -55,6 +52,7 @@ useEffect(() => {
     setError('Erro inesperado ao processar o link de recuperação.');
   });
 }, []);
+
 
 
   const validateForm = () => {
