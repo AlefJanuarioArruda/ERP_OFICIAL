@@ -1,90 +1,109 @@
-import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle, Brain } from 'lucide-react'
-import { useAuth } from '../../hooks/useAuth'
-import { supabase } from '../../lib/supabase'
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../lib/supabase';
 
 interface ResetPasswordScreenProps {
-  onBack: () => void
+  onBack: () => void;
 }
 
 export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack }) => {
-  const { signIn } = useAuth()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
-  const [loggingIn, setLoggingIn] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [userEmail, setUserEmail] = useState<string>('')
+  const { signIn } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [loggingIn, setLoggingIn] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>('');
 
   const [formData, setFormData] = useState({
     password: '',
-    confirmPassword: ''
-  })
+    confirmPassword: '',
+  });
 
-  // Obtém o usuário logado automaticamente via Supabase
+  // Extrair parâmetros da URL e configurar sessão
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email) {
-        setUserEmail(session.user.email)
-      }
-    })
-  }, [])
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+    const type = urlParams.get('type');
+
+    // Verifica se é um link de recuperação
+    if (type === 'recovery' && accessToken && refreshToken) {
+      // Configura a sessão com o token de recuperação
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      }).then(({ data, error }) => {
+        if (error) {
+          setError(`Erro ao configurar sessão: ${error.message}`);
+          return;
+        }
+        // Obtém o e-mail do usuário da sessão
+        if (data.session?.user?.email) {
+          setUserEmail(data.session.user.email);
+        }
+      });
+    } else {
+      setError('Link de recuperação inválido ou expirado');
+    }
+  }, []);
 
   const validateForm = () => {
     if (!formData.password) {
-      setError('Nova senha é obrigatória')
-      return false
+      setError('Nova senha é obrigatória');
+      return false;
     }
     if (formData.password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres')
-      return false
+      setError('A senha deve ter pelo menos 6 caracteres');
+      return false;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError('As senhas não coincidem')
-      return false
+      setError('As senhas não coincidem');
+      return false;
     }
-    return true
-  }
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!validateForm()) return
+    e.preventDefault();
+    if (!validateForm()) return;
 
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError('');
 
     try {
-      // Atualiza senha usando sessão já ativa
+      // Atualiza a senha usando a sessão configurada
       const { error: updateError } = await supabase.auth.updateUser({
-        password: formData.password
-      })
+        password: formData.password,
+      });
 
-      if (!updateError) {
-        setSuccess(true)
+      if (updateError) {
+        setError(`Erro ao redefinir senha: ${updateError.message}`);
+        return;
+      }
 
-        // Auto login após reset
-        if (userEmail) {
-          setLoggingIn(true)
-          setTimeout(async () => {
-            const loginResult = await signIn(userEmail, formData.password)
-            if (!loginResult.success) {
-              setTimeout(() => onBack(), 2000)
-            }
-            setLoggingIn(false)
-          }, 1000)
-        } else {
-          setTimeout(() => onBack(), 3000)
+      setSuccess(true);
+
+      // Auto login após reset (opcional)
+      if (userEmail) {
+        setLoggingIn(true);
+        const loginResult = await signIn(userEmail, formData.password);
+        setLoggingIn(false);
+        if (!loginResult.success) {
+          setError('Erro ao realizar login automático. Redirecionando...');
+          setTimeout(() => onBack(), 2000);
         }
       } else {
-        setError(`Erro ao redefinir senha: ${updateError.message}`)
+        setTimeout(() => onBack(), 3000);
       }
     } catch (err) {
-      setError(`Erro inesperado ao redefinir senha: ${err instanceof Error ? err.message : 'Erro desconhecido'}`)
+      setError(`Erro inesperado ao redefinir senha: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // Tela de sucesso
   if (success) {
@@ -110,7 +129,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
           )}
         </div>
       </div>
-    )
+    );
   }
 
   // Formulário principal
@@ -188,12 +207,12 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
           <button
             type="submit"
             disabled={loading || formData.password !== formData.confirmPassword}
-            className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg"
+            className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Redefinindo...' : 'Confirmar Nova Senha'}
           </button>
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
