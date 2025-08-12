@@ -22,32 +22,43 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     confirmPassword: '',
   });
 
-  // Extrair parâmetros da URL e configurar sessão
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get('access_token');
     const refreshToken = urlParams.get('refresh_token');
     const type = urlParams.get('type');
 
-    // Verifica se é um link de recuperação
-    if (type === 'recovery' && accessToken && refreshToken) {
-      // Configura a sessão com o token de recuperação
-      supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      }).then(({ data, error }) => {
-        if (error) {
-          setError(`Erro ao configurar sessão: ${error.message}`);
-          return;
-        }
-        // Obtém o e-mail do usuário da sessão
-        if (data.session?.user?.email) {
-          setUserEmail(data.session.user.email);
-        }
-      });
-    } else {
-      setError('Link de recuperação inválido ou expirado');
+    console.log('URL Params:', {
+      accessToken,
+      refreshToken,
+      type,
+      fullUrl: window.location.href,
+    });
+
+    if (type !== 'recovery' || !accessToken || !refreshToken) {
+      setError('Link de recuperação inválido ou incompleto. Verifique o link recebido no e-mail.');
+      return;
     }
+
+    supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    }).then(({ data, error }) => {
+      console.log('Sessão configurada:', data);
+      console.log('Erro na configuração da sessão:', error);
+      if (error) {
+        setError(`Erro ao configurar sessão: ${error.message}`);
+        return;
+      }
+      if (data.session?.user?.email) {
+        setUserEmail(data.session.user.email);
+      } else {
+        setError('Não foi possível obter informações do usuário. O token pode estar inválido.');
+      }
+    }).catch((err) => {
+      console.error('Erro inesperado ao configurar sessão:', err);
+      setError('Erro inesperado ao processar o link de recuperação.');
+    });
   }, []);
 
   const validateForm = () => {
@@ -74,7 +85,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     setError('');
 
     try {
-      // Atualiza a senha usando a sessão configurada
       const { error: updateError } = await supabase.auth.updateUser({
         password: formData.password,
       });
@@ -86,7 +96,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
       setSuccess(true);
 
-      // Auto login após reset (opcional)
       if (userEmail) {
         setLoggingIn(true);
         const loginResult = await signIn(userEmail, formData.password);
@@ -105,7 +114,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     }
   };
 
-  // Tela de sucesso
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
@@ -132,7 +140,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     );
   }
 
-  // Formulário principal
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
@@ -156,11 +163,20 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <AlertCircle className="w-5 h-5 text-red-500 inline mr-2" />
             <span className="text-red-600 text-sm">{error}</span>
+            {error.includes('inválido') && (
+              <div className="mt-4">
+                <button
+                  onClick={() => window.location.href = '/forgot-password'}
+                  className="text-blue-600 hover:text-blue-700 underline"
+                >
+                  Solicitar novo link de recuperação
+                </button>
+              </div>
+            )}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Nova senha */}
           <div>
             <label className="block text-sm font-medium mb-2">Nova Senha *</label>
             <div className="relative">
@@ -182,7 +198,6 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
             </div>
           </div>
 
-          {/* Confirmar senha */}
           <div>
             <label className="block text-sm font-medium mb-2">Confirmar Senha *</label>
             <div className="relative">
