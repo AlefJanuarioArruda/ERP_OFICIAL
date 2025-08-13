@@ -19,18 +19,24 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
   const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Captura os parâmetros da URL
-    const params = new URLSearchParams(window.location.search);
-    const access_token = params.get('access_token');
-    const refresh_token = params.get('refresh_token');
+    // Captura o hash da URL
+    const hash = window.location.hash;
 
-    if (!access_token || !refresh_token) {
+    if (hash) {
+      const params = new URLSearchParams(hash.replace('#', '?'));
+      const access_token = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+
+      if (!access_token || !refresh_token) {
+        setError('Link de recuperação inválido.');
+        return;
+      }
+
+      // Define o token de recuperação para permitir o envio da senha
+      setRecoveryToken(access_token);
+    } else {
       setError('Link de recuperação inválido.');
-      return;
     }
-
-    // Define o token de recuperação para permitir o envio da senha
-    setRecoveryToken(access_token);
   }, []);
 
   const validateForm = () => {
