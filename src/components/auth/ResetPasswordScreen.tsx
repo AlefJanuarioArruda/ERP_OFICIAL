@@ -58,7 +58,8 @@ useEffect(() => {
     return true;
   };
 
- const handleSubmit = async (e: React.FormEvent) => {
+// Código alterado
+const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   if (!validateForm()) return;
 
@@ -77,19 +78,14 @@ useEffect(() => {
       return;
     }
 
-    // Define a sessão usando os tokens do link (apenas agora, quando o usuário envia a senha)
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token,
-      refresh_token,
-    });
+    // Remova ou modifique esta parte, dependendo do que você deseja:
+    // Não vamos definir a sessão aqui, pois pode estar fazendo o login
+    // const { error: sessionError } = await supabase.auth.setSession({
+    //   access_token,
+    //   refresh_token,
+    // });
 
-    if (sessionError) {
-      setError(`Erro ao validar sessão: ${sessionError.message}`);
-      setLoading(false);
-      return;
-    }
-
-    // Agora sim atualiza a senha
+    // Atualize a senha sem definir a sessão
     const { error: updateError } = await supabase.auth.updateUser({
       password: formData.password,
     });
@@ -103,7 +99,7 @@ useEffect(() => {
     setSuccess(true);
     setLoading(false);
 
-    // Redireciona para o app depois de alguns segundos
+    // Redireciona para o app depois de alguns segundos (sem login automático)
     setTimeout(() => {
       window.location.href = 'https://legendary-otter-a68fb4.netlify.app/';
     }, 2000);
@@ -113,6 +109,7 @@ useEffect(() => {
     setLoading(false);
   }
 };
+
 
 
   if (success) {
