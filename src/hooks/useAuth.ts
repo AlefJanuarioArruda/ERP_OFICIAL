@@ -142,10 +142,10 @@ export const useAuthProvider = (): AuthContextType => {
   const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
   try {
     // Usa o domínio atual (funciona tanto no Bolt.new quanto em localhost)
-
+    const currentDomain = window.location.origin;
     
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo: `https://legendary-otter-a68fb4.netlify.app/reset-password`
+      redirectTo: `${currentDomain}/reset-password`
     });
 
     if (error) {
