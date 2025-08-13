@@ -22,20 +22,20 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     confirmPassword: '',
   });
 
-const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
+//const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
 
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const type = params.get('type');
-  const access_token = params.get('access_token');
+// useEffect(() => {
+//   const params = new URLSearchParams(window.location.search);
+//   const type = params.get('type');
+//   const access_token = params.get('access_token');
 
-  if (type !== 'recovery' || !access_token) {
-    setError('Link inválido.');
-    return;
-  }
+//   if (type !== 'recovery' || !access_token) {
+//     setError('Link inválido.');
+//     return;
+//   }
 
-  setRecoveryToken(access_token);
-}, []);
+//   setRecoveryToken(access_token);
+// }, []);
 
 
 
@@ -59,56 +59,56 @@ useEffect(() => {
   };
 
 // Código alterado
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!validateForm()) return;
+// const handleSubmit = async (e: React.FormEvent) => {
+//   e.preventDefault();
+//   if (!validateForm()) return;
 
-  setLoading(true);
-  setError('');
+//   setLoading(true);
+//   setError('');
 
-  try {
-    // Captura os parâmetros da URL
-    const params = new URLSearchParams(window.location.hash.replace('#', '?'));
-    const access_token = params.get('access_token');
-    const refresh_token = params.get('refresh_token');
+//   try {
+//     // Captura os parâmetros da URL
+//     const params = new URLSearchParams(window.location.hash.replace('#', '?'));
+//     const access_token = params.get('access_token');
+//     const refresh_token = params.get('refresh_token');
 
-    if (!access_token || !refresh_token) {
-      setError('Link de redefinição inválido ou expirado.');
-      setLoading(false);
-      return;
-    }
+//     if (!access_token || !refresh_token) {
+//       setError('Link de redefinição inválido ou expirado.');
+//       setLoading(false);
+//       return;
+//     }
 
-    // Remova ou modifique esta parte, dependendo do que você deseja:
-    // Não vamos definir a sessão aqui, pois pode estar fazendo o login
-    // const { error: sessionError } = await supabase.auth.setSession({
-    //   access_token,
-    //   refresh_token,
-    // });
+//     // Remova ou modifique esta parte, dependendo do que você deseja:
+//     // Não vamos definir a sessão aqui, pois pode estar fazendo o login
+//     // const { error: sessionError } = await supabase.auth.setSession({
+//     //   access_token,
+//     //   refresh_token,
+//     // });
 
-    // Atualize a senha sem definir a sessão
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: formData.password,
-    });
+//     // Atualize a senha sem definir a sessão
+//     const { error: updateError } = await supabase.auth.updateUser({
+//       password: formData.password,
+//     });
 
-    if (updateError) {
-      setError(`Erro ao redefinir senha: ${updateError.message}`);
-      setLoading(false);
-      return;
-    }
+//     if (updateError) {
+//       setError(`Erro ao redefinir senha: ${updateError.message}`);
+//       setLoading(false);
+//       return;
+//     }
 
-    setSuccess(true);
-    setLoading(false);
+//     setSuccess(true);
+//     setLoading(false);
 
-    // Redireciona para o app depois de alguns segundos (sem login automático)
-    setTimeout(() => {
-      window.location.href = 'https://legendary-otter-a68fb4.netlify.app/';
-    }, 2000);
+//     // Redireciona para o app depois de alguns segundos (sem login automático)
+//     setTimeout(() => {
+//       window.location.href = 'https://legendary-otter-a68fb4.netlify.app/';
+//     }, 2000);
 
-  } catch (err: any) {
-    setError(`Erro inesperado: ${err.message}`);
-    setLoading(false);
-  }
-};
+//   } catch (err: any) {
+//     setError(`Erro inesperado: ${err.message}`);
+//     setLoading(false);
+//   }
+// };
 
 
 
