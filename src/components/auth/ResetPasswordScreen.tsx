@@ -23,27 +23,21 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
   });
 
 useEffect(() => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const accessToken = urlParams.get('access_token');
-  const type = urlParams.get('type');
+  const params = new URLSearchParams(window.location.search);
+  const type = params.get('type');
+  const access_token = params.get('access_token');
 
-  if (!accessToken || type !== 'recovery') {
-    setError('Link de recuperação inválido ou expirado.');
+  if (type !== 'recovery' || !access_token) {
+    setError('Link inválido.');
     return;
   }
 
-  // Apenas configura sessão para permitir updateUser depois
   supabase.auth.setSession({
-    access_token: accessToken,
-    refresh_token: '' // refresh_token pode ser vazio nesse caso
-  }).then(({ error }) => {
-    if (error) {
-      setError(`Erro ao configurar sessão: ${error.message}`);
-    }
-  }).catch(() => {
-    setError('Erro inesperado ao processar o link de recuperação.');
-  });
+    access_token,
+    refresh_token: ''
+  }).catch(err => setError(err.message));
 }, []);
+
 
 
 
