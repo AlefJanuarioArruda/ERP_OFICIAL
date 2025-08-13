@@ -29,7 +29,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
       if (access_token && refresh_token) {
         // Se os tokens estiverem presentes, define o recoveryToken
-        setRecoveryToken(access_token);
+       // setRecoveryToken(access_token);
       } else {
         setError('Link de recuperação inválido. Verifique a URL.');
       }
