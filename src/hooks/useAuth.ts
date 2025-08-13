@@ -141,28 +141,25 @@ export const useAuthProvider = (): AuthContextType => {
 
   const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Get the current domain for redirect URL
-    const currentDomain = window.location.origin;
-    
-    // Verificar o redirecionamento
-    const redirectTo = `${currentDomain}/reset-password?access_token=`;
-    console.log('Redirecting to:', redirectTo);
+    // Usa o domínio atual (funciona tanto no Bolt.new quanto em localhost)
+
     
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo,
+      redirectTo: `https://legendary-otter-a68fb4.netlify.app/reset-password`
     });
 
     if (error) {
-      console.error('Error while sending reset email:', error.message);
+      console.error('Erro ao enviar email de redefinição:', error.message);
       return { success: false, error: translateAuthError(error.message) };
     }
 
     return { success: true };
   } catch (error) {
-    console.error('Reset password error:', error);
+    console.error('Erro inesperado no resetPassword:', error);
     return { success: false, error: 'Erro de conexão. Verifique sua internet e tente novamente.' };
   }
 };
+
 
 
   const updateProfile = async (updates: any): Promise<{ success: boolean; error?: string }> => {
