@@ -19,16 +19,14 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
   const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Verifica se a URL contém o hash
     const hash = window.location.hash;
     if (hash) {
-      // Modifica o hash para o formato de parâmetros de URL
-      const params = new URLSearchParams(hash.replace('#', '?'));
+      // Remover o "#" e dividir os parâmetros manualmente
+      const params = new URLSearchParams(hash.substring(1)); // Remove o "#"
       const access_token = params.get('access_token');
       const refresh_token = params.get('refresh_token');
 
       if (access_token && refresh_token) {
-        // Se os tokens estiverem presentes, define o recoveryToken
         setRecoveryToken(access_token);
       } else {
         setError('Link de recuperação inválido. Verifique a URL.');
