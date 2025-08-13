@@ -22,6 +22,8 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
     confirmPassword: '',
   });
 
+const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
+
 useEffect(() => {
   const params = new URLSearchParams(window.location.search);
   const type = params.get('type');
@@ -32,10 +34,7 @@ useEffect(() => {
     return;
   }
 
-  supabase.auth.setSession({
-    access_token,
-    refresh_token: ''
-  }).catch(err => setError(err.message));
+  setRecoveryToken(access_token);
 }, []);
 
 
@@ -66,18 +65,53 @@ useEffect(() => {
   setLoading(true);
   setError('');
 
-  const { error: updateError } = await supabase.auth.updateUser({
-    password: formData.password
-  });
+  try {
+    // Captura os parâmetros da URL
+    const params = new URLSearchParams(window.location.hash.replace('#', '?'));
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
 
-  if (updateError) {
-    setError(`Erro ao redefinir senha: ${updateError.message}`);
+    if (!access_token || !refresh_token) {
+      setError('Link de redefinição inválido ou expirado.');
+      setLoading(false);
+      return;
+    }
+
+    // Define a sessão usando os tokens do link (apenas agora, quando o usuário envia a senha)
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token,
+      refresh_token,
+    });
+
+    if (sessionError) {
+      setError(`Erro ao validar sessão: ${sessionError.message}`);
+      setLoading(false);
+      return;
+    }
+
+    // Agora sim atualiza a senha
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: formData.password,
+    });
+
+    if (updateError) {
+      setError(`Erro ao redefinir senha: ${updateError.message}`);
+      setLoading(false);
+      return;
+    }
+
+    setSuccess(true);
     setLoading(false);
-    return;
-  }
 
-  // Usuário já logado, redireciona para o app hospedado no Netlify
-  window.location.href = 'https://legendary-otter-a68fb4.netlify.app/';
+    // Redireciona para o app depois de alguns segundos
+    setTimeout(() => {
+      window.location.href = 'https://legendary-otter-a68fb4.netlify.app/';
+    }, 2000);
+
+  } catch (err: any) {
+    setError(`Erro inesperado: ${err.message}`);
+    setLoading(false);
+  }
 };
 
 
