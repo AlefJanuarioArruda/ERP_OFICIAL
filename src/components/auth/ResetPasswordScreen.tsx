@@ -19,23 +19,22 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
   const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Captura o hash da URL
+    // Verifica se a URL contém o hash
     const hash = window.location.hash;
-
     if (hash) {
+      // Modifica o hash para o formato de parâmetros de URL
       const params = new URLSearchParams(hash.replace('#', '?'));
       const access_token = params.get('access_token');
       const refresh_token = params.get('refresh_token');
 
-      if (!access_token || !refresh_token) {
-        setError('Link de recuperação inválido.');
-        return;
+      if (access_token && refresh_token) {
+        // Se os tokens estiverem presentes, define o recoveryToken
+        setRecoveryToken(access_token);
+      } else {
+        setError('Link de recuperação inválido. Verifique a URL.');
       }
-
-      // Define o token de recuperação para permitir o envio da senha
-      setRecoveryToken(access_token);
     } else {
-      setError('Link de recuperação inválido.');
+      setError('Link de recuperação inválido. Não foi possível encontrar o token.');
     }
   }, []);
 
@@ -69,7 +68,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
         return;
       }
 
-      // Atualiza a senha sem definir a sessão (sem login automático)
+      // Atualiza a senha sem fazer login automático
       const { error: updateError } = await supabase.auth.updateUser({
         password: formData.password,
       });
@@ -83,7 +82,7 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
       setSuccess(true);
       setLoading(false);
 
-      // Redireciona para o login depois de alguns segundos
+      // Redireciona para a tela de login após sucesso
       setTimeout(() => {
         window.location.href = '/login'; // Redireciona para a tela de login
       }, 2000);
