@@ -8,19 +8,19 @@ interface ResetPasswordScreenProps {
 }
 
 export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack }) => {
-  const { signIn } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [loggingIn, setLoggingIn] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [userEmail, setUserEmail] = useState<string>('');
+  // const { signIn } = useAuth();
+  // const [loading, setLoading] = useState(false);
+  // const [error, setError] = useState('');
+  // const [success, setSuccess] = useState(false);
+  // const [loggingIn, setLoggingIn] = useState(false);
+  // const [showPassword, setShowPassword] = useState(false);
+  // const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // const [userEmail, setUserEmail] = useState<string>('');
 
-  const [formData, setFormData] = useState({
-    password: '',
-    confirmPassword: '',
-  });
+  // const [formData, setFormData] = useState({
+  //   password: '',
+  //   confirmPassword: '',
+  // });
 
 //const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
 
@@ -42,21 +42,21 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
 
 
-  const validateForm = () => {
-    if (!formData.password) {
-      setError('Nova senha é obrigatória');
-      return false;
-    }
-    if (formData.password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres');
-      return false;
-    }
-    if (formData.password !== formData.confirmPassword) {
-      setError('As senhas não coincidem');
-      return false;
-    }
-    return true;
-  };
+  // const validateForm = () => {
+  //   if (!formData.password) {
+  //     setError('Nova senha é obrigatória');
+  //     return false;
+  //   }
+  //   if (formData.password.length < 6) {
+  //     setError('A senha deve ter pelo menos 6 caracteres');
+  //     return false;
+  //   }
+  //   if (formData.password !== formData.confirmPassword) {
+  //     setError('As senhas não coincidem');
+  //     return false;
+  //   }
+  //   return true;
+  // };
 
 // Código alterado
 // const handleSubmit = async (e: React.FormEvent) => {
