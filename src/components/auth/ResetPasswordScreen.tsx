@@ -1,6 +1,10 @@
 // reset-password.tsx
 import { useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../lib/supabase';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('')
