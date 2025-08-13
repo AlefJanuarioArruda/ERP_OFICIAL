@@ -17,11 +17,11 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
   // const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   // const [userEmail, setUserEmail] = useState<string>('');
 
-  // const [formData, setFormData] = useState({
-  //   password: '',
-  //   confirmPassword: '',
-  // });
-
+  const [formData, setFormData] = useState({
+    password: '',
+    confirmPassword: '',
+  });
+//
 //const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
 
 // useEffect(() => {
@@ -42,21 +42,21 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 
 
 
-  // const validateForm = () => {
-  //   if (!formData.password) {
-  //     setError('Nova senha é obrigatória');
-  //     return false;
-  //   }
-  //   if (formData.password.length < 6) {
-  //     setError('A senha deve ter pelo menos 6 caracteres');
-  //     return false;
-  //   }
-  //   if (formData.password !== formData.confirmPassword) {
-  //     setError('As senhas não coincidem');
-  //     return false;
-  //   }
-  //   return true;
-  // };
+  const validateForm = () => {
+    if (!formData.password) {
+      setError('Nova senha é obrigatória');
+      return false;
+    }
+    if (formData.password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres');
+      return false;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      setError('As senhas não coincidem');
+      return false;
+    }
+    return true;
+  };
 
 // Código alterado
 // const handleSubmit = async (e: React.FormEvent) => {
@@ -111,7 +111,32 @@ export const ResetPasswordScreen: React.FC<ResetPasswordScreenProps> = ({ onBack
 // };
 
 
-/
+
+  // if (success) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center p-4">
+  //       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
+  //         <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+  //           <CheckCircle className="w-8 h-8 text-white" />
+  //         </div>
+  //         <h1 className="text-2xl font-bold mb-4">🎉 Senha Redefinida!</h1>
+  //         {loggingIn ? (
+  //           <p>Entrando automaticamente...</p>
+  //         ) : (
+  //           <p>{userEmail ? 'Você será logado automaticamente.' : 'Redirecionando para login...'}</p>
+  //         )}
+  //         {!loggingIn && (
+  //           <button
+  //             onClick={onBack}
+  //             className="w-full mt-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg"
+  //           >
+  //             Ir para Login
+  //           </button>
+  //         )}
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
