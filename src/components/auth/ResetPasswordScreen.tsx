@@ -27,32 +27,24 @@ useEffect(() => {
   const accessToken = urlParams.get('access_token');
   const type = urlParams.get('type');
 
-  console.log('Parâmetros extraídos:', { accessToken, type });
-
   if (!accessToken || type !== 'recovery') {
     setError('Link de recuperação inválido ou expirado.');
     return;
   }
 
-  // Configura a sessão com access_token e um refresh_token vazio (necessário para updateUser)
+  // Apenas configura sessão para permitir updateUser depois
   supabase.auth.setSession({
     access_token: accessToken,
-    refresh_token: ''
-  }).then(({ data, error }) => {
+    refresh_token: '' // refresh_token pode ser vazio nesse caso
+  }).then(({ error }) => {
     if (error) {
       setError(`Erro ao configurar sessão: ${error.message}`);
-      return;
-    }
-
-    if (data.session?.user?.email) {
-      setUserEmail(data.session.user.email);
-    } else {
-      setError('Não foi possível obter informações do usuário.');
     }
   }).catch(() => {
     setError('Erro inesperado ao processar o link de recuperação.');
   });
 }, []);
+
 
 
 
@@ -73,42 +65,27 @@ useEffect(() => {
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    setLoading(true);
-    setError('');
+  setLoading(true);
+  setError('');
 
-    try {
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: formData.password,
-      });
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: formData.password
+  });
 
-      if (updateError) {
-        setError(`Erro ao redefinir senha: ${updateError.message}`);
-        return;
-      }
+  if (updateError) {
+    setError(`Erro ao redefinir senha: ${updateError.message}`);
+    setLoading(false);
+    return;
+  }
 
-      setSuccess(true);
+  // Usuário já logado, redireciona para o app hospedado no Netlify
+  window.location.href = 'https://legendary-otter-a68fb4.netlify.app/';
+};
 
-      if (userEmail) {
-        setLoggingIn(true);
-        const loginResult = await signIn(userEmail, formData.password);
-        setLoggingIn(false);
-        if (!loginResult.success) {
-          setError('Erro ao realizar login automático. Redirecionando...');
-          setTimeout(() => onBack(), 2000);
-        }
-      } else {
-        setTimeout(() => onBack(), 3000);
-      }
-    } catch (err) {
-      setError(`Erro inesperado ao redefinir senha: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (success) {
     return (
