@@ -154,11 +154,12 @@ export const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ onBa
               <Mail className="w-4 h-4 text-blue-600 mr-2" />
               <span className="font-medium text-blue-900">Como Funciona</span>
             </div>
-            <p className="text-sm text-blue-800">
-              1. Você receberá um email com link seguro<br/>
-              2. Clique no link para criar nova senha<br/>
-              3. Será automaticamente logado no sistema
-            </p>
+            <div className="text-sm text-blue-800 space-y-1">
+              <p>1. Você receberá um email com link seguro</p>
+              <p>2. Clique no link para abrir a página de redefinição</p>
+              <p>3. Digite sua nova senha</p>
+              <p>4. Faça login com a nova senha</p>
+            </div>
             <p className="text-xs text-blue-600 mt-2">
               ⏰ O link expira em 1 hora por segurança
             </p>

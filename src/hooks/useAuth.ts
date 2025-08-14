@@ -141,11 +141,11 @@ export const useAuthProvider = (): AuthContextType => {
 
   const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Usa o domínio atual (funciona tanto no Bolt.new quanto em localhost)
-    const currentDomain = window.location.origin;
+    // URL de redirecionamento para a página de reset de senha
+    const redirectUrl = `${window.location.origin}/#/reset-password`;
     
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo: `${currentDomain}/forgot-password`
+      redirectTo: redirectUrl
     });
 
     if (error) {
@@ -160,6 +160,22 @@ export const useAuthProvider = (): AuthContextType => {
   }
 };
 
+  const updatePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        return { success: false, error: translateAuthError(error.message) };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Update password error:', error);
+      return { success: false, error: 'Erro de conexão. Verifique sua internet e tente novamente.' };
+    }
+  };
 
 
   const updateProfile = async (updates: any): Promise<{ success: boolean; error?: string }> => {
@@ -207,6 +223,7 @@ export const useAuthProvider = (): AuthContextType => {
     signUp,
     signOut,
     resetPassword,
+    updatePassword,
     updateProfile,
     isAuthenticated
   }
