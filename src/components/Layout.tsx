@@ -99,7 +99,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
       `}>
         <div className="flex flex-col h-full">
           {/* Logo */}
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+          <div className="flex items-center justify-between h-20 px-6 mt-4">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
                 <Brain className="w-5 h-5 text-white" />
