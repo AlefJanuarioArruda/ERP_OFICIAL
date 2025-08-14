@@ -664,6 +664,58 @@ export const Settings: React.FC = () => {
                 <BillingSection />
               </div>
             )}
+
+            {/* Integrations Tab */}
+            {activeTab === 'integrations' && (
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-900">Integrações</h3>
+                
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Globe className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <h4 className="text-xl font-semibold text-gray-900 mb-2">Integrações em Breve</h4>
+                  <p className="text-gray-600 max-w-md mx-auto mb-6">
+                    Estamos trabalhando para trazer integrações incríveis que vão conectar seu ERP Smart 
+                    com as principais ferramentas do mercado.
+                  </p>
+                  
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
+                    <h5 className="font-semibold text-gray-900 mb-3">🚀 Próximas Integrações:</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                        Mercado Livre & OLX
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                        WhatsApp Business
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                        Correios & Transportadoras
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-amber-500 rounded-full mr-2"></div>
+                        Bancos & PIX
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                        Nota Fiscal Eletrônica
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-indigo-500 rounded-full mr-2"></div>
+                        Google Analytics
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-500 mt-4">
+                    Quer sugerir uma integração? Entre em contato conosco!
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -694,7 +746,7 @@ const BillingSection: React.FC = () => {
             Você não possui um plano ativo no momento. Escolha um plano para começar a usar todas as funcionalidades.
           </p>
           <button
-            onClick={() => window.location.href = '/pricing'}
+            onClick={() => window.location.href = '#pricing'}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Ver Planos Disponíveis
@@ -778,7 +830,11 @@ const BillingSection: React.FC = () => {
 
       <div className="flex space-x-3">
         <button
-          onClick={() => window.location.href = '/pricing'}
+          onClick={() => {
+            // Use the onPageChange function from Layout to navigate to pricing
+            const event = new CustomEvent('navigate-to-pricing');
+            window.dispatchEvent(event);
+          }}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           Alterar Plano
