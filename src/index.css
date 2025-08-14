@@ -1,3 +1,26 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Responsive improvements */
+@media (max-width: 640px) {
+  .sidebar-mobile {
+    width: 280px;
+  }
+}
+
+/* Ensure proper scrolling on mobile */
+@media (max-width: 1024px) {
+  .main-content {
+    height: calc(100vh - 4rem);
+  }
+}
+
+/* Fix dropdown positioning on small screens */
+@media (max-width: 480px) {
+  .profile-dropdown {
+    right: 0.5rem;
+    left: 0.5rem;
+    width: auto;
+  }
+}

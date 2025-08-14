@@ -94,7 +94,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0
+        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 lg:flex lg:flex-col
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex flex-col h-full">
@@ -104,7 +104,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
                 <Brain className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900">ERP Smart</span>
+              <span className="text-lg sm:text-xl font-bold text-gray-900">ERP Smart</span>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
@@ -128,7 +128,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
                     setSidebarOpen(false);
                   }}
                   className={`
-                    w-full flex items-center px-3 py-3 rounded-lg text-left transition-colors duration-200
+                    w-full flex items-center px-3 py-2.5 rounded-lg text-left transition-colors duration-200
                     ${isActive 
                       ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' 
                       : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
@@ -136,7 +136,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
                   `}
                 >
                   <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-700' : 'text-gray-400'}`} />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium text-sm sm:text-base">{item.label}</span>
                 </button>
               );
             })}
