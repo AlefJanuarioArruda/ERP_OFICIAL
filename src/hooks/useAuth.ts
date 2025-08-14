@@ -142,7 +142,7 @@ export const useAuthProvider = (): AuthContextType => {
   const resetPassword = async (email: string): Promise<{ success: boolean; error?: string }> => {
   try {
     // Usa o domínio atual (funciona tanto no Bolt.new quanto em localhost)
-    const currentDomain = window.location.;
+    const currentDomain = window.location.origin;
     
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo: `${currentDomain}/forgot-password`
