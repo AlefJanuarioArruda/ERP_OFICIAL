@@ -14,8 +14,9 @@ export const Products: React.FC = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [productVariationsFormData, setProductVariationsFormData] = useState<ProductVariation[]>([]);
   const [showLimitBanner, setShowLimitBanner] = useState(false);
+  const [productVariationsFormData, setProductVariationsFormData] = useState<Omit<ProductVariation, 'id' | 'user_id' | 'product_id' | 'created_at' | 'updated_at'>[]>([]);
+  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -121,30 +122,36 @@ export const Products: React.FC = () => {
 
     // Handle product variations
     if (newProductId) {
-      const existingVariations = getVariationsForProduct(newProductId);
-      const variationsToDelete = existingVariations.filter(
-        (ev) => !productVariationsFormData.some((fv) => fv.id === ev.id)
-      );
-      const variationsToUpdate = productVariationsFormData.filter((fv) =>
-        existingVariations.some((ev) => ev.id === fv.id)
-      );
-      const variationsToAdd = productVariationsFormData.filter(
-        (fv) => !existingVariations.some((ev) => ev.id === fv.id)
-      );
-
-      // Delete variations
-      for (const variation of variationsToDelete) {
-        await deleteProductVariation(variation.id);
+      // Clear existing variations if editing
+      if (editingProduct) {
+        const existingVariations = getVariationsForProduct(newProductId);
+        for (const variation of existingVariations) {
+          await deleteProductVariation(variation.id);
+        }
       }
-
-      // Update variations
-      for (const variation of variationsToUpdate) {
-        await updateProductVariation(variation.id, variation);
-      }
-
-      // Add new variations
-      for (const variation of variationsToAdd) {
-        await addProductVariation({ ...variation, product_id: newProductId });
+      
+      // Add all variations from form
+      for (const variation of productVariationsFormData) {
+        if (variation.sku && variation.sku.trim()) {
+          // Generate variation name if not provided
+          let variationName = variation.variation_name;
+          if (!variationName && (variation.color || variation.size)) {
+            variationName = [variation.color, variation.size].filter(Boolean).join(' - ');
+          }
+          if (!variationName) {
+            variationName = `Variação ${variation.sku}`;
+          }
+          
+          await addProductVariation({
+            product_id: newProductId,
+            variation_name: variationName,
+            color: variation.color || null,
+            size: variation.size || null,
+            sku: variation.sku,
+            stock: variation.stock,
+            price: variation.price
+          });
+        }
       }
     }
 
@@ -173,6 +180,18 @@ export const Products: React.FC = () => {
       supplier: product.supplier || '',
 
     });
+    
+    // Load existing variations for editing
+    const existingVariations = getVariationsForProduct(product.id);
+    setProductVariationsFormData(existingVariations.map(v => ({
+      variation_name: v.variation_name,
+      color: v.color,
+      size: v.size,
+      sku: v.sku,
+      stock: v.stock,
+      price: v.price
+    })));
+    
     setEditingProduct(product);
     setShowAddForm(true);
   };
@@ -188,33 +207,28 @@ export const Products: React.FC = () => {
     setProductVariationsFormData([
       ...productVariationsFormData,
       {
-        id: `new-${Date.now()}`, // Temporary ID for new variations
-        user_id: '', // Will be set on save
-        product_id: editingProduct?.id || '', // Will be set on save
         variation_name: '',
         color: '',
         size: '',
         sku: '',
         stock: 0,
         price: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
+      }
     ]);
   };
 
   const handleRemoveVariation = (id: string) => {
-    setProductVariationsFormData(productVariationsFormData.filter((v) => v.id !== id));
+    setProductVariationsFormData(productVariationsFormData.filter((_, index) => index.toString() !== id));
   };
 
   const handleVariationChange = (
-    id: string,
-    field: keyof ProductVariation,
+    index: number,
+    field: keyof Omit<ProductVariation, 'id' | 'user_id' | 'product_id' | 'created_at' | 'updated_at'>,
     value: string | number | null
   ) => {
     setProductVariationsFormData(
-      productVariationsFormData.map((v) =>
-        v.id === id ? { ...v, [field]: value } : v
+      productVariationsFormData.map((v, i) =>
+        i === index ? { ...v, [field]: value } : v
       )
     );
   };
