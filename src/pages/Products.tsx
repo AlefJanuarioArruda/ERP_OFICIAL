@@ -114,10 +114,54 @@ export const Products: React.FC = () => {
     } else {
       result = await addProduct(productData);
     }
-    const newProductId = editingProduct?.id || result?.data?.id;
 
     if (result?.error) {
       showNotification('error', editingProduct ? 'Erro ao atualizar produto' : 'Erro ao adicionar produto');
+      return;
+    }
+    
+    const newProductId = editingProduct?.id || result?.data?.id;
+
+    // Handle product variations
+    if (newProductId && productVariationsFormData.length > 0) {
+      try {
+        // Clear existing variations if editing
+        if (editingProduct) {
+          const existingVariations = getVariationsForProduct(newProductId);
+          for (const variation of existingVariations) {
+            await deleteProductVariation(variation.id);
+          }
+        }
+        
+        // Add all variations from form
+        for (const variation of productVariationsFormData) {
+          if (variation.sku && variation.sku.trim()) {
+            // Generate variation name if not provided
+            let variationName = variation.variation_name;
+            if (!variationName && (variation.color || variation.size)) {
+              variationName = [variation.color, variation.size].filter(Boolean).join(' - ');
+            }
+            if (!variationName) {
+              variationName = `Variação ${variation.sku}`;
+            }
+            
+            await addProductVariation({
+              product_id: newProductId,
+              variation_name: variationName,
+              color: variation.color || null,
+              size: variation.size || null,
+              sku: variation.sku,
+              stock: variation.stock,
+              price: variation.price
+            });
+          }
+        }
+        
+        showNotification('success', editingProduct ? 'Produto e variações atualizados com sucesso' : 'Produto e variações adicionados com sucesso');
+      } catch (error) {
+        console.error('Error handling variations:', error);
+        showNotification('error', 'Produto salvo, mas houve erro ao salvar variações');
+      }
     } else {
       showNotification('success', editingProduct ? 'Produto atualizado com sucesso' : 'Produto adicionado com sucesso');
     }
@@ -156,11 +200,6 @@ export const Products: React.FC = () => {
         }
       }
     }
-
-    // After all operations, refetch data to ensure consistency
-    // This is a simplified approach; in a real app, you might update state more granularly
-    // refetch(); 
-
     resetForm();
   };
 
