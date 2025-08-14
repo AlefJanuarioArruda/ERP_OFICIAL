@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
-import type { Product, Customer, Sale, SaleItem, FinancialRecord, AIInsight } from '../lib/supabase'
+import type { Product, Customer, Sale, SaleItem, FinancialRecord, AIInsight, ProductVariation } from '../lib/supabase'
 
 export const useSupabaseData = () => {
   const { user } = useAuth()
@@ -10,6 +10,7 @@ export const useSupabaseData = () => {
   const [sales, setSales] = useState<Sale[]>([])
   const [saleItems, setSaleItems] = useState<SaleItem[]>([])
   const [financialRecords, setFinancialRecords] = useState<FinancialRecord[]>([])
+  const [productVariations, setProductVariations] = useState<ProductVariation[]>([])
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -65,11 +66,19 @@ export const useSupabaseData = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
+      // Fetch product variations
+      const { data: productVariationsData } = await supabase
+        .from('product_variations')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
       setProducts(productsData || [])
       setCustomers(customersData || [])
       setSales(salesData || [])
       setSaleItems(saleItemsData || [])
       setFinancialRecords(financialData || [])
+      setProductVariations(productVariationsData || [])
       setAiInsights(insightsData || [])
     } catch (error) {
       console.error('Error fetching user data:', error)
@@ -139,6 +148,81 @@ export const useSupabaseData = () => {
 
     return { error }
   }
+
+  // Product Variation operations
+  const addProductVariation = async (variationData: Omit<ProductVariation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from('product_variations')
+      .insert({
+        ...variationData,
+        user_id: user.id
+      })
+      .select()
+      .single()
+
+    if (!error && data) {
+      setProductVariations(prev => [data, ...prev])
+    }
+
+    return { data, error }
+  }
+
+  const updateProductVariation = async (id: string, updates: Partial<ProductVariation>) => {
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from('product_variations')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (!error && data) {
+      setProductVariations(prev => prev.map(v => v.id === id ? data : v))
+    }
+
+    return { data, error }
+  }
+
+  const deleteProductVariation = async (id: string) => {
+    if (!user) return
+
+    const { error } = await supabase
+      .from('product_variations')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+
+    if (!error) {
+      setProductVariations(prev => prev.filter(v => v.id !== id))
+    }
+
+    return { error }
+  }
+
+  // Helper to get variations for a specific product
+  const getVariationsForProduct = (productId: string) => {
+    return productVariations.filter(v => v.product_id === productId);
+  };
+
+  // Update product stock based on variations
+  const updateProductStockFromVariations = async (productId: string) => {
+    if (!user) return;
+    const variations = getVariationsForProduct(productId);
+    const totalStock = variations.reduce((sum, v) => sum + v.stock, 0);
+    await updateProduct(productId, { stock: totalStock });
+  };
+
+  // Update product price based on variations (e.g., min price)
+  const updateProductPriceFromVariations = async (productId: string) => {
+    if (!user) return;
+    const variations = getVariationsForProduct(productId);
+    const minPrice = variations.length > 0 ? Math.min(...variations.map(v => v.price || 0)) : 0;
+    await updateProduct(productId, { price: minPrice });
+  };
 
   // Customer operations
   const addCustomer = async (customerData: Omit<Customer, 'id' | 'user_id' | 'total_purchases' | 'last_purchase' | 'created_at' | 'updated_at'>) => {
@@ -520,6 +604,10 @@ export const useSupabaseData = () => {
     addCustomer,
     updateCustomer,
     deleteCustomer,
+    addProductVariation,
+    updateProductVariation,
+    deleteProductVariation,
+    getVariationsForProduct,
     addSale,
     addFinancialRecord,
     updateFinancialRecord,

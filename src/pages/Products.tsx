@@ -3,9 +3,10 @@ import { Plus, Search, Package, AlertTriangle, Edit, Trash2, Crown, CheckCircle,
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UpgradeModal } from '../components/UpgradeModal';
+import { ProductVariation } from '../lib/supabase';
 
 export const Products: React.FC = () => {
-  const { products, addProduct, updateProduct, deleteProduct, loading } = useSupabaseData();
+  const { products, addProduct, updateProduct, deleteProduct, loading, addProductVariation, updateProductVariation, deleteProductVariation, getVariationsForProduct } = useSupabaseData();
   const usageStatus = useUsageLimits();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -13,6 +14,7 @@ export const Products: React.FC = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [productVariationsFormData, setProductVariationsFormData] = useState<ProductVariation[]>([]);
   const [showLimitBanner, setShowLimitBanner] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -54,6 +56,7 @@ export const Products: React.FC = () => {
     });
     setShowAddForm(false);
     setEditingProduct(null);
+    setProductVariationsFormData([]);
     setShowUpgradeModal(false);
   };
 
@@ -108,12 +111,46 @@ export const Products: React.FC = () => {
     } else {
       result = await addProduct(productData);
     }
+    const newProductId = editingProduct?.id || result?.data?.id;
 
     if (result?.error) {
       showNotification('error', editingProduct ? 'Erro ao atualizar produto' : 'Erro ao adicionar produto');
     } else {
       showNotification('success', editingProduct ? 'Produto atualizado com sucesso' : 'Produto adicionado com sucesso');
     }
+
+    // Handle product variations
+    if (newProductId) {
+      const existingVariations = getVariationsForProduct(newProductId);
+      const variationsToDelete = existingVariations.filter(
+        (ev) => !productVariationsFormData.some((fv) => fv.id === ev.id)
+      );
+      const variationsToUpdate = productVariationsFormData.filter((fv) =>
+        existingVariations.some((ev) => ev.id === fv.id)
+      );
+      const variationsToAdd = productVariationsFormData.filter(
+        (fv) => !existingVariations.some((ev) => ev.id === fv.id)
+      );
+
+      // Delete variations
+      for (const variation of variationsToDelete) {
+        await deleteProductVariation(variation.id);
+      }
+
+      // Update variations
+      for (const variation of variationsToUpdate) {
+        await updateProductVariation(variation.id, variation);
+      }
+
+      // Add new variations
+      for (const variation of variationsToAdd) {
+        await addProductVariation({ ...variation, product_id: newProductId });
+      }
+    }
+
+    // After all operations, refetch data to ensure consistency
+    // This is a simplified approach; in a real app, you might update state more granularly
+    // refetch(); 
 
     resetForm();
   };
@@ -134,6 +171,7 @@ export const Products: React.FC = () => {
       category: product.category,
       sku: product.sku,
       supplier: product.supplier || '',
+
     });
     setEditingProduct(product);
     setShowAddForm(true);
@@ -144,6 +182,41 @@ export const Products: React.FC = () => {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
+  };
+
+  const handleAddVariation = () => {
+    setProductVariationsFormData([
+      ...productVariationsFormData,
+      {
+        id: `new-${Date.now()}`, // Temporary ID for new variations
+        user_id: '', // Will be set on save
+        product_id: editingProduct?.id || '', // Will be set on save
+        variation_name: '',
+        color: '',
+        size: '',
+        sku: '',
+        stock: 0,
+        price: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    ]);
+  };
+
+  const handleRemoveVariation = (id: string) => {
+    setProductVariationsFormData(productVariationsFormData.filter((v) => v.id !== id));
+  };
+
+  const handleVariationChange = (
+    id: string,
+    field: keyof ProductVariation,
+    value: string | number | null
+  ) => {
+    setProductVariationsFormData(
+      productVariationsFormData.map((v) =>
+        v.id === id ? { ...v, [field]: value } : v
+      )
+    );
   };
 
   if (loading) {
@@ -452,6 +525,96 @@ export const Products: React.FC = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
+                </div>
+
+                {/* Product Variations Section */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Variações (Opcional)</h4>
+                  <p className="text-xs text-gray-500 mb-4">Adicione diferentes cores, tamanhos ou outras variações para este produto.</p>
+
+                  {productVariationsFormData.map((variation, index) => (
+                    <div key={variation.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 relative">
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveVariation(variation.id)}
+                        className="absolute top-2 right-2 text-gray-400 hover:text-red-600"
+                        title="Remover variação"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Cor</label>
+                          <div className="relative">
+                            <Palette className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                              type="text"
+                              value={variation.color || ''}
+                              onChange={(e) => handleVariationChange(variation.id, 'color', e.target.value)}
+                              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                              placeholder="Ex: Azul, Vermelho"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Tamanho</label>
+                          <div className="relative">
+                            <Ruler className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                              type="text"
+                              value={variation.size || ''}
+                              onChange={(e) => handleVariationChange(variation.id, 'size', e.target.value)}
+                              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                              placeholder="Ex: P, M, G, 38, 40"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">SKU da Variação</label>
+                          <input
+                            type="text"
+                            value={variation.sku}
+                            onChange={(e) => handleVariationChange(variation.id, 'sku', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            placeholder="SKU único"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Estoque</label>
+                          <input
+                            type="number"
+                            value={variation.stock}
+                            onChange={(e) => handleVariationChange(variation.id, 'stock', parseInt(e.target.value) || 0)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Preço (Opcional)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={variation.price || ''}
+                            onChange={(e) => handleVariationChange(variation.id, 'price', parseFloat(e.target.value) || null)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            placeholder="Herdar do produto"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={handleAddVariation}
+                    className="mt-4 w-full flex items-center justify-center px-4 py-2 border border-dashed border-gray-300 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Variação
+                  </button>
                 </div>
 
                 <div className="flex justify-end space-x-3 pt-4">
