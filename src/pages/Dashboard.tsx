@@ -35,7 +35,7 @@ export const Dashboard: React.FC = () => {
         <MetricCard
           title="Receita do Mês"
           value={formatCurrency(dashboardMetrics.revenue.current)}
-          change={dashboardMetrics.revenue.change}
+          change={dashboardMetrics.revenue.change?.toFixed(2)}
           changeLabel="vs mês anterior"
           icon={<DollarSign className="w-6 h-6" />}
           color="green"
