@@ -17,6 +17,7 @@ export const Products: React.FC = () => {
   const [showLimitBanner, setShowLimitBanner] = useState(false);
   const [productVariationsFormData, setProductVariationsFormData] = useState<Omit<ProductVariation, 'id' | 'user_id' | 'product_id' | 'created_at' | 'updated_at'>[]>([]);
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
+  const [showVariationsModal, setShowVariationsModal] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -59,6 +60,7 @@ export const Products: React.FC = () => {
     setEditingProduct(null);
     setProductVariationsFormData([]);
     setShowUpgradeModal(false);
+    setShowVariationsModal(null);
   };
 
   const showNotification = (type: 'success' | 'error', message: string) => {
@@ -391,9 +393,44 @@ export const Products: React.FC = () => {
                   <span className="text-sm text-gray-600">Categoria</span>
                   <span className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded">{product.category}</span>
                 </div>
+
+                {/* Variations Summary */}
+                {(() => {
+                  const variations = getVariationsForProduct(product.id);
+                  if (variations.length > 0) {
+                    return (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Variações</span>
+                        <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                          {variations.length} variação{variations.length > 1 ? 'ões' : ''}
+                        </span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               <p className="text-sm text-gray-600 mt-3 line-clamp-2">{product.description}</p>
+
+              {/* View Variations Button */}
+              {(() => {
+                const variations = getVariationsForProduct(product.id);
+                if (variations.length > 0) {
+                  return (
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <button
+                        onClick={() => setShowVariationsModal(product.id)}
+                        className="w-full flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                      >
+                        <Palette className="w-4 h-4 mr-2" />
+                        Ver Variações ({variations.length})
+                      </button>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           ))}
         </div>
@@ -685,6 +722,126 @@ export const Products: React.FC = () => {
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
                   Excluir Produto
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Variations View Modal */}
+      {showVariationsModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowVariationsModal(null)}></div>
+            
+            <div className="inline-block w-full max-w-4xl p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Variações do Produto
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {(() => {
+                      const product = products.find(p => p.id === showVariationsModal);
+                      return product ? product.name : 'Produto';
+                    })()}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setShowVariationsModal(null)} 
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {(() => {
+                  const variations = getVariationsForProduct(showVariationsModal);
+                  
+                  if (variations.length === 0) {
+                    return (
+                      <div className="text-center py-8">
+                        <Palette className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                        <p className="text-gray-500">Nenhuma variação encontrada para este produto</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {variations.map((variation) => (
+                        <div key={variation.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium text-gray-900">{variation.variation_name}</h4>
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                              {variation.sku}
+                            </span>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            {variation.color && (
+                              <div className="flex items-center">
+                                <Palette className="w-4 h-4 text-gray-400 mr-2" />
+                                <span className="text-sm text-gray-600">Cor:</span>
+                                <span className="text-sm font-medium text-gray-900 ml-1">{variation.color}</span>
+                              </div>
+                            )}
+                            
+                            {variation.size && (
+                              <div className="flex items-center">
+                                <Ruler className="w-4 h-4 text-gray-400 mr-2" />
+                                <span className="text-sm text-gray-600">Tamanho:</span>
+                                <span className="text-sm font-medium text-gray-900 ml-1">{variation.size}</span>
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center">
+                              <Package className="w-4 h-4 text-gray-400 mr-2" />
+                              <span className="text-sm text-gray-600">Estoque:</span>
+                              <span className={`text-sm font-medium ml-1 ${
+                                variation.stock <= 5 ? 'text-red-600' : 'text-gray-900'
+                              }`}>
+                                {variation.stock} unidades
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center">
+                              <DollarSign className="w-4 h-4 text-gray-400 mr-2" />
+                              <span className="text-sm text-gray-600">Preço:</span>
+                              <span className="text-sm font-medium text-green-600 ml-1">
+                                {variation.price ? formatCurrency(variation.price) : (
+                                  <span className="text-gray-500">
+                                    {(() => {
+                                      const product = products.find(p => p.id === showVariationsModal);
+                                      return product ? formatCurrency(product.price) + ' (herdado)' : 'N/A';
+                                    })()}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {variation.stock <= 5 && (
+                            <div className="mt-3 flex items-center text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              Estoque baixo
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="flex justify-end pt-6 border-t border-gray-200 mt-6">
+                <button
+                  onClick={() => setShowVariationsModal(null)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Fechar
                 </button>
               </div>
             </div>
