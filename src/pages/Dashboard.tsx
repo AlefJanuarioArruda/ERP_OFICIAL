@@ -35,7 +35,7 @@ export const Dashboard: React.FC = () => {
         <MetricCard
           title="Receita do Mês"
           value={formatCurrency(dashboardMetrics.revenue.current)}
-          change={dashboardMetrics.revenue.change.toFixed(2)}
+          change={dashboardMetrics.revenue.change?.toFixed(2)}
           changeLabel="vs mês anterior"
           icon={<DollarSign className="w-6 h-6" />}
           color="green"
@@ -43,7 +43,7 @@ export const Dashboard: React.FC = () => {
         <MetricCard
           title="Lucro Líquido"
           value={formatCurrency(dashboardMetrics.profit.current)}
-          change={dashboardMetrics.profit.change}
+          change={dashboardMetrics.profit.change?.toFixed(2)}
           changeLabel="vs mês anterior"
           icon={<TrendingUp className="w-6 h-6" />}
           color="blue"
@@ -51,7 +51,7 @@ export const Dashboard: React.FC = () => {
         <MetricCard
           title="Despesas"
           value={formatCurrency(dashboardMetrics.expenses.current)}
-          change={dashboardMetrics.expenses.change}
+          change={dashboardMetrics.expenses.change?.toFixed(2)}
           changeLabel="vs mês anterior"
           icon={<TrendingDown className="w-6 h-6" />}
           color="red"
@@ -59,7 +59,7 @@ export const Dashboard: React.FC = () => {
         <MetricCard
           title="Vendas Realizadas"
           value={dashboardMetrics.sales.current.toString()}
-          change={dashboardMetrics.sales.change}
+          change={dashboardMetrics.sales.change?.toFixed(2)}
           changeLabel="vs mês anterior"
           icon={<ShoppingCart className="w-6 h-6" />}
           color="yellow"
