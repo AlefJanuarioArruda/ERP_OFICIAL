@@ -394,6 +394,59 @@ export const Products: React.FC = () => {
               </div>
 
               <p className="text-sm text-gray-600 mt-3 line-clamp-2">{product.description}</p>
+              
+              {/* Variations Display */}
+              {(() => {
+                const variations = getVariationsForProduct(product.id);
+                return variations.length > 0 ? (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-gray-500">
+                        {variations.length} variação(ões)
+                      </span>
+                      <button
+                        onClick={() => setExpandedProduct(expandedProduct === product.id ? null : product.id)}
+                        className="text-xs text-blue-600 hover:text-blue-700 transition-colors"
+                      >
+                        {expandedProduct === product.id ? 'Ocultar' : 'Ver todas'}
+                      </button>
+                    </div>
+                    
+                    {expandedProduct === product.id ? (
+                      <div className="space-y-2">
+                        {variations.map((variation) => (
+                          <div key={variation.id} className="bg-gray-50 rounded p-2">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-xs font-medium text-gray-900">{variation.variation_name}</p>
+                                <p className="text-xs text-gray-600">
+                                  SKU: {variation.sku} • Estoque: {variation.stock}
+                                </p>
+                              </div>
+                              {variation.price && (
+                                <span className="text-xs font-medium text-green-600">
+                                  {formatCurrency(variation.price)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {variations.slice(0, 3).map((variation) => (
+                          <span key={variation.id} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                            {variation.color || variation.size || variation.sku}
+                          </span>
+                        ))}
+                        {variations.length > 3 && (
+                          <span className="text-xs text-gray-500">+{variations.length - 3} mais</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : null;
+              })()}
             </div>
           ))}
         </div>
