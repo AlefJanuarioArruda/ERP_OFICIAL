@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Package, AlertTriangle, Edit, Trash2, Crown, CheckCircle, AlertCircle, X, Palette, Ruler } from 'lucide-react';
+import { Plus, Search, Package, AlertTriangle, Edit, Trash2, Crown, CheckCircle, AlertCircle, X, Palette, Ruler, DollarSign } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UpgradeModal } from '../components/UpgradeModal';
