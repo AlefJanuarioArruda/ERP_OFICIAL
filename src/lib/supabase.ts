@@ -16,6 +16,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Database types
 export interface Product {
   id: string
+}
 export interface Customer {
   id: string
   user_id: string
