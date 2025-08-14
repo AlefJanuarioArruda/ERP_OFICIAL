@@ -116,8 +116,46 @@ export const Settings: React.FC = () => {
         return
       }
       
-      // For now, show a message that storage is not configured
-      showNotification('error', 'Upload de imagens não está configurado. Entre em contato com o administrador para configurar o Supabase Storage.')
+      // Ensure user is logged in
+      if (!user) {
+        showNotification('error', 'Usuário não autenticado.')
+        return
+      }
+
+      const fileExtension = file.name.split('.').pop()
+      const filePath = `${user.id}-${Date.now()}.${fileExtension}`
+
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        console.error('Supabase Storage upload error:', error)
+        showNotification('error', `Erro ao fazer upload da imagem: ${error.message}`)
+        return
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath)
+
+      if (!publicUrlData || !publicUrlData.publicUrl) {
+        showNotification('error', 'Erro ao obter URL pública da imagem.')
+        return
+      }
+
+      // Update user profile with new avatar URL
+      const updateResult = await updateProfile({ avatar_url: publicUrlData.publicUrl })
+
+      if (updateResult.success) {
+        showNotification('success', 'Foto de perfil atualizada com sucesso!')
+      } else {
+        showNotification('error', updateResult.error || 'Erro ao atualizar perfil com nova foto.')
+      }
       
     } catch (error) {
       console.error('Profile photo upload error:', error)
