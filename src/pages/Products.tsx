@@ -5,7 +5,7 @@ import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UpgradeModal } from '../components/UpgradeModal';
 
 export const Products: React.FC = () => {
-  const { products, addProduct, updateProduct, deleteProduct, productVariations, addProductVariation, updateProductVariation, deleteProductVariation, loading } = useSupabaseData();
+  const { products, addProduct, updateProduct, deleteProduct, loading } = useSupabaseData();
   const usageStatus = useUsageLimits();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -25,15 +25,6 @@ export const Products: React.FC = () => {
     category: '',
     sku: '',
     supplier: '',
-    variations: [] as Array<{
-      id?: string
-      variation_name: string
-      color: string
-      size: string
-      sku: string
-      stock: string
-      price: string
-    }>
   });
 
   // Effect to show limit banner when limit is reached
@@ -60,7 +51,6 @@ export const Products: React.FC = () => {
       category: '',
       sku: '',
       supplier: '',
-      variations: []
     });
     setShowAddForm(false);
     setEditingProduct(null);
@@ -121,38 +111,8 @@ export const Products: React.FC = () => {
 
     if (result?.error) {
       showNotification('error', editingProduct ? 'Erro ao atualizar produto' : 'Erro ao adicionar produto');
-    } else if (result?.data) {
-      // Handle variations
-      const productId = editingProduct ? editingProduct.id : result.data.id;
-      
-      if (formData.variations.length > 0) {
-        // If editing, remove old variations first
-        if (editingProduct) {
-          const existingVariations = productVariations.filter(v => v.product_id === productId);
-          for (const variation of existingVariations) {
-            await deleteProductVariation(variation.id);
-          }
-        }
-        
-        // Add new variations
-        for (const variation of formData.variations) {
-          const variationData = {
-            product_id: productId,
-            variation_name: variation.variation_name,
-            color: variation.color || null,
-            size: variation.size || null,
-            sku: variation.sku,
-            stock: parseInt(variation.stock),
-            price: variation.price ? parseFloat(variation.price) : null
-          };
-          
-          await addProductVariation(variationData);
-        }
-      }
-      
-      showNotification('success', editingProduct ? 'Produto atualizado com sucesso' : 'Produto adicionado com sucesso');
     } else {
-      showNotification('error', 'Erro inesperado');
+      showNotification('success', editingProduct ? 'Produto atualizado com sucesso' : 'Produto adicionado com sucesso');
     }
 
     resetForm();
@@ -164,19 +124,6 @@ export const Products: React.FC = () => {
       return;
     }
     
-    // Get variations for this product
-    const productVars = productVariations
-      .filter(v => v.product_id === product.id)
-      .map(v => ({
-        id: v.id,
-        variation_name: v.variation_name,
-        color: v.color || '',
-        size: v.size || '',
-        sku: v.sku,
-        stock: v.stock.toString(),
-        price: v.price ? v.price.toString() : ''
-      }));
-    
     setFormData({
       name: product.name,
       description: product.description,
@@ -187,7 +134,6 @@ export const Products: React.FC = () => {
       category: product.category,
       sku: product.sku,
       supplier: product.supplier || '',
-      variations: productVars
     });
     setEditingProduct(product);
     setShowAddForm(true);
@@ -198,52 +144,6 @@ export const Products: React.FC = () => {
       style: 'currency',
       currency: 'BRL'
     }).format(value);
-  };
-
-  const addVariation = () => {
-    setFormData({
-      ...formData,
-      variations: [
-        ...formData.variations,
-        {
-          variation_name: '',
-          color: '',
-          size: '',
-          sku: '',
-          stock: '0',
-          price: ''
-        }
-      ]
-    });
-  };
-
-  const removeVariation = (index: number) => {
-    setFormData({
-      ...formData,
-      variations: formData.variations.filter((_, i) => i !== index)
-    });
-  };
-
-  const updateVariation = (index: number, field: string, value: string) => {
-    const updatedVariations = [...formData.variations];
-    updatedVariations[index] = {
-      ...updatedVariations[index],
-      [field]: value
-    };
-    
-    // Auto-generate variation name if color or size changes
-    if (field === 'color' || field === 'size') {
-      const variation = updatedVariations[index];
-      const nameParts = [];
-      if (variation.color) nameParts.push(variation.color);
-      if (variation.size) nameParts.push(variation.size);
-      updatedVariations[index].variation_name = nameParts.join(' - ') || '';
-    }
-    
-    setFormData({
-      ...formData,
-      variations: updatedVariations
-    });
   };
 
   if (loading) {
@@ -404,34 +304,6 @@ export const Products: React.FC = () => {
                   <span className="text-sm text-gray-600">Categoria</span>
                   <span className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded">{product.category}</span>
                 </div>
-                
-                {/* Show variations if any */}
-                {productVariations.filter(v => v.product_id === product.id).length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-medium text-gray-600">Variações</span>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                        {productVariations.filter(v => v.product_id === product.id).length}
-                      </span>
-                    </div>
-                    <div className="space-y-1">
-                      {productVariations
-                        .filter(v => v.product_id === product.id)
-                        .slice(0, 2)
-                        .map((variation) => (
-                          <div key={variation.id} className="text-xs text-gray-600 flex items-center justify-between">
-                            <span>{variation.variation_name}</span>
-                            <span className="font-medium">{variation.stock} un.</span>
-                          </div>
-                        ))}
-                      {productVariations.filter(v => v.product_id === product.id).length > 2 && (
-                        <div className="text-xs text-gray-500">
-                          +{productVariations.filter(v => v.product_id === product.id).length - 2} mais...
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </div>
 
               <p className="text-sm text-gray-600 mt-3 line-clamp-2">{product.description}</p>
@@ -580,115 +452,6 @@ export const Products: React.FC = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
-                </div>
-
-                {/* Variations Section */}
-                <div className="border-t border-gray-200 pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="text-md font-semibold text-gray-900">Variações do Produto (Opcional)</h4>
-                      <p className="text-sm text-gray-600">Adicione variações como cor, tamanho, etc.</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={addVariation}
-                      className="flex items-center px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Adicionar Variação
-                    </button>
-                  </div>
-
-                  {formData.variations.length > 0 && (
-                    <div className="space-y-4 max-h-60 overflow-y-auto">
-                      {formData.variations.map((variation, index) => (
-                        <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                          <div className="flex items-center justify-between mb-3">
-                            <h5 className="font-medium text-gray-900">Variação {index + 1}</h5>
-                            <button
-                              type="button"
-                              onClick={() => removeVariation(index)}
-                              className="text-red-500 hover:text-red-700 transition-colors"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Cor</label>
-                              <div className="relative">
-                                <Palette className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
-                                <input
-                                  type="text"
-                                  value={variation.color}
-                                  onChange={(e) => updateVariation(index, 'color', e.target.value)}
-                                  className="w-full pl-7 pr-2 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                                  placeholder="Ex: Azul"
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Tamanho</label>
-                              <div className="relative">
-                                <Ruler className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-3 h-3" />
-                                <input
-                                  type="text"
-                                  value={variation.size}
-                                  onChange={(e) => updateVariation(index, 'size', e.target.value)}
-                                  className="w-full pl-7 pr-2 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                                  placeholder="Ex: M"
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">SKU da Variação</label>
-                              <input
-                                type="text"
-                                value={variation.sku}
-                                onChange={(e) => updateVariation(index, 'sku', e.target.value)}
-                                className="w-full px-2 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="Ex: PROD-001-AZ-M"
-                                required
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">Estoque</label>
-                              <input
-                                type="number"
-                                value={variation.stock}
-                                onChange={(e) => updateVariation(index, 'stock', e.target.value)}
-                                className="w-full px-2 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                                min="0"
-                                required
-                              />
-                            </div>
-                            <div className="col-span-2">
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Preço Específico (Opcional)
-                              </label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={variation.price}
-                                onChange={(e) => updateVariation(index, 'price', e.target.value)}
-                                className="w-full px-2 py-2 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="Deixe vazio para usar preço do produto principal"
-                              />
-                            </div>
-                          </div>
-                          
-                          {variation.variation_name && (
-                            <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
-                              <p className="text-xs text-blue-800">
-                                <strong>Nome da Variação:</strong> {variation.variation_name}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex justify-end space-x-3 pt-4">

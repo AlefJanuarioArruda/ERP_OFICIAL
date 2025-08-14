@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
-import type { Product, Customer, Sale, SaleItem, FinancialRecord, AIInsight, ProductVariation } from '../lib/supabase'
+import type { Product, Customer, Sale, SaleItem, FinancialRecord, AIInsight } from '../lib/supabase'
 
 export const useSupabaseData = () => {
   const { user } = useAuth()
@@ -11,7 +11,6 @@ export const useSupabaseData = () => {
   const [saleItems, setSaleItems] = useState<SaleItem[]>([])
   const [financialRecords, setFinancialRecords] = useState<FinancialRecord[]>([])
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([])
-  const [productVariations, setProductVariations] = useState<ProductVariation[]>([])
   const [loading, setLoading] = useState(true)
 
   // Fetch all user data
@@ -66,20 +65,12 @@ export const useSupabaseData = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      // Fetch product variations
-      const { data: variationsData } = await supabase
-        .from('product_variations')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
       setProducts(productsData || [])
       setCustomers(customersData || [])
       setSales(salesData || [])
       setSaleItems(saleItemsData || [])
       setFinancialRecords(financialData || [])
       setAiInsights(insightsData || [])
-      setProductVariations(variationsData || [])
     } catch (error) {
       console.error('Error fetching user data:', error)
     } finally {
@@ -144,60 +135,6 @@ export const useSupabaseData = () => {
 
     if (!error) {
       setProducts(prev => prev.filter(p => p.id !== id))
-    }
-
-    return { error }
-  }
-
-  // Product variation operations
-  const addProductVariation = async (variationData: Omit<ProductVariation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    if (!user) return
-
-    const { data, error } = await supabase
-      .from('product_variations')
-      .insert({
-        ...variationData,
-        user_id: user.id
-      })
-      .select()
-      .single()
-
-    if (!error && data) {
-      setProductVariations(prev => [data, ...prev])
-    }
-
-    return { data, error }
-  }
-
-  const updateProductVariation = async (id: string, updates: Partial<ProductVariation>) => {
-    if (!user) return
-
-    const { data, error } = await supabase
-      .from('product_variations')
-      .update(updates)
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select()
-      .single()
-
-    if (!error && data) {
-      setProductVariations(prev => prev.map(v => v.id === id ? data : v))
-    }
-
-    return { data, error }
-  }
-
-  const deleteProductVariation = async (id: string) => {
-    if (!user) return
-
-    const { error } = await supabase
-      .from('product_variations')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', user.id)
-
-    if (!error) {
-      setProductVariations(prev => prev.filter(v => v.id !== id))
     }
 
     return { error }
@@ -574,16 +511,12 @@ export const useSupabaseData = () => {
     sales: getSalesWithItems(),
     financialRecords,
     aiInsights,
-    productVariations,
     loading,
     
     // Operations
     addProduct,
     updateProduct,
     deleteProduct,
-    addProductVariation,
-    updateProductVariation,
-    deleteProductVariation,
     addCustomer,
     updateCustomer,
     deleteCustomer,
