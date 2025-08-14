@@ -176,27 +176,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
                 </button>
               )}
             </div>
-            
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <User className="w-5 h-5 text-blue-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {user?.name || 'Usuário'}
-                </p>
-                <p className="text-xs text-gray-500 truncate">
-                  {user?.email || 'usuario@email.com'}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
-            </button>
           </div>
         </div>
       </aside>
@@ -204,7 +183,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6">
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -212,12 +191,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
             >
               <Menu className="w-5 h-5" />
             </button>
-            <h1 className="text-xl font-semibold text-gray-900 capitalize">
+            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 capitalize">
               {navigationItems.find(item => item.id === currentPage)?.label || 'Dashboard'}
             </h1>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
 
             {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
@@ -249,7 +228,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
 
               {/* Profile Dropdown */}
               {profileOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-w-[calc(100vw-2rem)]">
                   <div className="p-4 border-b border-gray-200">
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
@@ -321,7 +300,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {children}
         </main>
       </div>
