@@ -96,6 +96,36 @@ export const Products: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate unique SKUs for variations
+    if (productVariationsFormData.length > 0) {
+      const variationSkus = productVariationsFormData
+        .filter(v => v.sku && v.sku.trim())
+        .map(v => v.sku.trim().toLowerCase());
+      
+      // Check for duplicates within the form
+      const duplicatesInForm = variationSkus.filter((sku, index) => variationSkus.indexOf(sku) !== index);
+      if (duplicatesInForm.length > 0) {
+        showNotification('error', 'SKUs das variações devem ser únicos');
+        return;
+      }
+      
+      // Check for duplicates with existing variations (excluding current product if editing)
+      const allExistingVariations = products.flatMap(product => {
+        if (editingProduct && product.id === editingProduct.id) {
+          return []; // Skip current product when editing
+        }
+        return getVariationsForProduct(product.id);
+      });
+      
+      const existingSkus = allExistingVariations.map(v => v.sku.toLowerCase());
+      const duplicateWithExisting = variationSkus.find(sku => existingSkus.includes(sku));
+      
+      if (duplicateWithExisting) {
+        showNotification('error', `SKU "${duplicateWithExisting}" já está em uso em outro produto`);
+        return;
+      }
+    }
+    
     const productData = {
       name: formData.name,
       description: formData.description,
@@ -166,40 +196,6 @@ export const Products: React.FC = () => {
       showNotification('success', editingProduct ? 'Produto atualizado com sucesso' : 'Produto adicionado com sucesso');
     }
 
-    // Handle product variations
-    if (newProductId) {
-      // Clear existing variations if editing
-      if (editingProduct) {
-        const existingVariations = getVariationsForProduct(newProductId);
-        for (const variation of existingVariations) {
-          await deleteProductVariation(variation.id);
-        }
-      }
-      
-      // Add all variations from form
-      for (const variation of productVariationsFormData) {
-        if (variation.sku && variation.sku.trim()) {
-          // Generate variation name if not provided
-          let variationName = variation.variation_name;
-          if (!variationName && (variation.color || variation.size)) {
-            variationName = [variation.color, variation.size].filter(Boolean).join(' - ');
-          }
-          if (!variationName) {
-            variationName = `Variação ${variation.sku}`;
-          }
-          
-          await addProductVariation({
-            product_id: newProductId,
-            variation_name: variationName,
-            color: variation.color || null,
-            size: variation.size || null,
-            sku: variation.sku,
-            stock: variation.stock,
-            price: variation.price
-          });
-        }
-      }
-    }
     resetForm();
   };
 
