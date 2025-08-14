@@ -171,7 +171,7 @@ export const Dashboard: React.FC = () => {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Vendas Realizadas</span>
-                <span className="font-medium text-gray-900">{sales?.length ?? 0}</span>
+                <span className="font-medium text-gray-900">{sales?.length ?? 0} </span>
               </div>
             </div>
           </div>
