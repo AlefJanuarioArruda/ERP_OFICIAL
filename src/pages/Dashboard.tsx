@@ -59,7 +59,10 @@ export const Dashboard: React.FC = () => {
         <MetricCard
           title="Vendas Realizadas"
           value={dashboardMetrics.sales.current.toString()}
-          change={dashboardMetrics.sales.change?.toFixed(1)}
+          change={
+    isFinite(dashboardMetrics.revenue.change)
+      ? `${dashboardMetrics.revenue.change.toFixed(2).replace('.', ',')}%`
+      : '0%'}
           changeLabel="vs mês anterior"
           icon={<ShoppingCart className="w-6 h-6" />}
           color="yellow"
