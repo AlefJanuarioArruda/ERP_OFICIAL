@@ -141,7 +141,7 @@ Controle estoque, impulsione vendas e antecipe resultados com um ERP inteligente
                 <div className="flex items-center space-x-4 text-sm text-gray-600">
                   <div className="flex items-center">
                     <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    Teste grátis por 14 dias
+                    Teste grátis
                   </div>
                   <div className="flex items-center">
                     <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
