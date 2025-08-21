@@ -446,10 +446,7 @@ export const Settings: React.FC = () => {
                         
                       </label>
                     </div>
-                    <div className="ml-4">
-                      <h4 className="font-medium text-gray-900">Logotipo da Empresa</h4>
-                      <p className="text-sm text-gray-600">Clique no ícone para fazer upload do logo</p>
-                    </div>
+                    
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
