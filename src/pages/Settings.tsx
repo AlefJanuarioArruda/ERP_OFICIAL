@@ -436,20 +436,7 @@ export const Settings: React.FC = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações da Empresa</h3>
                   
                   {/* Company Logo Section */}
-                  <div className="flex items-center mb-6">
-                    <div className="relative">
-                      <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                        <Building className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <label className="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors">
-                        <Upload className="w-3 h-3 text-white" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleCompanyLogoUpload}
-                          className="hidden"
-                        />
-                      </label>
+                 
                     </div>
                     <div className="ml-4">
                       <h4 className="font-medium text-gray-900">Logotipo da Empresa</h4>
