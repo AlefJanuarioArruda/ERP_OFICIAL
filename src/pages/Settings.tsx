@@ -519,25 +519,28 @@ export const Settings: React.FC = () => {
             )}
 
             {/* Save Button */}
-            <div className="flex justify-end pt-6 border-t border-gray-200">
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Salvar Configurações
-                  </>
-                )}
-              </button>
-            </div>
+        {activeTab !== 'integrations' && activeTab !== 'billing' && (
+  <div className="flex justify-end pt-6 border-t border-gray-200">
+    <button
+      onClick={handleSave}
+      disabled={loading}
+      className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+    >
+      {loading ? (
+        <>
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+          Salvando...
+        </>
+      ) : (
+        <>
+          <Save className="w-4 h-4 mr-2" />
+          Salvar Configurações
+        </>
+      )}
+    </button>
+  </div>
+)}
+
             {/* Notifications Tab */}
             {activeTab === 'notifications' && (
               <div className="space-y-6">
