@@ -437,7 +437,7 @@ export const Settings: React.FC = () => {
                   
                   {/* Company Logo Section */}
                  
-                    </div>
+                   
                     <div className="ml-4">
                       <h4 className="font-medium text-gray-900">Logotipo da Empresa</h4>
                       <p className="text-sm text-gray-600">Clique no ícone para fazer upload do logo</p>
