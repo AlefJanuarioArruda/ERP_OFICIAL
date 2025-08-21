@@ -438,7 +438,7 @@ export const Settings: React.FC = () => {
                   {/* Company Logo Section */}
                   <div className="flex items-center mb-6">
                     <div className="relative">
-                  
+                
                    
                     </div>
                     
