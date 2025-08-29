@@ -142,21 +142,19 @@ export const useStripe = () => {
     return getActiveSubscription().isActive;
   };
 
-  const getCurrentPlan = (): string => {
-    const { product, isActive } = getActiveSubscription();
-    
-    if (!product) {
+const getCurrentPlan = (): string => {
+  const { product, isActive } = getActiveSubscription();
+
+  if (!product) {
     return 'Plano Free';
   }
 
-    if (isActive) {
-    return 'Plano Ativo';
+  if (isActive) {
+    return `Plano ${product.name} Ativo`;
   }
 
-    return 'Nenhum plano ativo';
-
-    return product.name;
-  };
+  return 'Nenhum plano ativo';
+};
 
   useEffect(() => {
     const loadData = async () => {
