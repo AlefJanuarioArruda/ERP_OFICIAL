@@ -154,7 +154,7 @@ const getCurrentPlan = (): string => {
     return `Plano ${product.name} Ativo`;
   }
 
-  return 'Nenhum plano ativo';
+  return 'plano ativo';
    //if (!isActive || !product) { return 'Nenhum plano ativo'; }
   //return product.name;
 };
