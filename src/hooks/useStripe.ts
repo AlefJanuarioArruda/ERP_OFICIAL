@@ -133,7 +133,8 @@ export const useStripe = () => {
       return { product: null, isActive: false };
     }
 
-    const product = getProductByPriceId(subscription.price_id) || null;
+    
+    const product = getProductByPriceId(subscription.price_id);
     const isActive = ['active', 'trialing'].includes(subscription.subscription_status);
 
     return { product, isActive };
