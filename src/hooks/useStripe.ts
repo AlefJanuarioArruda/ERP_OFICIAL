@@ -142,6 +142,7 @@ export const useStripe = () => {
     return getActiveSubscription().isActive;
   };
 
+
 const getCurrentPlan = (): string => {
   const { product, isActive } = getActiveSubscription();
 
