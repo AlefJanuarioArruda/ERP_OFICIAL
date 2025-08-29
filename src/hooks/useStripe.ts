@@ -145,9 +145,15 @@ export const useStripe = () => {
   const getCurrentPlan = (): string => {
     const { product, isActive } = getActiveSubscription();
     
-    if (!isActive || !product) {
-      return 'Nenhum plano ativo';
-    }
+    if (!product) {
+    return 'Plano Free';
+  }
+
+    if (isActive) {
+    return 'Plano Ativo';
+  }
+
+    return 'Nenhum plano ativo';
 
     return product.name;
   };
