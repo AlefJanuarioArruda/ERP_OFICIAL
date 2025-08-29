@@ -147,7 +147,7 @@ const getCurrentPlan = (): string => {
   const { product, isActive } = getActiveSubscription();
 
   if (!product) {
-    return 'Plano Free';
+    return 'Nenhum plano ativo';
   }
 
   if (isActive) {
@@ -155,6 +155,8 @@ const getCurrentPlan = (): string => {
   }
 
   return 'Nenhum plano ativo';
+   //if (!isActive || !product) { return 'Nenhum plano ativo'; }
+  //return product.name;
 };
 
   useEffect(() => {
