@@ -108,7 +108,7 @@ export const useStripe = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          price_id: priceId,
+          price_id == priceId,
           mode,
           success_url: `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${window.location.origin}/pricing`,
