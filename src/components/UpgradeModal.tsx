@@ -52,18 +52,18 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   };
 
   const getCardStyle = (productName: string) => {
-    if (productName === 'Plano Anual') {
+    if (productName === 'Plano Semestral') {
       return 'border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 transform scale-105';
     }
     return 'border border-gray-200 bg-white';
   };
 
   const getPopularBadge = (productName: string) => {
-    if (productName === 'Plano Anual') {
+    if (productName === 'Plano Semestral') {
       return (
         <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
           <span className="bg-gradient-to-r from-amber-600 to-orange-600 text-white px-3 py-1 rounded-full text-xs font-medium">
-            Melhor Valor
+            Mais Popular
           </span>
         </div>
       );
@@ -111,16 +111,16 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                       {formatPrice(product.price)}
                     </span>
                     <span className="text-gray-600 ml-1">
-                      /{product.interval === 'year' ? 'ano' : 'mês'}
+                      /{product.interval === 'year' ? 'ano' : product.name === 'Plano Semestral' ? '6 meses' : 'mês'}
                     </span>
                     {product.interval === 'year' && (
                       <div className="text-sm text-green-600 font-medium mt-1">
-                        Economize mais de R$ 30/mês!
+                        Economize mais de R$ 100 no ano!
                       </div>
                     )}
                     {product.name === 'Plano Semestral' && (
                       <div className="text-sm text-green-600 font-medium mt-1">
-                        Melhor custo-benefício!
+                        Mais popular entre nossos clientes!
                       </div>
                     )}
                   </div>
@@ -157,7 +157,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   onClick={() => handleSubscribe(product.priceId)}
                   disabled={loadingPriceId === product.priceId}
                   className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 ${
-                    product.name === 'Plano Anual'
+                    product.name === 'Plano Semestral'
                       ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-700 hover:to-orange-700'
                       : 'bg-gray-900 text-white hover:bg-gray-800'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
