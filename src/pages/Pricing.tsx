@@ -250,6 +250,7 @@ export const Pricing: React.FC = () => {
                 <div>
                   <p className="font-medium">Configure URLs de retorno</p>
                   <p className="text-blue-700">Success: {window.location.origin}/?session_id={{CHECKOUT_SESSION_ID}}</p>
+                  <p className="text-blue-700">Success: {window.location.origin}/?session_id={CHECKOUT_SESSION_ID}</p>
                   <p className="text-blue-700">Cancel: {window.location.origin}/?page=pricing</p>
                 </div>
               </div>
