@@ -14,7 +14,7 @@ export interface StripeProduct {
 export const stripeProducts: StripeProduct[] = [
   {
     id: 'plano-mensal',
-    priceId: 'price_1QdVGJRyTupwgwOOmKqHZvQs', // Substitua pelo seu Price ID real do Stripe
+    priceId: 'price_mensal', // Será usado como identificador interno
     name: 'Plano Mensal',
     description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
     price: 2990, // R$ 29.90 em centavos
@@ -24,30 +24,32 @@ export const stripeProducts: StripeProduct[] = [
       'Produtos ilimitados',
       'Clientes ilimitados', 
       'Vendas ilimitadas',
+      'Controle financeiro completo',
       'Relatórios básicos',
       'Suporte por email'
     ]
   },
   {
     id: 'plano-semestral',
-    priceId: 'price_1QdVGsRyTupwgwOOYhKqLmNp', // Substitua pelo seu Price ID real do Stripe
+    priceId: 'price_semestral', // Será usado como identificador interno
     name: 'Plano Semestral',
     description: 'Acesso completo ao ERP Smart por 6 meses com melhor custo-benefício',
-    price: 14990, // R$ 149.90 em centavos (cobrado a cada 6 meses)
+    price: 14990, // R$ 149.90 em centavos
     currency: 'brl',
-    interval: 'month', // Stripe interval, mas será configurado para 6 meses
+    interval: 'month', // Configurado como 6 meses no Stripe
     popular: true,
     features: [
       'Tudo do plano mensal',
       'Relatórios avançados',
       'IA Insights completos',
       'Suporte prioritário',
-      'Backup automático'
+      'Backup automático',
+      'Exportação de dados'
     ]
   },
   {
     id: 'plano-anual',
-    priceId: 'price_1QdVHHRyTupwgwOOzKqMnOpQ', // Substitua pelo seu Price ID real do Stripe
+    priceId: 'price_anual', // Será usado como identificador interno
     name: 'Plano Anual',
     description: 'Acesso completo ao ERP Smart por 12 meses com máximo desconto',
     price: 25990, // R$ 259.90 em centavos
@@ -58,7 +60,8 @@ export const stripeProducts: StripeProduct[] = [
       'Consultoria estratégica',
       'Integrações personalizadas',
       'Suporte telefônico',
-      'Treinamento exclusivo'
+      'Treinamento exclusivo',
+      'Relatórios personalizados'
     ]
   }
 ];
@@ -74,23 +77,45 @@ export const formatPrice = (price: number, currency: string = 'brl'): string => 
   }).format(price / 100);
 };
 
-// Função para criar URL de checkout direto do Stripe
-export const createStripeCheckoutUrl = (priceId: string): string => {
-  const baseUrl = 'https://buy.stripe.com/test_'; // Para produção, remova 'test_'
+// URLs de checkout direto do Stripe (você precisa configurar no seu Dashboard)
+export const getStripeCheckoutUrl = (productId: string): string => {
+  // IMPORTANTE: Substitua estas URLs pelas URLs reais do seu Stripe Dashboard
+  // Vá em: Stripe Dashboard > Payment Links > Criar novo link de pagamento
   
-  // Mapeamento dos Price IDs para URLs de checkout do Stripe
   const checkoutUrls: Record<string, string> = {
-    'price_1QdVGJRyTupwgwOOmKqHZvQs': 'eVa5lq7Tn2Qg3Wm000', // Plano Mensal
-    'price_1QdVGsRyTupwgwOOYhKqLmNp': 'bIY01C5Lj6Ys7Aq001', // Plano Semestral  
-    'price_1QdVHHRyTupwgwOOzKqMnOpQ': 'cN203E7Pl8Zu9Cs002'  // Plano Anual
+    'plano-mensal': 'https://buy.stripe.com/test_SUBSTITUA_PELA_URL_MENSAL',
+    'plano-semestral': 'https://buy.stripe.com/test_SUBSTITUA_PELA_URL_SEMESTRAL', 
+    'plano-anual': 'https://buy.stripe.com/test_SUBSTITUA_PELA_URL_ANUAL'
   };
   
-  const checkoutId = checkoutUrls[priceId];
-  
-  if (!checkoutId) {
-    console.error('Checkout URL não encontrada para o Price ID:', priceId);
-    return '#';
+  return checkoutUrls[productId] || '#';
+};
+
+// Função para criar checkout usando a API do Stripe (fallback)
+export const createCheckoutSession = async (priceId: string) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        price_id: priceId,
+        success_url: `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${window.location.origin}/?page=pricing`,
+      }),
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Erro ao criar sessão de checkout');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro no checkout:', error);
+    throw error;
   }
-  
-  return `${baseUrl}${checkoutId}`;
 };
