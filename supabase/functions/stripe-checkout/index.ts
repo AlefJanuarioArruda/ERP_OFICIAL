@@ -83,9 +83,9 @@ Deno.serve(async (req) => {
 
     // Validate that the price exists in our configuration
     const validPriceIds = [
-      'price_1RtxsARyTupwgwOO31bFKE6N', // Plano Mensal
-      'price_1RtxscRyTupwgwOOkhNcILCM', // Plano Semestral
-      'price_1RtxrdRyTupwgwOO6wxulMvw'  // Plano Anual
+      'price_1RtxsARyTupwgwOO31bFKE6N', // Plano Mensal - R$ 29,90
+      'price_1RtxscRyTupwgwOOkhNcILCM', // Plano Semestral - R$ 149,90
+      'price_1RtxrdRyTupwgwOO6wxulMvw'  // Plano Anual - R$ 259,90
     ];
     
     if (!validPriceIds.includes(price_id)) {
