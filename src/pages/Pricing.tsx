@@ -249,8 +249,7 @@ export const Pricing: React.FC = () => {
                 <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">6</div>
                 <div>
                   <p className="font-medium">Configure URLs de retorno</p>
-                  <p className="text-blue-700">Success: {window.location.origin}/?session_id={{CHECKOUT_SESSION_ID}}</p>
-                  <p className="text-blue-700">Success: {window.location.origin}/?session_id={CHECKOUT_SESSION_ID}</p>
+                  <p className="text-blue-700">Success: {window.location.origin}/?session_id={'{CHECKOUT_SESSION_ID}'}</p>
                   <p className="text-blue-700">Cancel: {window.location.origin}/?page=pricing</p>
                 </div>
               </div>
