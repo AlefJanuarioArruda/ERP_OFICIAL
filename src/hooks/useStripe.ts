@@ -100,7 +100,6 @@ export const useStripe = () => {
         return { success: false, error: 'No valid session found' };
       }
 
-    
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
         method: 'POST',
         headers: {
@@ -110,8 +109,8 @@ export const useStripe = () => {
         body: JSON.stringify({
           price_id: priceId,
           mode,
-          success_url: `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${window.location.origin}/pricing`,
+          success_url: `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${window.location.origin}/?page=pricing`,
         }),
       });
 
