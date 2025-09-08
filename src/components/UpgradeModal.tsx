@@ -1,6 +1,6 @@
 import React from 'react';
 import { Crown, X, Check, Zap, Star, ExternalLink } from 'lucide-react';
-import { stripeProducts, formatPrice, createStripeCheckoutUrl } from '../stripe-config';
+import { stripeProducts, formatPrice, getStripeCheckoutUrl } from '../stripe-config';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -21,8 +21,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     setRedirectingTo(productName);
     
     try {
-      // Criar URL de checkout direto do Stripe
-      const checkoutUrl = createStripeCheckoutUrl(priceId);
+      // Obter URL de checkout do Stripe
+      const checkoutUrl = getStripeCheckoutUrl(priceId);
       
       if (checkoutUrl === '#') {
         alert('Erro: URL de checkout não configurada para este produto');
