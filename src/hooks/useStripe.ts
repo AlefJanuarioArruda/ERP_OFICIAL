@@ -85,54 +85,11 @@ export const useStripe = () => {
     }
   };
 
-  const createCheckoutSession = async (
-    priceId: string,
-    mode: 'payment' | 'subscription' = 'subscription'
-  ): Promise<{ success: boolean; url?: string; error?: string }> => {
-    if (!user) {
-      return { success: false, error: 'User not authenticated' };
-    }
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        return { success: false, error: 'No valid session found' };
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          price_id: priceId,
-          mode,
-          success_url: `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${window.location.origin}/?page=pricing`,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        return { success: false, error: result.error || 'Failed to create checkout session' };
-      }
-
-      return { success: true, url: result.url };
-    } catch (err) {
-      console.error('Error creating checkout session:', err);
-      return { success: false, error: 'Failed to create checkout session' };
-    }
-  };
-
   const getActiveSubscription = (): { product: StripeProduct | null; isActive: boolean } => {
     if (!subscription || !subscription.price_id) {
       return { product: null, isActive: false };
     }
 
-    
     const product = getProductByPriceId(subscription.price_id);
     const isActive = ['active', 'trialing'].includes(subscription.subscription_status);
 
@@ -143,20 +100,19 @@ export const useStripe = () => {
     return getActiveSubscription().isActive;
   };
 
+  const getCurrentPlan = (): string => {
+    const { product, isActive } = getActiveSubscription();
 
-const getCurrentPlan = (): string => {
-  const { product, isActive } = getActiveSubscription();
+    if (!product) {
+      return 'Nenhum plano ativo';
+    }
 
-  if (!product) {
+    if (isActive) {
+      return `${product.name} Ativo`;
+    }
+
     return 'Nenhum plano ativo';
-  }
-
-  if (isActive) {
-    return `${product.name} Ativo`;
-  }
-
-  return 'Nenhum plano ativo';
-};
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -179,7 +135,6 @@ const getCurrentPlan = (): string => {
     orders,
     loading,
     error,
-    createCheckoutSession,
     getActiveSubscription,
     isSubscriptionActive,
     getCurrentPlan,

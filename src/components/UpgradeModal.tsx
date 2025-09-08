@@ -1,7 +1,6 @@
 import React from 'react';
-import { Crown, X, Check, Zap, Star } from 'lucide-react';
-import { useStripe } from '../hooks/useStripe';
-import { stripeProducts, formatPrice } from '../stripe-config';
+import { Crown, X, Check, Zap, Star, ExternalLink } from 'lucide-react';
+import { stripeProducts, formatPrice, createStripeCheckoutUrl } from '../stripe-config';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -16,25 +15,34 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   title = "Limite de Uso Atingido",
   message = "Você atingiu o limite de uso gratuito. Assine para continuar usando sem restrições."
 }) => {
-  const { createCheckoutSession, loading } = useStripe();
-  const [loadingPriceId, setLoadingPriceId] = React.useState<string | null>(null);
+  const [redirectingTo, setRedirectingTo] = React.useState<string | null>(null);
 
-  const handleSubscribe = async (priceId: string) => {
-    setLoadingPriceId(priceId);
+  const handleSubscribe = async (priceId: string, productName: string) => {
+    setRedirectingTo(productName);
     
     try {
-      const result = await createCheckoutSession(priceId, 'subscription');
+      // Criar URL de checkout direto do Stripe
+      const checkoutUrl = createStripeCheckoutUrl(priceId);
       
-      if (result.success && result.url) {
-        window.location.href = result.url;
-      } else {
-        alert(result.error || 'Erro ao criar sessão de checkout');
+      if (checkoutUrl === '#') {
+        alert('Erro: URL de checkout não configurada para este produto');
+        setRedirectingTo(null);
+        return;
       }
+      
+      // Adicionar parâmetros de sucesso e cancelamento
+      const successUrl = encodeURIComponent(`${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`);
+      const cancelUrl = encodeURIComponent(`${window.location.origin}/`);
+      
+      const finalUrl = `${checkoutUrl}?success_url=${successUrl}&cancel_url=${cancelUrl}`;
+      
+      // Redirecionar para o Stripe Checkout
+      window.location.href = finalUrl;
+      
     } catch (error) {
-      console.error('Error during checkout:', error);
+      console.error('Erro ao redirecionar para checkout:', error);
       alert('Erro inesperado. Tente novamente.');
-    } finally {
-      setLoadingPriceId(null);
+      setRedirectingTo(null);
     }
   };
 
@@ -51,15 +59,15 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     }
   };
 
-  const getCardStyle = (productName: string) => {
-    if (productName === 'Plano Semestral') {
+  const getCardStyle = (product: any) => {
+    if (product.popular) {
       return 'border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 transform scale-105';
     }
     return 'border border-gray-200 bg-white';
   };
 
-  const getPopularBadge = (productName: string) => {
-    if (productName === 'Plano Semestral') {
+  const getPopularBadge = (product: any) => {
+    if (product.popular) {
       return (
         <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
           <span className="bg-gradient-to-r from-amber-600 to-orange-600 text-white px-3 py-1 rounded-full text-xs font-medium">
@@ -67,6 +75,23 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
           </span>
         </div>
       );
+    }
+    return null;
+  };
+
+  const getIntervalLabel = (product: any) => {
+    if (product.name === 'Plano Semestral') {
+      return '6 meses';
+    }
+    return product.interval === 'year' ? 'ano' : 'mês';
+  };
+
+  const getSavingsText = (product: any) => {
+    if (product.interval === 'year') {
+      return 'Economize mais de R$ 100 no ano!';
+    }
+    if (product.name === 'Plano Semestral') {
+      return 'Mais popular entre nossos clientes!';
     }
     return null;
   };
@@ -98,8 +123,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
           {/* Pricing Plans */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {stripeProducts.map((product) => (
-              <div key={product.id} className={`relative rounded-xl p-6 ${getCardStyle(product.name)}`}>
-                {getPopularBadge(product.name)}
+              <div key={product.id} className={`relative rounded-xl p-6 ${getCardStyle(product)}`}>
+                {getPopularBadge(product)}
                 
                 <div className="text-center mb-6">
                   <div className="flex justify-center mb-3">
@@ -111,64 +136,44 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                       {formatPrice(product.price)}
                     </span>
                     <span className="text-gray-600 ml-1">
-                      /{product.interval === 'year' ? 'ano' : product.name === 'Plano Semestral' ? '6 meses' : 'mês'}
+                      /{getIntervalLabel(product)}
                     </span>
-                    {product.interval === 'year' && (
+                    {getSavingsText(product) && (
                       <div className="text-sm text-green-600 font-medium mt-1">
-                        Economize mais de R$ 100 no ano!
-                      </div>
-                    )}
-                    {product.name === 'Plano Semestral' && (
-                      <div className="text-sm text-green-600 font-medium mt-1">
-                        Mais popular entre nossos clientes!
+                        {getSavingsText(product)}
                       </div>
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-3 mb-6">
-                  <div className="flex items-center text-sm">
-                    <Check className="w-4 h-4 text-green-500 mr-2" />
-                    <span>Produtos ilimitados</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <Check className="w-4 h-4 text-green-500 mr-2" />
-                    <span>Clientes ilimitados</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <Check className="w-4 h-4 text-green-500 mr-2" />
-                    <span>Vendas ilimitadas</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <Check className="w-4 h-4 text-green-500 mr-2" />
-                    <span>Relatórios avançados</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <Check className="w-4 h-4 text-green-500 mr-2" />
-                    <span>IA Insights completos</span>
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <Check className="w-4 h-4 text-green-500 mr-2" />
-                    <span>Suporte prioritário</span>
-                  </div>
+                  {product.features.slice(0, 5).map((feature, index) => (
+                    <div key={index} className="flex items-center text-sm">
+                      <Check className="w-4 h-4 text-green-500 mr-2" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
                 </div>
 
                 <button
-                  onClick={() => handleSubscribe(product.priceId)}
-                  disabled={loadingPriceId === product.priceId}
-                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 ${
-                    product.name === 'Plano Semestral'
+                  onClick={() => handleSubscribe(product.priceId, product.name)}
+                  disabled={redirectingTo === product.name}
+                  className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-300 flex items-center justify-center ${
+                    product.popular
                       ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-700 hover:to-orange-700'
                       : 'bg-gray-900 text-white hover:bg-gray-800'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  {loadingPriceId === product.priceId ? (
-                    <div className="flex items-center justify-center">
+                  {redirectingTo === product.name ? (
+                    <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Processando...
-                    </div>
+                      Redirecionando...
+                    </>
                   ) : (
-                    'Assinar Agora'
+                    <>
+                      Assinar Agora
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </>
                   )}
                 </button>
               </div>
@@ -195,7 +200,26 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                 <Check className="w-4 h-4 text-blue-600 mr-2" />
                 Exportação de dados para Excel
               </div>
+              <div className="flex items-center">
+                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                Suporte prioritário
+              </div>
+              <div className="flex items-center">
+                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                Backup automático dos dados
+              </div>
             </div>
+          </div>
+
+          {/* Security Notice */}
+          <div className="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center text-green-800">
+              <Check className="w-5 h-5 mr-2" />
+              <span className="font-medium">Pagamento 100% seguro processado pelo Stripe</span>
+            </div>
+            <p className="text-sm text-green-700 mt-1">
+              Seus dados de pagamento são protegidos com criptografia de nível bancário
+            </p>
           </div>
         </div>
       </div>
