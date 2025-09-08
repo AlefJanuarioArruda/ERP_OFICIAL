@@ -23,15 +23,8 @@ export const Pricing: React.FC = () => {
         return;
       }
       
-      // Adicionar parâmetros de retorno
-      const separator = checkoutUrl.includes('?') ? '&' : '?';
-      const successUrl = encodeURIComponent(`${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`);
-      const cancelUrl = encodeURIComponent(`${window.location.origin}/?page=pricing`);
-      
-      const finalUrl = `${checkoutUrl}${separator}success_url=${successUrl}&cancel_url=${cancelUrl}`;
-      
       // Redirecionar para o Stripe Checkout
-      window.open(finalUrl, '_blank');
+      window.open(checkoutUrl, '_blank');
       
       // Reset loading state after a delay
       setTimeout(() => {
