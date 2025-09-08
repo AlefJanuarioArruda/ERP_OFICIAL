@@ -14,7 +14,7 @@ export interface StripeProduct {
 export const stripeProducts: StripeProduct[] = [
   {
     id: 'plano-mensal',
-    priceId: 'REPLACE_WITH_YOUR_MONTHLY_PRICE_ID', // Replace with actual price ID from Stripe
+    priceId: 'price_1OTestMonthlyPriceId', // Replace with actual price ID from Stripe
     name: 'Plano Mensal',
     description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
     mode: 'subscription',
@@ -24,7 +24,7 @@ export const stripeProducts: StripeProduct[] = [
   },
   {
     id: 'plano-semestral',
-    priceId: 'REPLACE_WITH_YOUR_SEMESTRAL_PRICE_ID', // Replace with actual price ID from Stripe
+    priceId: 'price_1OTestSemestralPriceId', // Replace with actual price ID from Stripe
     name: 'Plano Semestral',
     description: 'Acesso completo ao ERP Smart por 6 meses com melhor custo-benefício',
     mode: 'subscription',
@@ -34,7 +34,7 @@ export const stripeProducts: StripeProduct[] = [
   },
   {
     id: 'plano-anual',
-    priceId: 'REPLACE_WITH_YOUR_ANNUAL_PRICE_ID', // Replace with actual price ID from Stripe
+    priceId: 'price_1OTestAnnualPriceId', // Replace with actual price ID from Stripe
     name: 'Plano Anual',
     description: 'Acesso completo ao ERP Smart por 12 meses com máximo desconto',
     mode: 'subscription',
