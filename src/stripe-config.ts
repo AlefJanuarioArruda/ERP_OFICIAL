@@ -9,10 +9,12 @@ export interface StripeProduct {
   interval?: 'month' | 'year';
 }
 
+// TODO: Replace these placeholder price IDs with your actual Stripe Price IDs
+// Go to your Stripe Dashboard > Products > Pricing to find the correct Price IDs
 export const stripeProducts: StripeProduct[] = [
   {
-    id: 'prod_T1FAK1uqgZkta9',
-    priceId: 'price_1S5CgDRyTupwgwOO1LH6xXol',
+    id: 'plano-mensal',
+    priceId: 'REPLACE_WITH_YOUR_MONTHLY_PRICE_ID', // Replace with actual price ID from Stripe
     name: 'Plano Mensal',
     description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
     mode: 'subscription',
@@ -21,8 +23,8 @@ export const stripeProducts: StripeProduct[] = [
     interval: 'month'
   },
   {
-    id: 'prod_T1FAZ6vxP70anf',
-    priceId: 'price_1S5CgcRyTupwgwOOZJa8yy4A',
+    id: 'plano-semestral',
+    priceId: 'REPLACE_WITH_YOUR_SEMESTRAL_PRICE_ID', // Replace with actual price ID from Stripe
     name: 'Plano Semestral',
     description: 'Acesso completo ao ERP Smart por 6 meses com melhor custo-benefício',
     mode: 'subscription',
@@ -31,8 +33,8 @@ export const stripeProducts: StripeProduct[] = [
     interval: 'month'
   },
   {
-    id: 'prod_T1FBZMsJ1G5oRQ',
-    priceId: 'price_1S5CgwRyTupwgwOOuSFgfryG',
+    id: 'plano-anual',
+    priceId: 'REPLACE_WITH_YOUR_ANNUAL_PRICE_ID', // Replace with actual price ID from Stripe
     name: 'Plano Anual',
     description: 'Acesso completo ao ERP Smart por 12 meses com máximo desconto',
     mode: 'subscription',
