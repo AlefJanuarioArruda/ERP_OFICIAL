@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Check, Zap, Crown, Star, ArrowRight, ExternalLink, AlertTriangle } from 'lucide-react';
 import { stripeProducts, formatPrice, createCheckoutSession } from '../stripe-config';
 import { useStripe } from '../hooks/useStripe';
+import { supabase } from '../lib/supabase';
 
 export const Pricing: React.FC = () => {
   const { getCurrentPlan, isSubscriptionActive } = useStripe();
@@ -12,6 +13,17 @@ export const Pricing: React.FC = () => {
     setRedirectingTo(productName);
     
     try {
+      // Obter o token de acesso do usuário autenticado
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        throw new Error(`Erro de autenticação: ${sessionError.message}`);
+      }
+      
+      if (!session?.access_token) {
+        throw new Error('Usuário não autenticado. Faça login para continuar.');
+      }
+
       // Encontrar o produto pelo ID
       const product = stripeProducts.find(p => p.id === productId);
       if (!product) {
@@ -19,7 +31,7 @@ export const Pricing: React.FC = () => {
       }
       
       // Criar sessão de checkout
-      const { url } = await createCheckoutSession(product.priceId);
+      const { url } = await createCheckoutSession(product.priceId, session.access_token);
       
       if (url) {
         // Redirecionar para o Stripe Checkout

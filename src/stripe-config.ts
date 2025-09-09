@@ -82,13 +82,17 @@ export const formatPrice = (price: number, currency: string = 'brl'): string => 
 };
 
 // Função para criar checkout usando a API do Stripe
-export const createCheckoutSession = async (priceId: string) => {
+export const createCheckoutSession = async (priceId: string, accessToken?: string) => {
   try {
+    const authHeader = accessToken 
+      ? `Bearer ${accessToken}`
+      : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
+
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Authorization': authHeader,
       },
       body: JSON.stringify({
         price_id: priceId,
