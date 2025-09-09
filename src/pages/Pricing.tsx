@@ -23,6 +23,8 @@ export const Pricing: React.FC = () => {
     setRedirectingTo(productName);
     
     try {
+      console.log('Iniciando processo de assinatura para produto:', productName);
+      
       // Obter o token de acesso do usuário autenticado
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
@@ -33,6 +35,53 @@ export const Pricing: React.FC = () => {
       
       if (!session?.access_token) {
         throw new Error('Usuário não autenticado. Faça login para continuar.');
+      }
+
+      // Verificar e limpar customer_id inválido antes de tentar checkout
+      if (session.user) {
+        console.log('Verificando customer_id existente para usuário:', session.user.id);
+        
+        const { data: existingCustomer } = await supabase
+          .from('stripe_customers')
+          .select('customer_id')
+          .eq('user_id', session.user.id)
+          .eq('deleted_at', null)
+          .maybeSingle();
+
+        if (existingCustomer?.customer_id) {
+          console.log('Customer_id encontrado no banco:', existingCustomer.customer_id);
+          
+          // Verificar se o customer ainda existe no Stripe
+          try {
+            const stripeResponse = await fetch(`https://api.stripe.com/v1/customers/${existingCustomer.customer_id}`, {
+              headers: {
+                'Authorization': `Bearer ${import.meta.env.VITE_STRIPE_SECRET_KEY}`,
+              },
+            });
+            
+            if (!stripeResponse.ok) {
+              console.log('Customer inválido detectado, marcando como deletado:', existingCustomer.customer_id);
+              
+              // Marcar como deletado para forçar criação de novo
+              await supabase
+                .from('stripe_customers')
+                .update({ deleted_at: new Date().toISOString() })
+                .eq('user_id', session.user.id);
+                
+              showNotification('success', 'Dados de pagamento atualizados. Tentando novamente...');
+            } else {
+              console.log('Customer válido no Stripe');
+            }
+          } catch (error) {
+            console.log('Erro ao verificar customer, será criado um novo:', error);
+            
+            // Marcar como deletado para forçar criação de novo
+            await supabase
+              .from('stripe_customers')
+              .update({ deleted_at: new Date().toISOString() })
+              .eq('user_id', session.user.id);
+          }
+        }
       }
 
       // Encontrar o produto pelo ID
@@ -57,7 +106,20 @@ export const Pricing: React.FC = () => {
     } catch (error) {
       console.error('Erro ao redirecionar para checkout:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro inesperado';
-      showNotification('error', errorMessage);
+      
+      // Mensagens de erro mais amigáveis
+      if (errorMessage.includes('No such customer')) {
+        showNotification('error', 'Dados de pagamento inconsistentes. Tentando corrigir automaticamente...');
+        
+        // Tentar novamente após 2 segundos
+        setTimeout(() => {
+          handleSubscribe(productId, productName);
+        }, 2000);
+        return;
+      } else {
+        showNotification('error', errorMessage);
+      }
+      
       setRedirectingTo(null);
     }
   };

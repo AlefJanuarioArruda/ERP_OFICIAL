@@ -120,6 +120,52 @@ export const validateStripeEnvironment = (): { isValid: boolean; environment: st
 // Função para criar checkout session
 export const createCheckoutSession = async (priceId: string, accessToken?: string) => {
   try {
+    // Primeiro, validar se o usuário tem um customer_id válido no Stripe
+    const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
+    
+    if (userError || !user) {
+      throw new Error('Usuário não autenticado. Faça login para continuar.');
+    }
+
+    // Verificar se existe um customer_id no banco e se ele é válido no Stripe
+    const { data: existingCustomer } = await supabase
+      .from('stripe_customers')
+      .select('customer_id')
+      .eq('user_id', user.id)
+      .eq('deleted_at', null)
+      .maybeSingle();
+
+    if (existingCustomer?.customer_id) {
+      console.log('Verificando customer_id existente:', existingCustomer.customer_id);
+      
+      // Tentar validar o customer no Stripe antes de usar
+      try {
+        const stripeResponse = await fetch(`https://api.stripe.com/v1/customers/${existingCustomer.customer_id}`, {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_STRIPE_SECRET_KEY || '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'}`,
+          },
+        });
+        
+        if (!stripeResponse.ok) {
+          console.log('Customer inválido no Stripe, será criado um novo');
+          // Marcar como deletado para forçar criação de novo
+          await supabase
+            .from('stripe_customers')
+            .update({ deleted_at: new Date().toISOString() })
+            .eq('user_id', user.id);
+        } else {
+          console.log('Customer válido no Stripe:', existingCustomer.customer_id);
+        }
+      } catch (error) {
+        console.log('Erro ao validar customer, será criado um novo:', error);
+        // Marcar como deletado para forçar criação de novo
+        await supabase
+          .from('stripe_customers')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('user_id', user.id);
+      }
+    }
+
     // Validar ambiente antes de criar checkout
     const validation = validateStripeEnvironment();
     if (!validation.isValid) {

@@ -224,6 +224,18 @@ Deno.serve(async (req) => {
         }
 
         console.log('Customer record successfully updated in database:', customerRecord);
+        
+        // ADDITIONAL VALIDATION: Double-check the customer exists in Stripe
+        try {
+          const verifyCustomer = await stripe.customers.retrieve(validCustomerId);
+          if (verifyCustomer.deleted) {
+            throw new Error('Customer was deleted immediately after creation');
+          }
+          console.log('Customer verified in Stripe after creation:', validCustomerId);
+        } catch (verifyError: any) {
+          console.error('CRITICAL: Customer verification failed after creation:', verifyError);
+          throw new Error(`Customer verification failed: ${verifyError.message}`);
+        }
       } else {
         // Step 4b: For existing customers, verify the database record is still valid
         const { data: verifyRecord, error: verifyError } = await supabase
@@ -244,6 +256,18 @@ Deno.serve(async (req) => {
           throw new Error('Customer record missing from database. Data inconsistency detected.');
         } else {
           console.log('Existing customer record verified in database');
+        }
+        
+        // ADDITIONAL VALIDATION: Verify customer still exists in Stripe
+        try {
+          const verifyCustomer = await stripe.customers.retrieve(validCustomerId);
+          if (verifyCustomer.deleted) {
+            throw new Error('Customer was deleted in Stripe but still exists in database');
+          }
+          console.log('Existing customer verified in Stripe:', validCustomerId);
+        } catch (verifyError: any) {
+          console.error('CRITICAL: Existing customer verification failed in Stripe:', verifyError);
+          throw new Error(`Customer verification failed: ${verifyError.message}`);
         }
       }
 
