@@ -108,8 +108,28 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (existingCustomer?.customer_id) {
-      customerId = existingCustomer.customer_id;
-    } else {
+      // Verify the customer still exists in Stripe
+      try {
+        await stripe.customers.retrieve(existingCustomer.customer_id);
+        customerId = existingCustomer.customer_id;
+      } catch (error: any) {
+        if (error.code === 'resource_missing') {
+          // Customer was deleted in Stripe, mark as deleted in our database
+          await supabase
+            .from('stripe_customers')
+            .update({ deleted_at: new Date().toISOString() })
+            .eq('user_id', user.id)
+            .eq('customer_id', existingCustomer.customer_id);
+          
+          // Set customerId to null so we create a new one below
+          customerId = null;
+        } else {
+          throw error;
+        }
+      }
+    }
+
+    if (!customerId) {
       // Create new Stripe customer
       const customer = await stripe.customers.create({
         email: user.email,
