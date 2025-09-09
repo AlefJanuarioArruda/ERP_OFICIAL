@@ -15,7 +15,7 @@ export interface StripeProduct {
 export const stripeProducts: StripeProduct[] = [
   {
     id: 'prod_T1FAK1uqgZkta9',
-    priceId: 'price_1S5CgDRyTupwgwOO1LH6xXol',
+    priceId: 'price_1RrHpa2LIhrob5CcdfQKImKv',
     name: 'Plano Mensal',
     description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
     price: 2990, // R$ 29.90 em centavos
