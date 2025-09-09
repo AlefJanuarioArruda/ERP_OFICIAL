@@ -58,19 +58,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
       }
     };
 
-    // Listen for navigation events from Settings page
-    const handleNavigateToPricing = () => {
-      onPageChange('pricing');
-    };
-
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('navigate-to-pricing', handleNavigateToPricing);
-    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('navigate-to-pricing', handleNavigateToPricing);
     };
-  }, [onPageChange]);
+  }, []);
 
   const handleLogout = () => {
     signOut();

@@ -548,82 +548,34 @@ export const useSupabaseData = () => {
 
   // Calculate dashboard metrics
   const getDashboardMetrics = () => {
-    const now = new Date()
-    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1)
-    
-    // Current month data
-    const currentMonthSales = sales.filter(sale => {
-      const saleDate = new Date(sale.created_at)
-      return saleDate >= currentMonth
-    })
-    
-    const currentMonthFinancial = financialRecords.filter(record => {
-      const recordDate = new Date(record.created_at)
-      return recordDate >= currentMonth
-    })
-    
-    // Previous month data
-    const lastMonthSales = sales.filter(sale => {
-      const saleDate = new Date(sale.created_at)
-      return saleDate >= lastMonth && saleDate < currentMonth
-    })
-    
-    const lastMonthFinancial = financialRecords.filter(record => {
-      const recordDate = new Date(record.created_at)
-      return recordDate >= lastMonth && recordDate < currentMonth
-    })
-    
-    // Calculate current month metrics
-    const currentRevenue = currentMonthSales.reduce((sum, sale) => sum + sale.total, 0)
-    const currentIncome = currentMonthFinancial
+    const totalRevenue = sales.reduce((sum, sale) => sum + sale.total, 0)
+    const totalIncome = financialRecords
       .filter(r => r.type === 'income' && r.status === 'paid')
       .reduce((sum, r) => sum + r.amount, 0)
-    const currentExpenses = currentMonthFinancial
+    const totalExpenses = financialRecords
       .filter(r => r.type === 'expense' && r.status === 'paid')
       .reduce((sum, r) => sum + r.amount, 0)
-    const currentSalesCount = currentMonthSales.length
-    
-    // Calculate previous month metrics
-    const previousRevenue = lastMonthSales.reduce((sum, sale) => sum + sale.total, 0)
-    const previousIncome = lastMonthFinancial
-      .filter(r => r.type === 'income' && r.status === 'paid')
-      .reduce((sum, r) => sum + r.amount, 0)
-    const previousExpenses = lastMonthFinancial
-      .filter(r => r.type === 'expense' && r.status === 'paid')
-      .reduce((sum, r) => sum + r.amount, 0)
-    const previousSalesCount = lastMonthSales.length
-    
-    // Calculate changes (percentage)
-    const calculateChange = (current: number, previous: number) => {
-      if (previous === 0) return current > 0 ? 100 : 0
-      return ((current - previous) / previous) * 100
-    }
-    
-    const currentProfit = currentIncome - currentExpenses
-    const previousProfit = previousIncome - previousExpenses
 
     return {
       revenue: {
-        current: currentRevenue,
-        previous: previousRevenue,
-        change: calculateChange(currentRevenue, previousRevenue)
+        current: totalRevenue,
+        previous: totalRevenue * 0.85, // Mock previous data
+        change: 15.0
       },
       profit: {
-        current: currentProfit,
-        previous: previousProfit,
-        change: calculateChange(currentProfit, previousProfit)
+        current: totalIncome - totalExpenses,
+        previous: (totalIncome - totalExpenses) * 0.75,
+        change: 25.0
       },
       expenses: {
-        current: currentExpenses,
-        previous: previousExpenses,
-        change: calculateChange(currentExpenses, previousExpenses)
+        current: totalExpenses,
+        previous: totalExpenses * 0.9,
+        change: 10.0
       },
       sales: {
-        current: currentSalesCount,
-        previous: previousSalesCount,
-        change: calculateChange(currentSalesCount, previousSalesCount)
+        current: sales.length,
+        previous: Math.max(1, sales.length - 2),
+        change: sales.length > 1 ? ((sales.length - (sales.length - 2)) / (sales.length - 2)) * 100 : 100
       }
     }
   }
