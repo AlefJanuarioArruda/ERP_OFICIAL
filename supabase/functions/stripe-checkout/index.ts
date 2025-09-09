@@ -2,7 +2,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
 
-const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
+const stripeSecret = Deno.env.get('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')!;
 const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
 const stripe = new Stripe(stripeSecret, {
