@@ -21,8 +21,8 @@ export const stripeProducts: StripeProduct[] = [
     interval: 'month'
   },
   {
-    id: 'prod_T1WZTKyMKXUc2s',
-    priceId: 'price_1S5TWgRyTupwgwOOoqom8a57',
+    id: 'prod_T1Wg2mJX1tL4XO',
+    priceId: 'price_1S5TcrRyTupwgwOOljbeem74',
     name: 'Plano Mensal',
     description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
     mode: 'subscription',
