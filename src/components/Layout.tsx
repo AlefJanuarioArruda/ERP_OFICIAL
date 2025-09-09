@@ -45,7 +45,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const { user, signOut } = useAuth();
-  const { getCurrentPlan, isSubscriptionActive } = useStripe();
+  const { getCurrentPlan, isSubscriptionActive, subscription } = useStripe();
 
   const profileRef = useRef<HTMLDivElement>(null);
 
