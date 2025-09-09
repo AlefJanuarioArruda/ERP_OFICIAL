@@ -11,8 +11,6 @@ export interface StripeProduct {
   mode: 'subscription';
 }
 
-import { supabase } from './lib/supabase';
-
 // Configuração dos produtos Stripe para produção
 export const stripeProducts: StripeProduct[] = [
   {
@@ -100,7 +98,7 @@ export const validateStripeEnvironment = (): { isValid: boolean; environment: st
   const environment = detectStripeEnvironment();
   
   // Verificar se todos os price IDs são do mesmo ambiente
-  const expectedPrefix = 'price_';
+  const expectedPrefix = environment === 'test' ? 'price_test_' : 'price_';
   const invalidPrices = stripeProducts.filter(product => 
     !product.priceId.startsWith(expectedPrefix)
   );
@@ -134,7 +132,7 @@ export const createCheckoutSession = async (priceId: string, accessToken?: strin
       .from('stripe_customers')
       .select('customer_id')
       .eq('user_id', user.id)
-      .is('deleted_at', null)
+      .eq('deleted_at', null)
       .maybeSingle();
 
     if (existingCustomer?.customer_id) {
