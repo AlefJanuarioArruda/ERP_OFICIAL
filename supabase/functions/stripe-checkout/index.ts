@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
         await stripe.customers.retrieve(existingCustomer.customer_id);
         customerId = existingCustomer.customer_id;
       } catch (error: any) {
-        if (error.code === 'resource_missing') {
+        if (error.code === 'resource_missing' || error.message?.includes('No such customer')) {
           // Customer doesn't exist in Stripe anymore, create a new one
           const customer = await stripe.customers.create({
             email: user.email,
