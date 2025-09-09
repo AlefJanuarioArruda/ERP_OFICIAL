@@ -94,94 +94,120 @@ Deno.serve(async (req) => {
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      )
-      // Check if we have an existing customer record and update it, or create new one
-      const { data: existingCustomer } = await supabase
-
-        .select('id')
-        .eq('user_id', user.id)
-        .is('deleted_at', null)
-        .maybeSingle();
+      );
     }
+
+    // Handle Stripe customer creation/retrieval
+    let customerId: string;
+    
+    // First, check if we have an existing customer record
+    const { data: existingCustomer } = await supabase
+      .from('stripe_customers')
+      .select('customer_id')
+      .eq('user_id', user.id)
+      .is('deleted_at', null)
+      .maybeSingle();
+
+    if (existingCustomer?.customer_id) {
+      // We have a customer ID, let's verify it exists in Stripe
+      try {
+        await stripe.customers.retrieve(existingCustomer.customer_id);
+        customerId = existingCustomer.customer_id;
+      } catch (error: any) {
+        if (error.code === 'resource_missing') {
+          // Customer doesn't exist in Stripe anymore, create a new one
+          const customer = await stripe.customers.create({
+            email: user.email,
+            metadata: {
+              user_id: user.id,
+            },
+          });
+          customerId = customer.id;
+          
+          // Update the database record with the new customer ID
+          await supabase
+            .from('stripe_customers')
+            .update({
+              customer_id: customerId,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', user.id)
+            .is('deleted_at', null);
+        } else {
+          throw error;
+        }
+      }
+    } else {
+      // No existing customer record, create a new Stripe customer
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: {
+          user_id: user.id,
+        },
+      });
+      customerId = customer.id;
+      
+      // Save the new customer to our database
+      await supabase
+        .from('stripe_customers')
+        .insert({
+          user_id: user.id,
+          customer_id: customerId,
+        });
+    }
+
+    // Create subscription record if mode is subscription
+    if (mode === 'subscription') {
+      const { error: subscriptionError } = await supabase
+        .from('stripe_subscriptions')
+        .insert({
+          customer_id: customerId,
+          status: 'not_started',
+        });
+
+      if (subscriptionError) {
+        console.error('Error creating subscription record:', subscriptionError);
+      }
+    }
+
     try {
-      if (existingCustomer) {
-        // Update existing customer record with new Stripe customer ID
-        const { error: updateError } = await supabase
-          .from('stripe_customers')
-          .update({
-            customer_id: customerId,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingCustomer.id);
+      // Create checkout session
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: price_id,
+            quantity: 1,
+          },
+        ],
+        mode,
+        success_url,
+        cancel_url,
+        allow_promotion_codes: true,
+        billing_address_collection: 'required',
+        locale: 'pt-BR',
+      });
 
-        if (updateError) {
-          console.error('Error updating customer:', updateError);
-        }
-      } else {
-        // Create new customer record
-        const { error: insertError } = await supabase
-          .from('stripe_customers')
-          .insert({
-            user_id: user.id,
-            customer_id: customerId,
-          });
-
-        if (insertError) {
-          console.error('Error saving customer:', insertError);
-        }
-      }
-
-      // Create subscription record if mode is subscription
-      if (mode === 'subscription') {
-        const { error: subscriptionError } = await supabase
-          .from('stripe_subscriptions')
-          .insert({
-            customer_id: customerId,
-            status: 'not_started',
-          });
-
-        if (subscriptionError) {
-          console.error('Error creating subscription record:', subscriptionError);
-        }
-      }
-    } catch (error: any) {
-      console.error('Error creating Stripe customer:', error);
       return new Response(
-        JSON.stringify({ error: `Failed to create customer: ${error.message}` }),
+        JSON.stringify({ 
+          sessionId: session.id, 
+          url: session.url 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    } catch (error: any) {
+      console.error('Error creating checkout session:', error);
+      return new Response(
+        JSON.stringify({ error: `Failed to create checkout session: ${error.message}` }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
-
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: price_id,
-          quantity: 1,
-        },
-      ],
-      mode,
-      success_url,
-      cancel_url,
-      allow_promotion_codes: true,
-      billing_address_collection: 'required',
-      locale: 'pt-BR',
-    });
-
-    return new Response(
-      JSON.stringify({ 
-        sessionId: session.id, 
-        url: session.url 
-      }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
 
   } catch (error: any) {
     console.error('Checkout error:', error);
