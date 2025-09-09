@@ -42,7 +42,6 @@ export const useStripe = () => {
     }
 
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('stripe_user_subscriptions')
         .select('*')
@@ -55,12 +54,9 @@ export const useStripe = () => {
       }
 
       setSubscription(data);
-      setError(null);
     } catch (err) {
       console.error('Unexpected error fetching subscription:', err);
       setError('Unexpected error occurred');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -104,7 +100,6 @@ export const useStripe = () => {
         return { success: false, error: 'No valid session found' };
       }
 
-    
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
         method: 'POST',
         headers: {
@@ -137,37 +132,44 @@ export const useStripe = () => {
       return { product: null, isActive: false };
     }
 
-    
     const product = getProductByPriceId(subscription.price_id);
-    const isActive = subscription.subscription_status && ['active', 'trialing'].includes(subscription.subscription_status);
+    const isActive = ['active', 'trialing'].includes(subscription.subscription_status);
 
     return { product, isActive };
   };
 
   const isSubscriptionActive = (): boolean => {
-    if (!subscription) return false;
-    return subscription.subscription_status && ['active', 'trialing'].includes(subscription.subscription_status);
+    return getActiveSubscription().isActive;
   };
 
 
 const getCurrentPlan = (): string => {
   const { product, isActive } = getActiveSubscription();
 
-  if (!product || !isActive) {
+  if (!product) {
     return 'Nenhum plano ativo';
   }
 
-  return product.name;
+  if (isActive) {
+    return `Plano ${product.name} Ativo`;
+  }
+
+  return 'Nenhum plano ativo';
+   //if (!isActive || !product) { return 'Nenhum plano ativo'; }
+  //return product.name;
 };
 
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
       setError(null);
       
       await Promise.all([
         fetchSubscription(),
         fetchOrders()
       ]);
+      
+      setLoading(false);
     };
 
     loadData();
@@ -183,7 +185,6 @@ const getCurrentPlan = (): string => {
     isSubscriptionActive,
     getCurrentPlan,
     refetch: () => {
-      setLoading(true);
       fetchSubscription();
       fetchOrders();
     },

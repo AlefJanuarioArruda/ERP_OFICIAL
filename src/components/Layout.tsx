@@ -45,7 +45,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const { user, signOut } = useAuth();
-  const { getCurrentPlan, isSubscriptionActive, subscription } = useStripe();
+  const { getCurrentPlan, isSubscriptionActive } = useStripe();
 
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -174,10 +174,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
                 {!isSubscriptionActive() && (
                   <Crown className="w-5 h-5 text-amber-600" />
                 )}
-                {/* Debug info - remove in production */}
-                <p className="text-xs text-gray-500 mt-1">
-                  Status: {subscription?.subscription_status || 'N/A'}
-                </p>
               </div>
               {!isSubscriptionActive() && (
                 <button
@@ -188,15 +184,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
                 </button>
               )}
             </div>
-            {/* Force refresh button for debugging */}
-            <button
-              onClick={() => {
-                window.location.reload();
-              }}
-              className="w-full mt-2 px-3 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
-            >
-              Atualizar Status
-            </button>
           </div>
         </div>
       </aside>

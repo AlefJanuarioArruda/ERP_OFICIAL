@@ -177,7 +177,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    
     // create Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -226,4 +225,3 @@ function validateParameters<T extends Record<string, any>>(values: T, expected: 
 
   return undefined;
 }
-

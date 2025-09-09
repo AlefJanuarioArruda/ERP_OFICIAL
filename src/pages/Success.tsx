@@ -15,17 +15,12 @@ export const Success: React.FC = () => {
 
     // Refetch subscription data to get the latest info
     const fetchData = async () => {
-      // Wait a bit longer for webhook processing
-      await new Promise(resolve => setTimeout(resolve, 3000));
       await refetch();
-      // Try again after another delay if still no subscription
-      setTimeout(async () => {
-        await refetch();
-        setLoading(false);
-      }, 2000);
+      setLoading(false);
     };
 
-    fetchData();
+    // Add a small delay to ensure webhook has processed
+    setTimeout(fetchData, 2000);
   }, [refetch]);
 
   const { product, isActive } = getActiveSubscription();
@@ -64,7 +59,7 @@ export const Success: React.FC = () => {
           </p>
 
           {/* Subscription Details */}
-          {(isActive && product) || currentPlan !== 'Nenhum plano ativo' ? (
+          {isActive && product && (
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Detalhes da Sua Assinatura</h2>
               
@@ -72,36 +67,24 @@ export const Success: React.FC = () => {
                 <div className="flex items-center justify-center md:justify-start">
                   <CreditCard className="w-5 h-5 text-blue-600 mr-2" />
                   <span className="text-gray-700">
-                    <strong>Plano:</strong> {product?.name || currentPlan}
+                    <strong>Plano:</strong> {product.name}
                   </span>
                 </div>
                 
-                {product && (
-                  <div className="flex items-center justify-center md:justify-start">
-                    <Calendar className="w-5 h-5 text-purple-600 mr-2" />
-                    <span className="text-gray-700">
-                      <strong>Valor:</strong> {formatPrice(product.price)}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center justify-center md:justify-start">
+                  <Calendar className="w-5 h-5 text-purple-600 mr-2" />
+                  <span className="text-gray-700">
+                    <strong>Valor:</strong> {formatPrice(product.price)}
+                  </span>
+                </div>
                 
-                {product && (
-                  <div className="flex items-center justify-center md:justify-start md:col-span-2">
-                    <Calendar className="w-5 h-5 text-green-600 mr-2" />
-                    <span className="text-gray-700">
-                      <strong>Renovação:</strong> {product.interval === 'year' ? 'Anual' : 'Mensal'}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center justify-center md:justify-start md:col-span-2">
+                  <Calendar className="w-5 h-5 text-green-600 mr-2" />
+                  <span className="text-gray-700">
+                    <strong>Renovação:</strong> {product.interval === 'year' ? 'Anual' : 'Mensal'}
+                  </span>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="bg-blue-50 rounded-xl p-6 mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Processando Assinatura</h2>
-              <p className="text-gray-700">
-                Sua assinatura está sendo processada. Isso pode levar alguns minutos. 
-                Se o problema persistir, entre em contato com o suporte.
-              </p>
             </div>
           )}
 
@@ -156,10 +139,7 @@ export const Success: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => {
-                // Force a page reload to ensure fresh data
-                window.location.href = window.location.origin;
-              }}
+              onClick={() => window.location.href = '/dashboard'}
               className="flex items-center justify-center px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
             >
               <Home className="w-5 h-5 mr-2" />
@@ -168,10 +148,7 @@ export const Success: React.FC = () => {
             </button>
             
             <button
-              onClick={() => {
-                // Force a page reload to ensure fresh data
-                window.location.href = window.location.origin;
-              }}
+              onClick={() => window.location.href = '/settings'}
               className="flex items-center justify-center px-8 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
             >
               Configurar Perfil
