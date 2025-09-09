@@ -2,13 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle, ArrowRight, Home, CreditCard, Calendar } from 'lucide-react';
 import { useStripe } from '../hooks/useStripe';
 
-const formatPrice = (price: number, currency: string = 'brl'): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: currency.toUpperCase(),
-  }).format(price / 100);
-};
-
 export const Success: React.FC = () => {
   const { refetch, getCurrentPlan, getActiveSubscription } = useStripe();
   const [sessionId, setSessionId] = useState<string | null>(null);
