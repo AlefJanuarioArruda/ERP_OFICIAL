@@ -175,6 +175,23 @@ const getCurrentPlan = (): string => {
     loadData();
   }, [user]);
 
+  // Additional effect to handle URL parameters for successful payments
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
+    
+    // If we have a session_id in URL, it means user just completed payment
+    // Force refresh after a delay to allow webhook processing
+    if (sessionId && user) {
+      const timer = setTimeout(() => {
+        console.log('Refreshing subscription data after successful payment...');
+        fetchSubscription();
+        fetchOrders();
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
   return {
     subscription,
     orders,

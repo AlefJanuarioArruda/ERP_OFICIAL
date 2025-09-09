@@ -23,9 +23,21 @@ type AuthScreen = 'onboarding' | 'login' | 'signup' | 'forgot-password' | 'reset
 
 function AppContent() {
   const { user, loading, isAuthenticated } = useAuth()
-  const { getCurrentPlan } = useStripe()
+  const { getCurrentPlan, refetch } = useStripe()
   const [currentPage, setCurrentPage] = useState('dashboard')
   const [authScreen, setAuthScreen] = useState<AuthScreen>('onboarding')
+
+  // Force refresh subscription data when user becomes authenticated
+  React.useEffect(() => {
+    if (isAuthenticated && user) {
+      // Small delay to ensure user session is fully established
+      const timer = setTimeout(() => {
+        refetch()
+      }, 1000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [isAuthenticated, user, refetch])
 
   // Check URL parameters and hash for routing
   React.useEffect(() => {

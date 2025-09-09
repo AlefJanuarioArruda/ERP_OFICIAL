@@ -42,10 +42,40 @@ const FREE_TIER_LIMITS: UsageLimits = {
 };
 
 export const useUsageLimits = (): UsageStatus => {
-  const { isSubscriptionActive } = useStripe()
+  const { isSubscriptionActive, loading } = useStripe()
   const { products, customers, sales } = useSupabaseData();
 
   const usageStatus = useMemo(() => {
+    // If still loading subscription data, be conservative and allow access
+    if (loading) {
+      return {
+        isSubscriptionActive: true, // Temporarily allow access while loading
+        limits: FREE_TIER_LIMITS,
+        current: {
+          products: products.length,
+          customers: customers.length,
+          sales: sales.length
+        },
+        canAdd: {
+          products: true,
+          customers: true,
+          sales: true
+        },
+        canEdit: true,
+        canDelete: true,
+        isLimitReached: {
+          products: false,
+          customers: false,
+          sales: false
+        },
+        showLimitMessage: {
+          products: false,
+          customers: false,
+          sales: false
+        }
+      };
+    }
+
     const subscriptionActive = isSubscriptionActive()
     const limits = FREE_TIER_LIMITS;
     
@@ -124,7 +154,7 @@ export const useUsageLimits = (): UsageStatus => {
       isLimitReached,
       showLimitMessage
     };
-  }, [isSubscriptionActive, products.length, customers.length, sales.length]);
+  }, [isSubscriptionActive, loading, products.length, customers.length, sales.length]);
 
   return usageStatus;
 };
