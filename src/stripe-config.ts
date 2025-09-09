@@ -31,8 +31,8 @@ export const stripeProducts: StripeProduct[] = [
     interval: 'month'
   },
   {
-    id: 'prod_T1WOCHWCx1cIUN',
-    priceId: 'price_1S5TLo2LIhrob5Cc5AZQGT69',
+    id: 'prod_T1FBZMsJ1G5oRQ',
+    priceId: 'price_1S5CgwRyTupwgwOOuSFgfryG',
     name: 'Plano Anual',
     description: 'Acesso completo ao ERP Smart por 12 meses com máximo desconto',
     mode: 'subscription',
