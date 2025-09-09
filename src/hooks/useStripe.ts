@@ -109,8 +109,8 @@ export const useStripe = () => {
         body: JSON.stringify({
           price_id: priceId,
           mode,
-          success_url: `erpsmart.com.br/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `erpsmart.com.br/pricing`,
+          success_url: `https://erpsmart.com.br/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `https://erpsmart.com.br/pricing`,
         }),
       });
 
