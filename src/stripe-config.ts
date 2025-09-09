@@ -100,7 +100,7 @@ export const validateStripeEnvironment = (): { isValid: boolean; environment: st
   const environment = detectStripeEnvironment();
   
   // Verificar se todos os price IDs são do mesmo ambiente
-  const expectedPrefix = environment === 'test' ? 'price_test_' : 'price_';
+  const expectedPrefix = 'price_';
   const invalidPrices = stripeProducts.filter(product => 
     !product.priceId.startsWith(expectedPrefix)
   );
