@@ -132,7 +132,7 @@ export const createCheckoutSession = async (priceId: string, accessToken?: strin
       .from('stripe_customers')
       .select('customer_id')
       .eq('user_id', user.id)
-      .eq('deleted_at', null)
+      .is('deleted_at', null)
       .maybeSingle();
 
     if (existingCustomer?.customer_id) {
