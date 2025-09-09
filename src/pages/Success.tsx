@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle, ArrowRight, Home, CreditCard, Calendar } from 'lucide-react';
+import { CheckCircle, ArrowRight, Home, CreditCard, Calendar, RefreshCw, Clock } from 'lucide-react';
 import { useStripe } from '../hooks/useStripe';
+import { formatPrice } from '../stripe-config';
 
 export const Success: React.FC = () => {
   const { refetch, getCurrentPlan, getActiveSubscription } = useStripe();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const [isPolling, setIsPolling] = useState(false);
+  const MAX_POLLING_ATTEMPTS = 15; // 30 seconds total (15 attempts x 2 seconds)
 
   useEffect(() => {
     // Get session ID from URL
@@ -13,26 +17,128 @@ export const Success: React.FC = () => {
     const sessionIdParam = urlParams.get('session_id');
     setSessionId(sessionIdParam);
 
-    // Refetch subscription data to get the latest info
-    const fetchData = async () => {
-      await refetch();
+    // Start polling for subscription status
+    if (sessionIdParam) {
+      startPollingSubscriptionStatus();
+    } else {
       setLoading(false);
-    };
+    }
+  }, []);
 
-    // Add a small delay to ensure webhook has processed
-    setTimeout(fetchData, 2000);
-  }, [refetch]);
+  const startPollingSubscriptionStatus = async () => {
+    setIsPolling(true);
+    setPollingAttempts(0);
+    
+    // Initial delay to allow webhook processing
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    pollSubscriptionStatus();
+  };
+
+  const pollSubscriptionStatus = async () => {
+    try {
+      console.log(`Polling attempt ${pollingAttempts + 1}/${MAX_POLLING_ATTEMPTS}`);
+      
+      // Refetch subscription data
+      await refetch();
+      
+      // Check if subscription is now active
+      const { isActive } = getActiveSubscription();
+      
+      if (isActive) {
+        console.log('Subscription is now active!');
+        setLoading(false);
+        setIsPolling(false);
+        return;
+      }
+      
+      // If not active and we haven't reached max attempts, try again
+      if (pollingAttempts < MAX_POLLING_ATTEMPTS - 1) {
+        setPollingAttempts(prev => prev + 1);
+        setTimeout(() => {
+          pollSubscriptionStatus();
+        }, 2000); // Wait 2 seconds before next attempt
+      } else {
+        // Max attempts reached, stop polling but don't show error
+        console.log('Max polling attempts reached, stopping polling');
+        setLoading(false);
+        setIsPolling(false);
+      }
+    } catch (error) {
+      console.error('Error during polling:', error);
+      // Continue polling even if there's an error
+      if (pollingAttempts < MAX_POLLING_ATTEMPTS - 1) {
+        setPollingAttempts(prev => prev + 1);
+        setTimeout(() => {
+          pollSubscriptionStatus();
+        }, 2000);
+      } else {
+        setLoading(false);
+        setIsPolling(false);
+      }
+    }
+  };
+
+  const forceRefresh = async () => {
+    setLoading(true);
+    setPollingAttempts(0);
+    await refetch();
+    
+    const { isActive } = getActiveSubscription();
+    if (!isActive) {
+      startPollingSubscriptionStatus();
+    } else {
+      setLoading(false);
+    }
+  };
 
   const { product, isActive } = getActiveSubscription();
   const currentPlan = getCurrentPlan();
 
-  if (loading) {
+  if (loading || isPolling) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Processando sua assinatura...</h2>
-          <p className="text-gray-600">Aguarde enquanto confirmamos seu pagamento</p>
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+          
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            {pollingAttempts === 0 ? 'Processando sua assinatura...' : 'Confirmando status da assinatura...'}
+          </h2>
+          
+          <div className="space-y-3 mb-6">
+            <p className="text-gray-600">
+              {pollingAttempts === 0 
+                ? 'Aguarde enquanto confirmamos seu pagamento e ativamos sua conta'
+                : `Verificando status... (Tentativa ${pollingAttempts + 1}/${MAX_POLLING_ATTEMPTS})`
+              }
+            </p>
+            
+            {isPolling && (
+              <div className="flex items-center justify-center space-x-2 text-sm text-blue-600">
+                <Clock className="w-4 h-4 animate-pulse" />
+                <span>Sincronizando com o sistema de pagamentos...</span>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <h3 className="font-semibold text-blue-900 mb-2">O que está acontecendo?</h3>
+            <div className="text-sm text-blue-800 space-y-1 text-left">
+              <p>✅ Pagamento processado com sucesso</p>
+              <p>🔄 Ativando sua assinatura no sistema</p>
+              <p>⏱️ Isso pode levar até 30 segundos</p>
+            </div>
+          </div>
+
+          {pollingAttempts > 5 && (
+            <button
+              onClick={forceRefresh}
+              className="mt-4 flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Verificar Novamente
+            </button>
+          )}
         </div>
       </div>
     );
@@ -57,6 +163,36 @@ export const Success: React.FC = () => {
             Bem-vindo ao ERP Smart! Sua assinatura foi ativada e você já pode começar a usar 
             todas as funcionalidades da plataforma.
           </p>
+
+          {/* Subscription Status */}
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 mb-8 border border-green-200">
+            <h2 className="text-xl font-semibold text-green-900 mb-4">Status da Assinatura</h2>
+            
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-green-900">
+                  {isActive ? 'Assinatura Ativa' : 'Processando Ativação...'}
+                </p>
+                <p className="text-sm text-green-700">
+                  {isActive ? currentPlan : 'Aguardando confirmação do sistema'}
+                </p>
+              </div>
+            </div>
+
+            {!isActive && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                  <span className="text-amber-800 text-sm">
+                    Ativando assinatura... Isso pode levar alguns minutos.
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Subscription Details */}
           {isActive && product && (
@@ -154,6 +290,22 @@ export const Success: React.FC = () => {
               Configurar Perfil
             </button>
           </div>
+
+          {/* Manual Refresh Option */}
+          {!isActive && (
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-600 mb-4">
+                Assinatura ainda não ativada? Isso pode acontecer em casos raros.
+              </p>
+              <button
+                onClick={forceRefresh}
+                className="flex items-center justify-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Verificar Status Novamente
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Support Info */}
@@ -164,6 +316,11 @@ export const Success: React.FC = () => {
               suporte@erpsmart.com
             </a>
           </p>
+          {sessionId && (
+            <p className="text-sm text-gray-500 mt-2">
+              Mencione o ID da sessão: {sessionId}
+            </p>
+          )}
         </div>
       </div>
     </div>
