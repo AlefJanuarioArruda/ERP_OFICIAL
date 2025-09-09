@@ -202,4 +202,5 @@ export const createCheckoutSession = async (priceId: string, accessToken?: strin
     console.error('Erro no checkout:', error);
     throw error;
   }
+import { supabase } from './lib/supabase';
 };
