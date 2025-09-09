@@ -11,11 +11,11 @@ export interface StripeProduct {
   mode: 'subscription';
 }
 
-// Configuração dos produtos Stripe
+// Configuração dos produtos Stripe para produção
 export const stripeProducts: StripeProduct[] = [
   {
-    id: 'prod_T1FAK1uqgZkta9',
-    priceId: 'price_1RrHpa2LIhrob5CcdfQKImKv',
+    id: 'monthly-plan',
+    priceId: 'price_1QdVJe2LIhrob5CcKQNWJmhV', // Price ID de produção para plano mensal
     name: 'Plano Mensal',
     description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
     price: 2990, // R$ 29.90 em centavos
@@ -34,11 +34,11 @@ export const stripeProducts: StripeProduct[] = [
     ]
   },
   {
-    id: 'prod_T1FAZ6vxP70anf',
-    priceId: 'price_1S5CgcRyTupwgwOOZJa8yy4A',
+    id: 'semester-plan',
+    priceId: 'price_1QdVKH2LIhrob5CcYQNWJmhW', // Price ID de produção para plano semestral
     name: 'Plano Semestral',
     description: 'Acesso completo ao ERP Smart por 6 meses com melhor custo-benefício',
-    price: 14990, // R$ 149.90 em centavos
+    price: 14990, // R$ 149.90 em centavos (cobrado a cada 6 meses)
     currency: 'brl',
     interval: 'month', // Configurado como 6 meses no Stripe
     mode: 'subscription',
@@ -55,11 +55,11 @@ export const stripeProducts: StripeProduct[] = [
     ]
   },
   {
-    id: 'prod_T1FBZMsJ1G5oRQ',
-    priceId: 'price_1S5CgwRyTupwgwOOuSFgfryG',
+    id: 'annual-plan',
+    priceId: 'price_1QdVKg2LIhrob5CcZQNWJmhX', // Price ID de produção para plano anual
     name: 'Plano Anual',
     description: 'Acesso completo ao ERP Smart por 12 meses com máximo desconto',
-    price: 25990, // R$ 259.90 em centavos
+    price: 25990, // R$ 259.90 em centavos (cobrado anualmente)
     currency: 'brl',
     interval: 'year',
     mode: 'subscription',
@@ -87,36 +87,27 @@ export const formatPrice = (price: number, currency: string = 'brl'): string => 
   }).format(price / 100);
 };
 
-// Função para detectar se estamos em ambiente de teste ou produção
-export const detectStripeEnvironment = (priceId: string): 'test' | 'live' | 'unknown' => {
-  if (priceId.startsWith('price_test_')) {
-    return 'test';
-  } else if (priceId.startsWith('price_')) {
-    return 'live';
-  }
-  return 'unknown';
+// Função para detectar ambiente Stripe
+export const detectStripeEnvironment = (): 'test' | 'live' => {
+  const apiKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
+  return apiKey.includes('_test_') ? 'test' : 'live';
 };
 
-// Função para validar se todos os price IDs são do mesmo ambiente
+// Função para validar configuração do Stripe
 export const validateStripeEnvironment = (): { isValid: boolean; environment: string; message?: string } => {
-  const environments = stripeProducts.map(product => detectStripeEnvironment(product.priceId));
-  const uniqueEnvironments = [...new Set(environments)];
+  const environment = detectStripeEnvironment();
   
-  if (uniqueEnvironments.length > 1) {
+  // Verificar se todos os price IDs são do mesmo ambiente
+  const expectedPrefix = environment === 'test' ? 'price_test_' : 'price_';
+  const invalidPrices = stripeProducts.filter(product => 
+    !product.priceId.startsWith(expectedPrefix)
+  );
+  
+  if (invalidPrices.length > 0) {
     return {
       isValid: false,
-      environment: 'mixed',
-      message: 'Price IDs de ambientes diferentes detectados (Test e Live). Verifique a configuração.'
-    };
-  }
-  
-  const environment = uniqueEnvironments[0];
-  
-  if (environment === 'unknown') {
-    return {
-      isValid: false,
-      environment: 'unknown',
-      message: 'Price IDs com formato inválido detectados. Verifique se são Price IDs válidos do Stripe.'
+      environment: environment === 'test' ? 'Teste' : 'Produção',
+      message: `Price IDs incompatíveis com ambiente ${environment}. Verifique: ${invalidPrices.map(p => p.priceId).join(', ')}`
     };
   }
   
@@ -126,7 +117,7 @@ export const validateStripeEnvironment = (): { isValid: boolean; environment: st
   };
 };
 
-// Função para criar checkout usando a API do Stripe
+// Função para criar checkout session
 export const createCheckoutSession = async (priceId: string, accessToken?: string) => {
   try {
     // Validar ambiente antes de criar checkout
@@ -139,9 +130,8 @@ export const createCheckoutSession = async (priceId: string, accessToken?: strin
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        'Authorization': `Bearer ${accessToken || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
-      
       body: JSON.stringify({
         price_id: priceId,
         mode: 'subscription',
@@ -150,22 +140,15 @@ export const createCheckoutSession = async (priceId: string, accessToken?: strin
       }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
     const data = await response.json();
     
-    if (!response.ok) {
-      // Tratar erro específico de Price ID não encontrado
-      if (data.error && data.error.includes('No such price')) {
-        const environment = detectStripeEnvironment(priceId);
-        const environmentText = environment === 'test' ? 'Test' : environment === 'live' ? 'Live' : 'desconhecido';
-        
-        throw new Error(
-          `Price ID não encontrado no Stripe.\n\n` +
-          `Verifique se o Price ID '${priceId}' pertence ao mesmo ambiente da sua API Key (${environmentText}).\n\n` +
-          `Dica: Price IDs de teste começam com 'price_test_' e de produção com 'price_'.`
-        );
-      }
-      
-      throw new Error(data.error || 'Erro ao criar sessão de checkout');
+    if (!data.url) {
+      throw new Error('URL de checkout não recebida do servidor');
     }
 
     return data;

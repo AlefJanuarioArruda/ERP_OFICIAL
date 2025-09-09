@@ -5,10 +5,11 @@ import { useStripe } from '../hooks/useStripe';
 import { supabase } from '../lib/supabase';
 
 export const Pricing: React.FC = () => {
-  const { getCurrentPlan, isSubscriptionActive } = useStripe();
+  const { getCurrentPlan, isSubscriptionActive, getSubscriptionStatus } = useStripe();
   const [redirectingTo, setRedirectingTo] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const currentPlan = getCurrentPlan();
+  const subscriptionStatus = getSubscriptionStatus();
 
   // Validar configuração do Stripe na inicialização
   const stripeValidation = validateStripeEnvironment();
@@ -26,7 +27,8 @@ export const Pricing: React.FC = () => {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
-        throw new Error(`Erro de autenticação: ${sessionError.message}`);
+        console.error('Session error:', sessionError);
+        throw new Error('Erro de autenticação. Faça login novamente.');
       }
       
       if (!session?.access_token) {
@@ -39,10 +41,13 @@ export const Pricing: React.FC = () => {
         throw new Error('Produto não encontrado');
       }
       
+      console.log('Creating checkout for product:', product.name, 'Price ID:', product.priceId);
+      
       // Criar sessão de checkout
       const { url } = await createCheckoutSession(product.priceId, session.access_token);
       
       if (url) {
+        console.log('Redirecting to checkout URL:', url);
         // Redirecionar para o Stripe Checkout
         window.location.href = url;
       } else {
@@ -152,6 +157,18 @@ export const Pricing: React.FC = () => {
           <div className="mt-4 inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full">
             <Check className="w-4 h-4 mr-2" />
             Plano atual: {currentPlan}
+            {subscriptionStatus.expiresAt && (
+              <span className="ml-2 text-sm">
+                • Renova em {subscriptionStatus.expiresAt.toLocaleDateString('pt-BR')}
+              </span>
+            )}
+          </div>
+        )}
+        
+        {subscriptionStatus.needsPayment && (
+          <div className="mt-4 inline-flex items-center px-4 py-2 bg-red-100 text-red-800 rounded-full">
+            <AlertTriangle className="w-4 h-4 mr-2" />
+            Pagamento pendente - Renove sua assinatura
           </div>
         )}
       </div>
@@ -241,7 +258,7 @@ export const Pricing: React.FC = () => {
                 'Configuração Pendente'
               ) : (
                 <>
-                  Assinar Agora
+                  {subscriptionStatus.isActive ? 'Alterar Plano' : 'Assinar Agora'}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </>
               )}

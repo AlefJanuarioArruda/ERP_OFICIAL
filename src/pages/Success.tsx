@@ -1,16 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, ArrowRight, Home, CreditCard, Calendar } from 'lucide-react';
 import { useStripe } from '../hooks/useStripe';
-
-const formatPrice = (price: number, currency: string = 'brl'): string => {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: currency.toUpperCase(),
-  }).format(price / 100);
-};
+import { formatPrice } from '../stripe-config';
 
 export const Success: React.FC = () => {
-  const { refetch, getCurrentPlan, getActiveSubscription } = useStripe();
+  const { refetch, getCurrentPlan, getActiveSubscription, refreshSubscription } = useStripe();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,14 +14,15 @@ export const Success: React.FC = () => {
     const sessionIdParam = urlParams.get('session_id');
     setSessionId(sessionIdParam);
 
-    // Refetch subscription data to get the latest info
+    // Refresh subscription data to get the latest info after payment
     const fetchData = async () => {
-      await refetch();
+      // Wait a bit for webhook processing
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      await refreshSubscription();
       setLoading(false);
     };
 
-    // Add a small delay to ensure webhook has processed
-    setTimeout(fetchData, 2000);
+    fetchData();
   }, [refetch]);
 
   const { product, isActive } = getActiveSubscription();
@@ -146,7 +141,11 @@ export const Success: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => {
+                // Clear URL parameters and navigate to dashboard
+                window.history.replaceState({}, document.title, window.location.pathname);
+                window.location.reload();
+              }}
               className="flex items-center justify-center px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
             >
               <Home className="w-5 h-5 mr-2" />
@@ -155,7 +154,11 @@ export const Success: React.FC = () => {
             </button>
             
             <button
-              onClick={() => window.location.href = '/settings'}
+              onClick={() => {
+                // Clear URL parameters and navigate to settings
+                window.history.replaceState({}, document.title, window.location.pathname + '#settings');
+                window.location.reload();
+              }}
               className="flex items-center justify-center px-8 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
             >
               Configurar Perfil
