@@ -129,13 +129,11 @@ export const createCheckoutSession = async (priceId: string, accessToken?: strin
       throw new Error(validation.message || 'Erro de configuração do Stripe');
     }
 
-    const stripe = require('stripe')(Deno.env.get('STRIPE_SECRET_KEY'));
-
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader,
+        'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
         price_id: priceId,
