@@ -3,7 +3,6 @@ import { Check, Zap, Crown, Star, ArrowRight, AlertTriangle, CheckCircle, X } fr
 import { stripeProducts, formatPrice, createCheckoutSession, validateStripeEnvironment } from '../stripe-config';
 import { useStripe } from '../hooks/useStripe';
 import { supabase } from '../lib/supabase';
-import { supabase } from '../lib/supabase';
 
 export const Pricing: React.FC = () => {
   const { getCurrentPlan, isSubscriptionActive, getSubscriptionStatus } = useStripe();

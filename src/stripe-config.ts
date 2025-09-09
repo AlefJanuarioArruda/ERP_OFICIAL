@@ -11,6 +11,8 @@ export interface StripeProduct {
   mode: 'subscription';
 }
 
+import { supabase } from './lib/supabase';
+
 // Configuração dos produtos Stripe para produção
 export const stripeProducts: StripeProduct[] = [
   {
