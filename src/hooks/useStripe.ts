@@ -42,6 +42,8 @@ export const useStripe = () => {
     }
 
     try {
+      setError(null);
+      
       const { data, error } = await supabase
         .from('stripe_user_subscriptions')
         .select('*')
@@ -49,14 +51,16 @@ export const useStripe = () => {
 
       if (error) {
         console.error('Error fetching subscription:', error);
-        setError('Failed to fetch subscription data');
+        setError('Falha ao carregar dados da assinatura');
         return;
       }
 
       setSubscription(data);
-    } catch (err) {
+      console.log('Subscription data loaded:', data);
+
+    } catch (err: any) {
       console.error('Unexpected error fetching subscription:', err);
-      setError('Unexpected error occurred');
+      setError('Erro inesperado ao carregar assinatura');
     }
   };
 
@@ -74,56 +78,15 @@ export const useStripe = () => {
 
       if (error) {
         console.error('Error fetching orders:', error);
-        setError('Failed to fetch order data');
+        setError('Falha ao carregar histórico de pedidos');
         return;
       }
 
       setOrders(data || []);
-    } catch (err) {
+
+    } catch (err: any) {
       console.error('Unexpected error fetching orders:', err);
-      setError('Unexpected error occurred');
-    }
-  };
-
-  const createCheckoutSession = async (
-    priceId: string,
-    mode: 'payment' | 'subscription' = 'subscription'
-  ): Promise<{ success: boolean; url?: string; error?: string }> => {
-    if (!user) {
-      return { success: false, error: 'User not authenticated' };
-    }
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session?.access_token) {
-        return { success: false, error: 'No valid session found' };
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          price_id: priceId,
-          mode,
-          success_url: `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${window.location.origin}/pricing`,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        return { success: false, error: result.error || 'Failed to create checkout session' };
-      }
-
-      return { success: true, url: result.url };
-    } catch (err) {
-      console.error('Error creating checkout session:', err);
-      return { success: false, error: 'Failed to create checkout session' };
+      setError('Erro inesperado ao carregar pedidos');
     }
   };
 
@@ -139,17 +102,74 @@ export const useStripe = () => {
   };
 
   const isSubscriptionActive = (): boolean => {
-    return getActiveSubscription().isActive;
+    const { isActive } = getActiveSubscription();
+    return isActive;
   };
 
   const getCurrentPlan = (): string => {
     const { product, isActive } = getActiveSubscription();
-    
-    if (!isActive || !product) {
+
+    if (!product) {
       return 'Nenhum plano ativo';
     }
 
-    return product.name;
+    if (isActive) {
+      return product.name;
+    }
+
+    // Check if subscription exists but is not active
+    if (subscription?.subscription_status) {
+      switch (subscription.subscription_status) {
+        case 'past_due':
+          return 'Plano em atraso';
+        case 'canceled':
+          return 'Plano cancelado';
+        case 'incomplete':
+          return 'Pagamento pendente';
+        case 'unpaid':
+          return 'Pagamento em atraso';
+        default:
+          return 'Plano inativo';
+      }
+    }
+
+    return 'Nenhum plano ativo';
+  };
+
+  const getSubscriptionStatus = (): {
+    status: string;
+    isActive: boolean;
+    needsPayment: boolean;
+    expiresAt: Date | null;
+  } => {
+    if (!subscription) {
+      return {
+        status: 'not_started',
+        isActive: false,
+        needsPayment: false,
+        expiresAt: null,
+      };
+    }
+
+    const isActive = ['active', 'trialing'].includes(subscription.subscription_status);
+    const needsPayment = ['past_due', 'incomplete', 'unpaid'].includes(subscription.subscription_status);
+    const expiresAt = subscription.current_period_end 
+      ? new Date(subscription.current_period_end * 1000) 
+      : null;
+
+    return {
+      status: subscription.subscription_status,
+      isActive,
+      needsPayment,
+      expiresAt,
+    };
+  };
+
+  // Force refresh subscription data
+  const refreshSubscription = async () => {
+    setLoading(true);
+    await fetchSubscription();
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -173,10 +193,11 @@ export const useStripe = () => {
     orders,
     loading,
     error,
-    createCheckoutSession,
     getActiveSubscription,
     isSubscriptionActive,
     getCurrentPlan,
+    getSubscriptionStatus,
+    refreshSubscription,
     refetch: () => {
       fetchSubscription();
       fetchOrders();
