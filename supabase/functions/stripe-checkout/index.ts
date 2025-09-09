@@ -124,44 +124,113 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Handle Stripe customer - always create fresh customer for production reliability
-    let customerId: string;
+    // ROBUST CUSTOMER HANDLING LOGIC
+    let validCustomerId: string;
     
     try {
-      // Always create a new customer for each checkout to avoid stale customer issues
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          user_id: user.id,
-          created_from: 'checkout_session',
-          timestamp: new Date().toISOString(),
-        },
-      });
+      console.log('Starting customer validation for user:', user.id);
       
-      customerId = customer.id;
-      console.log('New Stripe customer created:', customerId);
-
-      // Update or create customer record in database
-      const { error: customerError } = await supabase
+      // Step 1: Check if user has a customer record in our database
+      const { data: existingCustomerRecord, error: dbError } = await supabase
         .from('stripe_customers')
-        .upsert({
-          user_id: user.id,
-          customer_id: customerId,
-          updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'user_id'
-        });
+        .select('customer_id')
+        .eq('user_id', user.id)
+        .eq('deleted_at', null)
+        .maybeSingle();
 
-      if (customerError) {
-        console.error('Database customer update failed:', customerError);
-        // Continue anyway - the Stripe customer exists and checkout can proceed
+      if (dbError) {
+        console.error('Database query error:', dbError);
+        throw new Error(`Database error: ${dbError.message}`);
       }
 
+      let shouldCreateNewCustomer = false;
+      let existingStripeCustomer: Stripe.Customer | null = null;
+
+      if (existingCustomerRecord?.customer_id) {
+        console.log('Found existing customer record:', existingCustomerRecord.customer_id);
+        
+        // Step 2: Validate that the customer still exists in Stripe
+        try {
+          const stripeCustomer = await stripe.customers.retrieve(existingCustomerRecord.customer_id);
+          
+          // Check if customer is deleted or invalid
+          if (stripeCustomer.deleted) {
+            console.log('Customer is deleted in Stripe, will create new one');
+            shouldCreateNewCustomer = true;
+          } else {
+            console.log('Customer is valid in Stripe');
+            existingStripeCustomer = stripeCustomer as Stripe.Customer;
+            validCustomerId = existingCustomerRecord.customer_id;
+          }
+          
+        } catch (stripeError: any) {
+          console.log('Customer validation failed in Stripe:', stripeError.message);
+          
+          // If customer doesn't exist in Stripe (any error), create a new one
+          if (stripeError.code === 'resource_missing' || 
+              stripeError.message?.includes('No such customer') ||
+              stripeError.type === 'invalid_request_error') {
+            console.log('Customer not found in Stripe, will create new one');
+            shouldCreateNewCustomer = true;
+          } else {
+            // For other Stripe errors, throw to handle properly
+            throw stripeError;
+          }
+        }
+      } else {
+        console.log('No customer record found in database, will create new one');
+        shouldCreateNewCustomer = true;
+      }
+
+      // Step 3: Create new customer if needed
+      if (shouldCreateNewCustomer) {
+        console.log('Creating new Stripe customer for user:', user.id);
+        
+        const newCustomer = await stripe.customers.create({
+          email: user.email,
+          name: user.user_metadata?.full_name || undefined,
+          metadata: {
+            user_id: user.id,
+            created_from: 'checkout_session',
+            timestamp: new Date().toISOString(),
+          },
+        });
+        
+        validCustomerId = newCustomer.id;
+        console.log('New Stripe customer created:', validCustomerId);
+
+        // Step 4: Update database with new customer ID
+        const { error: upsertError } = await supabase
+          .from('stripe_customers')
+          .upsert({
+            user_id: user.id,
+            customer_id: validCustomerId,
+            updated_at: new Date().toISOString(),
+            deleted_at: null,
+          }, {
+            onConflict: 'user_id'
+          });
+
+        if (upsertError) {
+          console.error('Failed to update customer record in database:', upsertError);
+          // Continue anyway - the Stripe customer exists and checkout can proceed
+        } else {
+          console.log('Customer record updated in database');
+        }
+      }
+
+      // Step 5: Final validation - ensure we have a valid customer ID
+      if (!validCustomerId) {
+        throw new Error('Failed to obtain valid customer ID');
+      }
+
+      console.log('Using customer ID for checkout:', validCustomerId);
+
     } catch (error: any) {
-      console.error('Customer creation failed:', error);
+      console.error('Customer handling failed:', error);
       return new Response(
         JSON.stringify({ 
-          error: `Failed to create customer: ${error.message}` 
+          error: `Customer handling failed: ${error.message}` 
         }),
         { 
           status: 500, 
@@ -176,15 +245,16 @@ Deno.serve(async (req) => {
         const { error: subscriptionError } = await supabase
           .from('stripe_subscriptions')
           .upsert({
-            customer_id: customerId,
+            customer_id: validCustomerId,
             status: 'not_started',
             updated_at: new Date().toISOString(),
+            deleted_at: null,
           }, {
             onConflict: 'customer_id'
           });
 
         if (subscriptionError) {
-          console.error('Subscription record creation failed:', subscriptionError);
+          console.error('Subscription record initialization failed:', subscriptionError);
           // Continue anyway - this is not critical for checkout
         }
       } catch (error) {
@@ -193,10 +263,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Create checkout session
+    // Create checkout session with validated customer
     try {
       const sessionParams: Stripe.Checkout.SessionCreateParams = {
-        customer: customerId,
+        customer: validCustomerId,
         payment_method_types: ['card'],
         line_items: [
           {
@@ -213,6 +283,7 @@ Deno.serve(async (req) => {
         metadata: {
           user_id: user.id,
           price_id: price_id,
+          customer_validation: 'robust_v2',
         },
       };
 
@@ -227,13 +298,13 @@ Deno.serve(async (req) => {
 
       const session = await stripe.checkout.sessions.create(sessionParams);
       
-      console.log('Checkout session created successfully:', session.id);
+      console.log('Checkout session created successfully:', session.id, 'with customer:', validCustomerId);
 
       return new Response(
         JSON.stringify({ 
           sessionId: session.id, 
           url: session.url,
-          customerId: customerId,
+          customerId: validCustomerId,
         }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
