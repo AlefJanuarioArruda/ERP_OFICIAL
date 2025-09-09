@@ -94,6 +94,7 @@ Deno.serve(async (req) => {
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
+      )
       // Check if we have an existing customer record and update it, or create new one
       const { data: existingCustomer } = await supabase
 
@@ -101,6 +102,7 @@ Deno.serve(async (req) => {
         .eq('user_id', user.id)
         .is('deleted_at', null)
         .maybeSingle();
+    }
     try {
       if (existingCustomer) {
         // Update existing customer record with new Stripe customer ID
