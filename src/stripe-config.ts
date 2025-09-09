@@ -8,18 +8,20 @@ export interface StripeProduct {
   interval: 'month' | 'year';
   features: string[];
   popular?: boolean;
+  mode: 'subscription';
 }
 
 // Configuração dos produtos Stripe
 export const stripeProducts: StripeProduct[] = [
   {
-    id: 'plano-mensal',
-    priceId: 'price_mensal', // Será usado como identificador interno
+    id: 'prod_T1FAK1uqgZkta9',
+    priceId: 'price_1S5CgDRyTupwgwOO1LH6xXol',
     name: 'Plano Mensal',
     description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
     price: 2990, // R$ 29.90 em centavos
     currency: 'brl',
     interval: 'month',
+    mode: 'subscription',
     features: [
       'Produtos ilimitados',
       'Clientes ilimitados', 
@@ -30,13 +32,14 @@ export const stripeProducts: StripeProduct[] = [
     ]
   },
   {
-    id: 'plano-semestral',
-    priceId: 'price_semestral', // Será usado como identificador interno
+    id: 'prod_T1FAZ6vxP70anf',
+    priceId: 'price_1S5CgcRyTupwgwOOZJa8yy4A',
     name: 'Plano Semestral',
     description: 'Acesso completo ao ERP Smart por 6 meses com melhor custo-benefício',
     price: 14990, // R$ 149.90 em centavos
     currency: 'brl',
     interval: 'month', // Configurado como 6 meses no Stripe
+    mode: 'subscription',
     popular: true,
     features: [
       'Tudo do plano mensal',
@@ -48,13 +51,14 @@ export const stripeProducts: StripeProduct[] = [
     ]
   },
   {
-    id: 'plano-anual',
-    priceId: 'price_anual', // Será usado como identificador interno
+    id: 'prod_T1FBZMsJ1G5oRQ',
+    priceId: 'price_1S5CgwRyTupwgwOOuSFgfryG',
     name: 'Plano Anual',
     description: 'Acesso completo ao ERP Smart por 12 meses com máximo desconto',
     price: 25990, // R$ 259.90 em centavos
     currency: 'brl',
     interval: 'year',
+    mode: 'subscription',
     features: [
       'Tudo dos planos anteriores',
       'Consultoria estratégica',
@@ -77,21 +81,7 @@ export const formatPrice = (price: number, currency: string = 'brl'): string => 
   }).format(price / 100);
 };
 
-// URLs de checkout direto do Stripe (você precisa configurar no seu Dashboard)
-export const getStripeCheckoutUrl = (productId: string): string => {
-  // IMPORTANTE: Substitua estas URLs pelas URLs reais do seu Stripe Dashboard
-  // Vá em: Stripe Dashboard > Payment Links > Criar novo link de pagamento
-  
-  const checkoutUrls: Record<string, string> = {
-    'plano-mensal': 'https://buy.stripe.com/test_SUBSTITUA_PELA_URL_MENSAL',
-    'plano-semestral': 'https://buy.stripe.com/test_SUBSTITUA_PELA_URL_SEMESTRAL', 
-    'plano-anual': 'https://buy.stripe.com/test_SUBSTITUA_PELA_URL_ANUAL'
-  };
-  
-  return checkoutUrls[productId] || '#';
-};
-
-// Função para criar checkout usando a API do Stripe (fallback)
+// Função para criar checkout usando a API do Stripe
 export const createCheckoutSession = async (priceId: string) => {
   try {
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
@@ -102,6 +92,7 @@ export const createCheckoutSession = async (priceId: string) => {
       },
       body: JSON.stringify({
         price_id: priceId,
+        mode: 'subscription',
         success_url: `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${window.location.origin}/?page=pricing`,
       }),
