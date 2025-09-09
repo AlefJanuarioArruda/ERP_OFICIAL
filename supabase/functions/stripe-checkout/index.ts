@@ -81,24 +81,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate that the price exists in our configuration
-    const validPriceIds = [
-      'price_1RtxsARyTupwgwOO31bFKE6N', // Plano Mensal
-      'price_1RtxscRyTupwgwOOkhNcILCM', // Plano Semestral
-      'price_1RtxrdRyTupwgwOO6wxulMvw'  // Plano Anual
-    ];
-    
-    if (!validPriceIds.includes(price_id)) {
-      console.error(`Invalid price ID: ${price_id}. Valid IDs: ${validPriceIds.join(', ')}`);
-      return new Response(
-        JSON.stringify({ error: `Invalid price ID: ${price_id}. Please contact support.` }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
     // Verify the price exists in Stripe
     let price;
     try {
