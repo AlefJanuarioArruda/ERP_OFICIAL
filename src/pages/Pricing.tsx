@@ -1,13 +1,22 @@
 import React, { useState } from 'react';
-import { Check, Zap, Crown, Star, ArrowRight, ExternalLink, AlertTriangle } from 'lucide-react';
-import { stripeProducts, formatPrice, createCheckoutSession } from '../stripe-config';
+import { Check, Zap, Crown, Star, ArrowRight, AlertTriangle, CheckCircle, X } from 'lucide-react';
+import { stripeProducts, formatPrice, createCheckoutSession, validateStripeEnvironment } from '../stripe-config';
 import { useStripe } from '../hooks/useStripe';
 import { supabase } from '../lib/supabase';
 
 export const Pricing: React.FC = () => {
   const { getCurrentPlan, isSubscriptionActive } = useStripe();
   const [redirectingTo, setRedirectingTo] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const currentPlan = getCurrentPlan();
+
+  // Validar configuração do Stripe na inicialização
+  const stripeValidation = validateStripeEnvironment();
+
+  const showNotification = (type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 5000);
+  };
 
   const handleSubscribe = async (productId: string, productName: string) => {
     setRedirectingTo(productName);
@@ -42,7 +51,8 @@ export const Pricing: React.FC = () => {
       
     } catch (error) {
       console.error('Erro ao redirecionar para checkout:', error);
-      alert(`Erro ao processar pagamento: ${error instanceof Error ? error.message : 'Erro inesperado'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Erro inesperado';
+      showNotification('error', errorMessage);
       setRedirectingTo(null);
     }
   };
@@ -103,6 +113,32 @@ export const Pricing: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 max-w-md ${
+          notification.type === 'success' 
+            ? 'bg-green-100 border border-green-200 text-green-800' 
+            : 'bg-red-100 border border-red-200 text-red-800'
+        }`}>
+          <div className="flex items-start">
+            {notification.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 mt-0.5 mr-3 flex-shrink-0" />
+            ) : (
+              <AlertTriangle className="w-5 h-5 mt-0.5 mr-3 flex-shrink-0" />
+            )}
+            <div className="flex-1">
+              <p className="text-sm font-medium whitespace-pre-line">{notification.message}</p>
+            </div>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -120,18 +156,35 @@ export const Pricing: React.FC = () => {
         )}
       </div>
 
-      {/* Configuration Notice */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-4xl mx-auto">
-        <div className="flex items-start">
-          <Check className="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
-          <div>
-            <h3 className="font-semibold text-green-900 mb-1">Pagamentos Configurados</h3>
-            <p className="text-sm text-green-800">
-              Sistema de pagamentos ativo e funcionando. Processamento seguro via Stripe.
-            </p>
+      {/* Stripe Environment Validation */}
+      {!stripeValidation.isValid && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-4xl mx-auto">
+          <div className="flex items-start">
+            <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-red-900 mb-1">Erro de Configuração do Stripe</h3>
+              <p className="text-sm text-red-800">{stripeValidation.message}</p>
+              <p className="text-xs text-red-700 mt-2">
+                Verifique se todos os Price IDs pertencem ao mesmo ambiente (Test ou Live) da sua API Key.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {stripeValidation.isValid && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-4xl mx-auto">
+          <div className="flex items-start">
+            <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-blue-900 mb-1">Stripe Configurado</h3>
+              <p className="text-sm text-blue-800">
+                Ambiente: <strong>{stripeValidation.environment}</strong> • Pagamentos processados de forma segura
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -172,7 +225,7 @@ export const Pricing: React.FC = () => {
 
             <button
               onClick={() => handleSubscribe(product.id, product.name)}
-              disabled={redirectingTo === product.name}
+              disabled={redirectingTo === product.name || !stripeValidation.isValid}
               className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center ${
                 product.popular
                   ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-700 hover:to-orange-700 shadow-lg hover:shadow-xl'
@@ -182,8 +235,10 @@ export const Pricing: React.FC = () => {
               {redirectingTo === product.name ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Redirecionando...
+                  Redirecionando para pagamento...
                 </>
+              ) : !stripeValidation.isValid ? (
+                'Configuração Pendente'
               ) : (
                 <>
                   Assinar Agora
@@ -195,99 +250,102 @@ export const Pricing: React.FC = () => {
         ))}
       </div>
 
+      {/* Benefits Section */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+          🚀 Com qualquer plano você terá:
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-3" />
+              <span className="text-gray-700">Registros ilimitados em todas as seções</span>
+            </div>
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-3" />
+              <span className="text-gray-700">Acesso completo aos relatórios</span>
+            </div>
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-3" />
+              <span className="text-gray-700">IA Insights avançados</span>
+            </div>
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-3" />
+              <span className="text-gray-700">Exportação de dados para Excel</span>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-3" />
+              <span className="text-gray-700">Suporte prioritário</span>
+            </div>
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-3" />
+              <span className="text-gray-700">Backup automático dos dados</span>
+            </div>
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-3" />
+              <span className="text-gray-700">Atualizações automáticas</span>
+            </div>
+            <div className="flex items-center">
+              <Check className="w-5 h-5 text-green-500 mr-3" />
+              <span className="text-gray-700">Cancelamento a qualquer momento</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Payment Security Section */}
-      <div className="bg-blue-50 rounded-2xl p-8 max-w-4xl mx-auto">
-        <h2 className="text-2xl font-bold text-blue-900 mb-6 text-center">
+      <div className="bg-green-50 rounded-2xl p-8 max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold text-green-900 mb-6 text-center">
           🔒 Pagamento 100% Seguro
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h3 className="text-lg font-semibold text-blue-900 mb-4">Processamento Seguro</h3>
-            <div className="space-y-3 text-sm text-blue-800">
+            <h3 className="text-lg font-semibold text-green-900 mb-4">Processamento Seguro</h3>
+            <div className="space-y-3 text-sm text-green-800">
               <div className="flex items-center">
-                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <Check className="w-4 h-4 text-green-600 mr-2" />
                 <span>Processado pelo Stripe (certificação PCI DSS)</span>
               </div>
               <div className="flex items-center">
-                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <Check className="w-4 h-4 text-green-600 mr-2" />
                 <span>Criptografia SSL 256-bit</span>
               </div>
               <div className="flex items-center">
-                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <Check className="w-4 h-4 text-green-600 mr-2" />
                 <span>Proteção contra fraude</span>
               </div>
               <div className="flex items-center">
-                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <Check className="w-4 h-4 text-green-600 mr-2" />
                 <span>Dados nunca armazenados em nossos servidores</span>
               </div>
             </div>
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-blue-900 mb-4">Formas de Pagamento</h3>
-            <div className="space-y-3 text-sm text-blue-800">
+            <h3 className="text-lg font-semibold text-green-900 mb-4">Formas de Pagamento</h3>
+            <div className="space-y-3 text-sm text-green-800">
               <div className="flex items-center">
-                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <Check className="w-4 h-4 text-green-600 mr-2" />
                 <span>Cartão de crédito (Visa, Mastercard, Elo)</span>
               </div>
               <div className="flex items-center">
-                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <Check className="w-4 h-4 text-green-600 mr-2" />
                 <span>Cartão de débito</span>
               </div>
               <div className="flex items-center">
-                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <Check className="w-4 h-4 text-green-600 mr-2" />
                 <span>PIX (disponível em breve)</span>
               </div>
               <div className="flex items-center">
-                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <Check className="w-4 h-4 text-green-600 mr-2" />
                 <span>Cancelamento a qualquer momento</span>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="bg-gray-50 rounded-2xl p-8 mt-16">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Por que escolher o ERP Smart?
-          </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Nossa plataforma combina gestão empresarial tradicional com o poder da Inteligência Artificial
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-8 h-8 text-blue-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">IA Avançada</h3>
-            <p className="text-gray-600">
-              Insights automáticos, previsões de vendas e recomendações estratégicas baseadas em seus dados
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-green-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Gestão Completa</h3>
-            <p className="text-gray-600">
-              Controle total de produtos, clientes, vendas, finanças e relatórios em uma única plataforma
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Crown className="w-8 h-8 text-purple-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Suporte Premium</h3>
-            <p className="text-gray-600">
-              Suporte especializado, atualizações constantes e garantia de satisfação
-            </p>
           </div>
         </div>
       </div>
@@ -336,6 +394,16 @@ export const Pricing: React.FC = () => {
             <p className="text-gray-600">
               Todos os planos incluem acesso completo às funcionalidades. A diferença está no 
               período de cobrança e no valor total - planos mais longos oferecem maior economia.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              O que acontece se eu tiver problemas com Price IDs?
+            </h3>
+            <p className="text-gray-600">
+              Se você receber erro "No such price", verifique se o Price ID pertence ao mesmo ambiente 
+              da sua API Key (Test ou Live). Price IDs de teste começam com "price_test_" e de produção com "price_".
             </p>
           </div>
         </div>

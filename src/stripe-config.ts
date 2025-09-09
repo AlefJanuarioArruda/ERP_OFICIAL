@@ -14,8 +14,8 @@ export interface StripeProduct {
 // Configuração dos produtos Stripe
 export const stripeProducts: StripeProduct[] = [
   {
-    id: 'prod_T1FAK1uqgZkta9',
-    priceId: 'price_1S5CgDRyTupwgwOO1LH6xXol',
+    id: 'plano-mensal',
+    priceId: 'price_1QdVGJRyTupwgwOOhKQZyQzV', // Substitua pelo Price ID correto do Stripe
     name: 'Plano Mensal',
     description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
     price: 2990, // R$ 29.90 em centavos
@@ -32,8 +32,8 @@ export const stripeProducts: StripeProduct[] = [
     ]
   },
   {
-    id: 'prod_T1FAZ6vxP70anf',
-    priceId: 'price_1S5CgcRyTupwgwOOZJa8yy4A', // TODO: Replace with correct price ID from Stripe Dashboard
+    id: 'plano-semestral',
+    priceId: 'price_1QdVGcRyTupwgwOOZJa8yy4A', // Substitua pelo Price ID correto do Stripe
     name: 'Plano Semestral',
     description: 'Acesso completo ao ERP Smart por 6 meses com melhor custo-benefício',
     price: 14990, // R$ 149.90 em centavos
@@ -51,8 +51,8 @@ export const stripeProducts: StripeProduct[] = [
     ]
   },
   {
-    id: 'prod_T1FBZMsJ1G5oRQ',
-    priceId: 'price_1S5CgwRyTupwgwOOuSFgfryG',
+    id: 'plano-anual',
+    priceId: 'price_1QdVGwRyTupwgwOOuSFgfryG', // Substitua pelo Price ID correto do Stripe
     name: 'Plano Anual',
     description: 'Acesso completo ao ERP Smart por 12 meses com máximo desconto',
     price: 25990, // R$ 259.90 em centavos
@@ -81,9 +81,54 @@ export const formatPrice = (price: number, currency: string = 'brl'): string => 
   }).format(price / 100);
 };
 
+// Função para detectar se estamos em ambiente de teste ou produção
+export const detectStripeEnvironment = (priceId: string): 'test' | 'live' | 'unknown' => {
+  if (priceId.startsWith('price_test_')) {
+    return 'test';
+  } else if (priceId.startsWith('price_')) {
+    return 'live';
+  }
+  return 'unknown';
+};
+
+// Função para validar se todos os price IDs são do mesmo ambiente
+export const validateStripeEnvironment = (): { isValid: boolean; environment: string; message?: string } => {
+  const environments = stripeProducts.map(product => detectStripeEnvironment(product.priceId));
+  const uniqueEnvironments = [...new Set(environments)];
+  
+  if (uniqueEnvironments.length > 1) {
+    return {
+      isValid: false,
+      environment: 'mixed',
+      message: 'Price IDs de ambientes diferentes detectados (Test e Live). Verifique a configuração.'
+    };
+  }
+  
+  const environment = uniqueEnvironments[0];
+  
+  if (environment === 'unknown') {
+    return {
+      isValid: false,
+      environment: 'unknown',
+      message: 'Price IDs com formato inválido detectados. Verifique se são Price IDs válidos do Stripe.'
+    };
+  }
+  
+  return {
+    isValid: true,
+    environment: environment === 'test' ? 'Teste' : 'Produção'
+  };
+};
+
 // Função para criar checkout usando a API do Stripe
 export const createCheckoutSession = async (priceId: string, accessToken?: string) => {
   try {
+    // Validar ambiente antes de criar checkout
+    const validation = validateStripeEnvironment();
+    if (!validation.isValid) {
+      throw new Error(validation.message || 'Erro de configuração do Stripe');
+    }
+
     const authHeader = accessToken 
       ? `Bearer ${accessToken}`
       : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
@@ -105,6 +150,18 @@ export const createCheckoutSession = async (priceId: string, accessToken?: strin
     const data = await response.json();
     
     if (!response.ok) {
+      // Tratar erro específico de Price ID não encontrado
+      if (data.error && data.error.includes('No such price')) {
+        const environment = detectStripeEnvironment(priceId);
+        const environmentText = environment === 'test' ? 'Test' : environment === 'live' ? 'Live' : 'desconhecido';
+        
+        throw new Error(
+          `Price ID não encontrado no Stripe.\n\n` +
+          `Verifique se o Price ID '${priceId}' pertence ao mesmo ambiente da sua API Key (${environmentText}).\n\n` +
+          `Dica: Price IDs de teste começam com 'price_test_' e de produção com 'price_'.`
+        );
+      }
+      
       throw new Error(data.error || 'Erro ao criar sessão de checkout');
     }
 
