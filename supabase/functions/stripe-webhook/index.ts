@@ -2,8 +2,8 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
 
-const stripeSecret = Deno.env.get('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')!;
-const stripeWebhookSecret = Deno.env.get('whsec_lsY5bxbr64BNj4f6s7Dn8jLB9lsGuPMQ')!;
+const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
+const stripeWebhookSecret = Deno.env.get('https://erpsmart.com.br/pagamento')!;
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!, 
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
