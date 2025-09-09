@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, AlertCircle, CheckCircle, Clock, Edit, Trash2, Check, X,Crown } from 'lucide-react';
+import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, AlertCircle, CheckCircle, Clock, Edit, Trash2, Check, X } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UsageLimitBanner } from '../components/UsageLimitBanner';

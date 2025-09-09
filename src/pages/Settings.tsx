@@ -438,10 +438,23 @@ export const Settings: React.FC = () => {
                   {/* Company Logo Section */}
                   <div className="flex items-center mb-6">
                     <div className="relative">
-                
-                   
+                      <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                        <Building className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <label className="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors">
+                        <Upload className="w-3 h-3 text-white" />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCompanyLogoUpload}
+                          className="hidden"
+                        />
+                      </label>
                     </div>
-                    
+                    <div className="ml-4">
+                      <h4 className="font-medium text-gray-900">Logotipo da Empresa</h4>
+                      <p className="text-sm text-gray-600">Clique no ícone para fazer upload do logo</p>
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -519,28 +532,25 @@ export const Settings: React.FC = () => {
             )}
 
             {/* Save Button */}
-        {activeTab !== 'integrations' && activeTab !== 'billing' && (
-  <div className="flex justify-end pt-6 border-t border-gray-200">
-    <button
-      onClick={handleSave}
-      disabled={loading}
-      className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-    >
-      {loading ? (
-        <>
-          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-          Salvando...
-        </>
-      ) : (
-        <>
-          <Save className="w-4 h-4 mr-2" />
-          Salvar Configurações
-        </>
-      )}
-    </button>
-  </div>
-)}
-
+            <div className="flex justify-end pt-6 border-t border-gray-200">
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Salvar Configurações
+                  </>
+                )}
+              </button>
+            </div>
             {/* Notifications Tab */}
             {activeTab === 'notifications' && (
               <div className="space-y-6">
