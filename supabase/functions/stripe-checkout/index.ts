@@ -94,44 +94,39 @@ Deno.serve(async (req) => {
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
-      );
-    }
+      // Check if we have an existing customer record and update it, or create new one
+      const { data: existingCustomer } = await supabase
 
-    // Get or create Stripe customer
-    let customerId;
-    
-    // Check if customer already exists in our database
-    const { data: existingCustomer } = await supabase
-      .from('stripe_customers')
-      .select('customer_id')
-      .eq('user_id', user.id)
-      .is('deleted_at', null)
-      .maybeSingle();
+        .select('id')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .maybeSingle();
+    try {
+      if (existingCustomer) {
+        // Update existing customer record with new Stripe customer ID
+        const { error: updateError } = await supabase
+          .from('stripe_customers')
+          .update({
+            customer_id: customerId,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingCustomer.id);
 
-    if (existingCustomer?.customer_id) {
-      customerId = existingCustomer.customer_id;
-    } else {
-      // Create new Stripe customer
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          userId: user.id,
-        },
-      });
+        if (updateError) {
+          console.error('Error updating customer:', updateError);
+        }
+      } else {
+        // Create new customer record
+        const { error: insertError } = await supabase
+          .from('stripe_customers')
+          .insert({
+            user_id: user.id,
+            customer_id: customerId,
+          });
 
-      customerId = customer.id;
-
-      // Save customer mapping to database
-      const { error: customerError } = await supabase
-        .from('stripe_customers')
-        .insert({
-          user_id: user.id,
-          customer_id: customerId,
-        });
-
-      if (customerError) {
-        console.error('Error saving customer:', customerError);
-        // Continue anyway, as the customer exists in Stripe
+        if (insertError) {
+          console.error('Error saving customer:', insertError);
+        }
       }
 
       // Create subscription record if mode is subscription
@@ -145,9 +140,17 @@ Deno.serve(async (req) => {
 
         if (subscriptionError) {
           console.error('Error creating subscription record:', subscriptionError);
-          // Continue anyway
         }
       }
+    } catch (error: any) {
+      console.error('Error creating Stripe customer:', error);
+      return new Response(
+        JSON.stringify({ error: `Failed to create customer: ${error.message}` }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
     // Create checkout session
