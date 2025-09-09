@@ -11,7 +11,6 @@ export interface StripeProduct {
   mode: 'subscription';
 }
 
-
 // Configuração dos produtos Stripe
 export const stripeProducts: StripeProduct[] = [
   {
@@ -29,7 +28,9 @@ export const stripeProducts: StripeProduct[] = [
       'Vendas ilimitadas',
       'Controle financeiro completo',
       'Relatórios básicos',
-      'Suporte por email'
+      'Suporte por email',
+      'IA Insights básicos',
+      'Backup automático'
     ]
   },
   {
@@ -48,7 +49,9 @@ export const stripeProducts: StripeProduct[] = [
       'IA Insights completos',
       'Suporte prioritário',
       'Backup automático',
-      'Exportação de dados'
+      'Exportação de dados',
+      'Análises preditivas',
+      'Consultoria básica'
     ]
   },
   {
@@ -66,7 +69,9 @@ export const stripeProducts: StripeProduct[] = [
       'Integrações personalizadas',
       'Suporte telefônico',
       'Treinamento exclusivo',
-      'Relatórios personalizados'
+      'Relatórios personalizados',
+      'API de integração',
+      'Suporte dedicado'
     ]
   }
 ];
