@@ -47,6 +47,18 @@ export const useUsageLimits = (): UsageStatus => {
 
   const usageStatus = useMemo(() => {
     const subscriptionActive = isSubscriptionActive()
+    
+    // Force a refresh of subscription data if we think we should be active but aren't
+    if (!subscriptionActive && typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('session_id')) {
+        // We just came from a successful payment, force refresh
+        setTimeout(() => {
+          window.location.reload();
+        }, 5000);
+      }
+    }
+    
     const limits = FREE_TIER_LIMITS;
     
     const current = {

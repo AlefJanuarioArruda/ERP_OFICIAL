@@ -42,6 +42,7 @@ export const useStripe = () => {
     }
 
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('stripe_user_subscriptions')
         .select('*')
@@ -54,9 +55,12 @@ export const useStripe = () => {
       }
 
       setSubscription(data);
+      setError(null);
     } catch (err) {
       console.error('Unexpected error fetching subscription:', err);
       setError('Unexpected error occurred');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -135,43 +139,35 @@ export const useStripe = () => {
 
     
     const product = getProductByPriceId(subscription.price_id);
-    const isActive = ['active', 'trialing'].includes(subscription.subscription_status);
+    const isActive = subscription.subscription_status && ['active', 'trialing'].includes(subscription.subscription_status);
 
     return { product, isActive };
   };
 
   const isSubscriptionActive = (): boolean => {
-    return getActiveSubscription().isActive;
+    if (!subscription) return false;
+    return subscription.subscription_status && ['active', 'trialing'].includes(subscription.subscription_status);
   };
 
 
 const getCurrentPlan = (): string => {
   const { product, isActive } = getActiveSubscription();
 
-  if (!product) {
+  if (!product || !isActive) {
     return 'Nenhum plano ativo';
   }
 
-  if (isActive) {
-    return `Plano ${product.name} Ativo`;
-  }
-
-  return 'Nenhum plano ativo';
-   //if (!isActive || !product) { return 'Nenhum plano ativo'; }
-  //return product.name;
+  return product.name;
 };
 
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
       setError(null);
       
       await Promise.all([
         fetchSubscription(),
         fetchOrders()
       ]);
-      
-      setLoading(false);
     };
 
     loadData();
@@ -187,6 +183,7 @@ const getCurrentPlan = (): string => {
     isSubscriptionActive,
     getCurrentPlan,
     refetch: () => {
+      setLoading(true);
       fetchSubscription();
       fetchOrders();
     },
