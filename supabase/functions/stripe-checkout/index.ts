@@ -199,8 +199,8 @@ Deno.serve(async (req) => {
         validCustomerId = newCustomer.id;
         console.log('New Stripe customer created:', validCustomerId);
 
-        // Step 4: Update database with new customer ID
-        const { error: upsertError } = await supabase
+        // Step 4: CRITICAL - Update database with new customer ID and verify success
+        const { data: customerRecord, error: upsertError } = await supabase
           .from('stripe_customers')
           .upsert({
             user_id: user.id,
@@ -209,13 +209,41 @@ Deno.serve(async (req) => {
             deleted_at: null,
           }, {
             onConflict: 'user_id'
-          });
+          })
+          .select()
+          .single();
 
         if (upsertError) {
-          console.error('Failed to update customer record in database:', upsertError);
-          // Continue anyway - the Stripe customer exists and checkout can proceed
+          console.error('CRITICAL: Failed to update customer record in database:', upsertError);
+          throw new Error(`Database update failed: ${upsertError.message}. Cannot proceed with checkout without valid customer linkage.`);
+        }
+
+        if (!customerRecord || customerRecord.customer_id !== validCustomerId) {
+          console.error('CRITICAL: Customer record validation failed after upsert');
+          throw new Error('Customer record validation failed. Database may be inconsistent.');
+        }
+
+        console.log('Customer record successfully updated in database:', customerRecord);
+      } else {
+        // Step 4b: For existing customers, verify the database record is still valid
+        const { data: verifyRecord, error: verifyError } = await supabase
+          .from('stripe_customers')
+          .select('customer_id')
+          .eq('user_id', user.id)
+          .eq('customer_id', validCustomerId)
+          .eq('deleted_at', null)
+          .maybeSingle();
+
+        if (verifyError) {
+          console.error('Failed to verify existing customer record:', verifyError);
+          throw new Error(`Customer verification failed: ${verifyError.message}`);
+        }
+
+        if (!verifyRecord) {
+          console.error('CRITICAL: Customer record not found in database after validation');
+          throw new Error('Customer record missing from database. Data inconsistency detected.');
         } else {
-          console.log('Customer record updated in database');
+          console.log('Existing customer record verified in database');
         }
       }
 
@@ -242,7 +270,9 @@ Deno.serve(async (req) => {
     // Initialize subscription record for subscription mode
     if (mode === 'subscription') {
       try {
-        const { error: subscriptionError } = await supabase
+        console.log('Initializing subscription record for customer:', validCustomerId);
+        
+        const { data: subscriptionRecord, error: subscriptionError } = await supabase
           .from('stripe_subscriptions')
           .upsert({
             customer_id: validCustomerId,
@@ -251,15 +281,24 @@ Deno.serve(async (req) => {
             deleted_at: null,
           }, {
             onConflict: 'customer_id'
-          });
+          })
+          .select()
+          .single();
 
         if (subscriptionError) {
-          console.error('Subscription record initialization failed:', subscriptionError);
-          // Continue anyway - this is not critical for checkout
+          console.error('CRITICAL: Subscription record initialization failed:', subscriptionError);
+          throw new Error(`Subscription initialization failed: ${subscriptionError.message}`);
         }
+
+        if (!subscriptionRecord) {
+          console.error('CRITICAL: Subscription record not created');
+          throw new Error('Subscription record creation failed');
+        }
+        
+        console.log('Subscription record initialized successfully:', subscriptionRecord.customer_id);
       } catch (error) {
-        console.error('Subscription initialization error:', error);
-        // Continue anyway
+        console.error('CRITICAL: Subscription initialization error:', error);
+        throw error;
       }
     }
 
