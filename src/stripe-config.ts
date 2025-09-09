@@ -33,7 +33,7 @@ export const stripeProducts: StripeProduct[] = [
   },
   {
     id: 'prod_T1FAZ6vxP70anf',
-    priceId: 'price_1S5CgcRyTupwgwOOZJa8yy4A',
+    priceId: 'price_1S5CgcRyTupwgwOOZJa8yy4A', // TODO: Replace with correct price ID from Stripe Dashboard
     name: 'Plano Semestral',
     description: 'Acesso completo ao ERP Smart por 6 meses com melhor custo-benefício',
     price: 14990, // R$ 149.90 em centavos
