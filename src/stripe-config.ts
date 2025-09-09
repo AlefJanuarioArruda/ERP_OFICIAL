@@ -139,7 +139,7 @@ export const createCheckoutSession = async (priceId: string, accessToken?: strin
       body: JSON.stringify({
         price_id: priceId,
         mode: 'subscription',
-        success_url: `${window.location.origin/?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${window.location.origin}/?page=pricing`,
       }),
     });
