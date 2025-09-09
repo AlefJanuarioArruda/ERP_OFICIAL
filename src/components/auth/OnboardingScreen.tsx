@@ -104,8 +104,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
                 </span>
               </h2>
               <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-8">
-                Gestão total da sua empresa com o poder da Inteligência Artificial.
-Controle estoque, impulsione vendas e antecipe resultados com um ERP inteligente e fácil de usar.
+                O único ERP que combina gestão empresarial completa com IA avançada. 
+                Sistema completo de gestão empresarial com IA avançada para estoque, vendas e análises preditivas.
                 Gestão Integrada: Do Estoque ao Faturamento
               </p>
               <p className="text-xl text-gray-600">
@@ -141,7 +141,7 @@ Controle estoque, impulsione vendas e antecipe resultados com um ERP inteligente
                 <div className="flex items-center space-x-4 text-sm text-gray-600">
                   <div className="flex items-center">
                     <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    Teste grátis
+                    Teste grátis por 14 dias
                   </div>
                   <div className="flex items-center">
                     <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
