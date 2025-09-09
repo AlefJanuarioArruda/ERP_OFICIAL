@@ -3,7 +3,7 @@ import Stripe from 'npm:stripe@17.7.0';
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
 
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
-const stripeWebhookSecret = Deno.env.get('https://rztpblmcazheuktcmxdc.supabase.co/functions/v1/stripe-webhook')!;
+const stripeWebhookSecret = Deno.env.get('https://erpsmart.com.br/pagamento')!;
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!, 
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
