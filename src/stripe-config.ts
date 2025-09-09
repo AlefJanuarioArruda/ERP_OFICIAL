@@ -129,9 +129,7 @@ export const createCheckoutSession = async (priceId: string, accessToken?: strin
       throw new Error(validation.message || 'Erro de configuração do Stripe');
     }
 
-    const authHeader = accessToken 
-      ? `Bearer ${accessToken}`
-      : `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`;
+    const stripe = require('stripe')(Deno.env.get('STRIPE_SECRET_KEY'));
 
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
       method: 'POST',
