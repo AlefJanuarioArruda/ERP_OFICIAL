@@ -3,76 +3,42 @@ export interface StripeProduct {
   priceId: string;
   name: string;
   description: string;
+  mode: 'payment' | 'subscription';
   price: number;
   currency: string;
-  interval: 'month' | 'year';
-  features: string[];
-  popular?: boolean;
-  mode: 'subscription';
+  interval?: 'month' | 'year';
 }
 
-// Configuração dos produtos Stripe para produção
 export const stripeProducts: StripeProduct[] = [
   {
-    id: 'monthly-plan',
-    priceId: 'price_1QdVJe2LIhrob5CcKQNWJmhV', // Price ID de produção para plano mensal
-    name: 'Plano Mensal',
-    description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
-    price: 2990, // R$ 29.90 em centavos
-    currency: 'brl',
-    interval: 'month',
-    mode: 'subscription',
-    features: [
-      'Produtos ilimitados',
-      'Clientes ilimitados', 
-      'Vendas ilimitadas',
-      'Controle financeiro completo',
-      'Relatórios básicos',
-      'Suporte por email',
-      'IA Insights básicos',
-      'Backup automático'
-    ]
-  },
-  {
-    id: 'semester-plan',
-    priceId: 'price_1QdVKH2LIhrob5CcYQNWJmhW', // Price ID de produção para plano semestral
+    id: 'prod_Spd8ywFKVVz3xZ',
+    priceId: 'price_1RtxscRyTupwgwOOkhNcILCM',
     name: 'Plano Semestral',
     description: 'Acesso completo ao ERP Smart por 6 meses com melhor custo-benefício',
-    price: 14990, // R$ 149.90 em centavos (cobrado a cada 6 meses)
-    currency: 'brl',
-    interval: 'month', // Configurado como 6 meses no Stripe
     mode: 'subscription',
-    popular: true,
-    features: [
-      'Tudo do plano mensal',
-      'Relatórios avançados',
-      'IA Insights completos',
-      'Suporte prioritário',
-      'Backup automático',
-      'Exportação de dados',
-      'Análises preditivas',
-      'Consultoria básica'
-    ]
+    price: 33990, // R$ 339.90 in cents
+    currency: 'brl',
+    interval: 'month'
   },
   {
-    id: 'annual-plan',
-    priceId: 'price_1QdVKg2LIhrob5CcZQNWJmhX', // Price ID de produção para plano anual
+    id: 'prod_Spd8crH2AN5efk',
+    priceId: 'price_1RtxsARyTupwgwOO31bFKE6N',
+    name: 'Plano Mensal',
+    description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
+    mode: 'subscription',
+    price: 5990, // R$ 59.90 in cents
+    currency: 'brl',
+    interval: 'month'
+  },
+  {
+    id: 'prod_Spd7F9eq5wAMJ7',
+    priceId: 'price_1RtxrdRyTupwgwOO6wxulMvw',
     name: 'Plano Anual',
     description: 'Acesso completo ao ERP Smart por 12 meses com máximo desconto',
-    price: 25990, // R$ 259.90 em centavos (cobrado anualmente)
-    currency: 'brl',
-    interval: 'year',
     mode: 'subscription',
-    features: [
-      'Tudo dos planos anteriores',
-      'Consultoria estratégica',
-      'Integrações personalizadas',
-      'Suporte telefônico',
-      'Treinamento exclusivo',
-      'Relatórios personalizados',
-      'API de integração',
-      'Suporte dedicado'
-    ]
+    price: 68990, // R$ 689.90 in cents
+    currency: 'brl',
+    interval: 'year'
   }
 ];
 
@@ -85,75 +51,4 @@ export const formatPrice = (price: number, currency: string = 'brl'): string => 
     style: 'currency',
     currency: currency.toUpperCase(),
   }).format(price / 100);
-};
-
-// Função para detectar ambiente Stripe
-export const detectStripeEnvironment = (): 'test' | 'live' => {
-  const apiKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '';
-  return apiKey.includes('_test_') ? 'test' : 'live';
-};
-
-// Função para validar configuração do Stripe
-export const validateStripeEnvironment = (): { isValid: boolean; environment: string; message?: string } => {
-  const environment = detectStripeEnvironment();
-  
-  // Verificar se todos os price IDs são do mesmo ambiente
-  const expectedPrefix = environment === 'test' ? 'price_test_' : 'price_';
-  const invalidPrices = stripeProducts.filter(product => 
-    !product.priceId.startsWith(expectedPrefix)
-  );
-  
-  if (invalidPrices.length > 0) {
-    return {
-      isValid: false,
-      environment: environment === 'test' ? 'Teste' : 'Produção',
-      message: `Price IDs incompatíveis com ambiente ${environment}. Verifique: ${invalidPrices.map(p => p.priceId).join(', ')}`
-    };
-  }
-  
-  return {
-    isValid: true,
-    environment: environment === 'test' ? 'Teste' : 'Produção'
-  };
-};
-
-// Função para criar checkout session
-export const createCheckoutSession = async (priceId: string, accessToken?: string) => {
-  try {
-    // Validar ambiente antes de criar checkout
-    const validation = validateStripeEnvironment();
-    if (!validation.isValid) {
-      throw new Error(validation.message || 'Erro de configuração do Stripe');
-    }
-
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken || import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({
-        price_id: priceId,
-        mode: 'subscription',
-        success_url: `${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${window.location.origin}/?page=pricing`,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    if (!data.url) {
-      throw new Error('URL de checkout não recebida do servidor');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Erro no checkout:', error);
-    throw error;
-  }
 };

@@ -1,74 +1,39 @@
 import React, { useState } from 'react';
-import { Check, Zap, Crown, Star, ArrowRight, AlertTriangle, CheckCircle, X } from 'lucide-react';
-import { stripeProducts, formatPrice, createCheckoutSession, validateStripeEnvironment } from '../stripe-config';
+import { Check, Zap, Crown, Star, ArrowRight, Loader2 } from 'lucide-react';
 import { useStripe } from '../hooks/useStripe';
-import { supabase } from '../lib/supabase';
+import { stripeProducts, formatPrice } from '../stripe-config';
 
 export const Pricing: React.FC = () => {
-  const { getCurrentPlan, isSubscriptionActive, getSubscriptionStatus } = useStripe();
-  const [redirectingTo, setRedirectingTo] = useState<string | null>(null);
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const { createCheckoutSession, loading: stripeLoading, getCurrentPlan } = useStripe();
+  const [loadingPriceId, setLoadingPriceId] = useState<string | null>(null);
   const currentPlan = getCurrentPlan();
-  const subscriptionStatus = getSubscriptionStatus();
 
-  // Validar configuração do Stripe na inicialização
-  const stripeValidation = validateStripeEnvironment();
-
-  const showNotification = (type: 'success' | 'error', message: string) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 5000);
-  };
-
-  const handleSubscribe = async (productId: string, productName: string) => {
-    setRedirectingTo(productName);
+  const handleSubscribe = async (priceId: string) => {
+    setLoadingPriceId(priceId);
     
     try {
-      // Obter o token de acesso do usuário autenticado
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const result = await createCheckoutSession(priceId, 'subscription');
       
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        throw new Error('Erro de autenticação. Faça login novamente.');
-      }
-      
-      if (!session?.access_token) {
-        throw new Error('Usuário não autenticado. Faça login para continuar.');
-      }
-
-      // Encontrar o produto pelo ID
-      const product = stripeProducts.find(p => p.id === productId);
-      if (!product) {
-        throw new Error('Produto não encontrado');
-      }
-      
-      console.log('Creating checkout for product:', product.name, 'Price ID:', product.priceId);
-      
-      // Criar sessão de checkout
-      const { url } = await createCheckoutSession(product.priceId, session.access_token);
-      
-      if (url) {
-        console.log('Redirecting to checkout URL:', url);
-        // Redirecionar para o Stripe Checkout
-        window.location.href = url;
+      if (result.success && result.url) {
+        window.location.href = result.url;
       } else {
-        throw new Error('URL de checkout não recebida');
+        alert(result.error || 'Erro ao criar sessão de checkout');
       }
-      
     } catch (error) {
-      console.error('Erro ao redirecionar para checkout:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro inesperado';
-      showNotification('error', errorMessage);
-      setRedirectingTo(null);
+      console.error('Error during checkout:', error);
+      alert('Erro inesperado. Tente novamente.');
+    } finally {
+      setLoadingPriceId(null);
     }
   };
 
-  const getPopularBadge = (product: any) => {
-    if (product.popular) {
+  const getPopularBadge = (productName: string) => {
+    if (productName === 'Plano Anual') {
       return (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
           <span className="bg-gradient-to-r from-amber-600 to-orange-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center">
             <Star className="w-4 h-4 mr-1" />
-            Mais Popular
+            Melhor Valor
           </span>
         </div>
       );
@@ -89,61 +54,39 @@ export const Pricing: React.FC = () => {
     }
   };
 
-  const getCardStyle = (product: any) => {
-    if (product.popular) {
+  const getCardStyle = (productName: string) => {
+    if (productName === 'Plano Anual') {
       return 'border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 shadow-xl scale-105';
     }
     return 'border border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow';
   };
 
-  const getIntervalLabel = (product: any) => {
-    if (product.name === 'Plano Semestral') {
-      return '6 meses';
-    }
-    return product.interval === 'year' ? 'ano' : 'mês';
-  };
+  const features = [
+    'Dashboard inteligente com IA',
+    'Gestão completa de produtos',
+    'Controle de clientes e vendas',
+    'Relatórios avançados',
+    'Análises preditivas',
+    'Controle financeiro',
+    'Alertas automáticos',
+    'Suporte prioritário',
+    'Backup automático',
+    'Atualizações gratuitas'
+  ];
 
-  const getSavingsText = (product: any) => {
-    if (product.interval === 'year') {
-      const monthlyEquivalent = product.price / 12;
-      const monthlySavings = 2990 - monthlyEquivalent;
-      const yearlySavings = monthlySavings * 12;
-      return `Economize R$ ${(yearlySavings / 100).toFixed(0)} no ano!`;
-    }
-    if (product.name === 'Plano Semestral') {
-      return 'Mais popular entre nossos clientes!';
-    }
-    return null;
-  };
+  if (stripeLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+          <p className="text-gray-600">Carregando planos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
-      {/* Notification Toast */}
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 max-w-md ${
-          notification.type === 'success' 
-            ? 'bg-green-100 border border-green-200 text-green-800' 
-            : 'bg-red-100 border border-red-200 text-red-800'
-        }`}>
-          <div className="flex items-start">
-            {notification.type === 'success' ? (
-              <CheckCircle className="w-5 h-5 mt-0.5 mr-3 flex-shrink-0" />
-            ) : (
-              <AlertTriangle className="w-5 h-5 mt-0.5 mr-3 flex-shrink-0" />
-            )}
-            <div className="flex-1">
-              <p className="text-sm font-medium whitespace-pre-line">{notification.message}</p>
-            </div>
-            <button
-              onClick={() => setNotification(null)}
-              className="ml-2 text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -157,57 +100,15 @@ export const Pricing: React.FC = () => {
           <div className="mt-4 inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-full">
             <Check className="w-4 h-4 mr-2" />
             Plano atual: {currentPlan}
-            {subscriptionStatus.expiresAt && (
-              <span className="ml-2 text-sm">
-                • Renova em {subscriptionStatus.expiresAt.toLocaleDateString('pt-BR')}
-              </span>
-            )}
-          </div>
-        )}
-        
-        {subscriptionStatus.needsPayment && (
-          <div className="mt-4 inline-flex items-center px-4 py-2 bg-red-100 text-red-800 rounded-full">
-            <AlertTriangle className="w-4 h-4 mr-2" />
-            Pagamento pendente - Renove sua assinatura
           </div>
         )}
       </div>
 
-      {/* Stripe Environment Validation */}
-      {!stripeValidation.isValid && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-4xl mx-auto">
-          <div className="flex items-start">
-            <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold text-red-900 mb-1">Erro de Configuração do Stripe</h3>
-              <p className="text-sm text-red-800">{stripeValidation.message}</p>
-              <p className="text-xs text-red-700 mt-2">
-                Verifique se todos os Price IDs pertencem ao mesmo ambiente (Test ou Live) da sua API Key.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {stripeValidation.isValid && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-4xl mx-auto">
-          <div className="flex items-start">
-            <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold text-blue-900 mb-1">Stripe Configurado</h3>
-              <p className="text-sm text-blue-800">
-                Ambiente: <strong>{stripeValidation.environment}</strong> • Pagamentos processados de forma segura
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Pricing Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
         {stripeProducts.map((product) => (
-          <div key={product.id} className={`relative rounded-2xl p-8 ${getCardStyle(product)}`}>
-            {getPopularBadge(product)}
+          <div key={product.id} className={`relative rounded-2xl p-8 ${getCardStyle(product.name)}`}>
+            {getPopularBadge(product.name)}
             
             <div className="text-center mb-8">
               <div className="flex justify-center mb-4">
@@ -221,18 +122,23 @@ export const Pricing: React.FC = () => {
                   {formatPrice(product.price)}
                 </span>
                 <span className="text-gray-600 ml-2">
-                  /{getIntervalLabel(product)}
+                  /{product.interval === 'year' ? 'ano' : 'mês'}
                 </span>
-                {getSavingsText(product) && (
+                {product.interval === 'year' && (
                   <div className="text-sm text-green-600 font-medium mt-1">
-                    {getSavingsText(product)}
+                    Economize mais de R$ 30/mês!
+                  </div>
+                )}
+                {product.name === 'Plano Semestral' && (
+                  <div className="text-sm text-green-600 font-medium mt-1">
+                    Melhor custo-benefício!
                   </div>
                 )}
               </div>
             </div>
 
             <div className="space-y-4 mb-8">
-              {product.features.map((feature, index) => (
+              {features.map((feature, index) => (
                 <div key={index} className="flex items-center">
                   <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
                   <span className="text-gray-700">{feature}</span>
@@ -241,24 +147,22 @@ export const Pricing: React.FC = () => {
             </div>
 
             <button
-              onClick={() => handleSubscribe(product.id, product.name)}
-              disabled={redirectingTo === product.name || !stripeValidation.isValid}
+              onClick={() => handleSubscribe(product.priceId)}
+              disabled={loadingPriceId === product.priceId}
               className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center ${
-                product.popular
+                product.name === 'Plano Anual'
                   ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-700 hover:to-orange-700 shadow-lg hover:shadow-xl'
                   : 'bg-gray-900 text-white hover:bg-gray-800'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
-              {redirectingTo === product.name ? (
+              {loadingPriceId === product.priceId ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Redirecionando para pagamento...
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Processando...
                 </>
-              ) : !stripeValidation.isValid ? (
-                'Configuração Pendente'
               ) : (
                 <>
-                  {subscriptionStatus.isActive ? 'Alterar Plano' : 'Assinar Agora'}
+                  Assinar Agora
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </>
               )}
@@ -267,102 +171,46 @@ export const Pricing: React.FC = () => {
         ))}
       </div>
 
-      {/* Benefits Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 max-w-4xl mx-auto">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-          🚀 Com qualquer plano você terá:
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <div className="flex items-center">
-              <Check className="w-5 h-5 text-green-500 mr-3" />
-              <span className="text-gray-700">Registros ilimitados em todas as seções</span>
-            </div>
-            <div className="flex items-center">
-              <Check className="w-5 h-5 text-green-500 mr-3" />
-              <span className="text-gray-700">Acesso completo aos relatórios</span>
-            </div>
-            <div className="flex items-center">
-              <Check className="w-5 h-5 text-green-500 mr-3" />
-              <span className="text-gray-700">IA Insights avançados</span>
-            </div>
-            <div className="flex items-center">
-              <Check className="w-5 h-5 text-green-500 mr-3" />
-              <span className="text-gray-700">Exportação de dados para Excel</span>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="flex items-center">
-              <Check className="w-5 h-5 text-green-500 mr-3" />
-              <span className="text-gray-700">Suporte prioritário</span>
-            </div>
-            <div className="flex items-center">
-              <Check className="w-5 h-5 text-green-500 mr-3" />
-              <span className="text-gray-700">Backup automático dos dados</span>
-            </div>
-            <div className="flex items-center">
-              <Check className="w-5 h-5 text-green-500 mr-3" />
-              <span className="text-gray-700">Atualizações automáticas</span>
-            </div>
-            <div className="flex items-center">
-              <Check className="w-5 h-5 text-green-500 mr-3" />
-              <span className="text-gray-700">Cancelamento a qualquer momento</span>
-            </div>
-          </div>
+      {/* Features Section */}
+      <div className="bg-gray-50 rounded-2xl p-8 mt-16">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Por que escolher o ERP Smart?
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            Nossa plataforma combina gestão empresarial tradicional com o poder da Inteligência Artificial
+          </p>
         </div>
-      </div>
 
-      {/* Payment Security Section */}
-      <div className="bg-green-50 rounded-2xl p-8 max-w-4xl mx-auto">
-        <h2 className="text-2xl font-bold text-green-900 mb-6 text-center">
-          🔒 Pagamento 100% Seguro
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h3 className="text-lg font-semibold text-green-900 mb-4">Processamento Seguro</h3>
-            <div className="space-y-3 text-sm text-green-800">
-              <div className="flex items-center">
-                <Check className="w-4 h-4 text-green-600 mr-2" />
-                <span>Processado pelo Stripe (certificação PCI DSS)</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-4 h-4 text-green-600 mr-2" />
-                <span>Criptografia SSL 256-bit</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-4 h-4 text-green-600 mr-2" />
-                <span>Proteção contra fraude</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-4 h-4 text-green-600 mr-2" />
-                <span>Dados nunca armazenados em nossos servidores</span>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-8 h-8 text-blue-600" />
             </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">IA Avançada</h3>
+            <p className="text-gray-600">
+              Insights automáticos, previsões de vendas e recomendações estratégicas baseadas em seus dados
+            </p>
           </div>
 
-          <div>
-            <h3 className="text-lg font-semibold text-green-900 mb-4">Formas de Pagamento</h3>
-            <div className="space-y-3 text-sm text-green-800">
-              <div className="flex items-center">
-                <Check className="w-4 h-4 text-green-600 mr-2" />
-                <span>Cartão de crédito (Visa, Mastercard, Elo)</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-4 h-4 text-green-600 mr-2" />
-                <span>Cartão de débito</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-4 h-4 text-green-600 mr-2" />
-                <span>PIX (disponível em breve)</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-4 h-4 text-green-600 mr-2" />
-                <span>Cancelamento a qualquer momento</span>
-              </div>
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8 text-green-600" />
             </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Gestão Completa</h3>
+            <p className="text-gray-600">
+              Controle total de produtos, clientes, vendas, finanças e relatórios em uma única plataforma
+            </p>
+          </div>
+
+          <div className="text-center">
+            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Crown className="w-8 h-8 text-purple-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Suporte Premium</h3>
+            <p className="text-gray-600">
+              Suporte especializado, atualizações constantes e garantia de satisfação
+            </p>
           </div>
         </div>
       </div>
@@ -386,11 +234,11 @@ export const Pricing: React.FC = () => {
 
           <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Como funciona o pagamento?
+              Existe período de teste gratuito?
             </h3>
             <p className="text-gray-600">
-              O pagamento é processado de forma segura pelo Stripe. Você será redirecionado para 
-              a página oficial de pagamento onde pode usar cartão de crédito, débito ou PIX.
+              Oferecemos uma demonstração completa do sistema. Entre em contato conosco para agendar 
+              uma apresentação personalizada.
             </p>
           </div>
 
@@ -402,52 +250,6 @@ export const Pricing: React.FC = () => {
               Sim, utilizamos criptografia de ponta e backup automático. Seus dados são protegidos 
               com os mais altos padrões de segurança.
             </p>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Qual a diferença entre os planos?
-            </h3>
-            <p className="text-gray-600">
-              Todos os planos incluem acesso completo às funcionalidades. A diferença está no 
-              período de cobrança e no valor total - planos mais longos oferecem maior economia.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              O que acontece se eu tiver problemas com Price IDs?
-            </h3>
-            <p className="text-gray-600">
-              Se você receber erro "No such price", verifique se o Price ID pertence ao mesmo ambiente 
-              da sua API Key (Test ou Live). Price IDs de teste começam com "price_test_" e de produção com "price_".
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Trust Indicators */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white text-center">
-        <h3 className="text-2xl font-bold mb-4">Pagamento 100% Seguro</h3>
-        <p className="text-blue-100 mb-6">
-          Processado pelo Stripe, a mesma tecnologia usada por empresas como Shopify, Lyft e Deliveroo
-        </p>
-        <div className="flex flex-wrap justify-center gap-6 text-sm">
-          <div className="flex items-center">
-            <Check className="w-4 h-4 mr-2" />
-            Criptografia SSL 256-bit
-          </div>
-          <div className="flex items-center">
-            <Check className="w-4 h-4 mr-2" />
-            Certificação PCI DSS
-          </div>
-          <div className="flex items-center">
-            <Check className="w-4 h-4 mr-2" />
-            Proteção contra fraude
-          </div>
-          <div className="flex items-center">
-            <Check className="w-4 h-4 mr-2" />
-            Dados nunca armazenados
           </div>
         </div>
       </div>
