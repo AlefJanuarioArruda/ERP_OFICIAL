@@ -116,41 +116,45 @@ export const Settings: React.FC = () => {
         return
       }
       
-      // Create unique filename
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${user?.id}-${Date.now()}.${fileExt}`
-      
-      // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      // Ensure user is logged in
+      if (!user) {
+        showNotification('error', 'Usuário não autenticado.')
+        return
+      }
+
+      const fileExtension = file.name.split('.').pop()
+      const filePath = `${user.id}-${Date.now()}.${fileExtension}`
+
+      const { data, error } = await supabase.storage
         .from('avatars')
-        .upload(fileName, file, {
+        .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         })
-      
-      if (uploadError) {
-        console.error('Upload error:', uploadError)
-        showNotification('error', 'Erro ao fazer upload da imagem')
+
+      if (error) {
+        console.error('Supabase Storage upload error:', error)
+        showNotification('error', `Erro ao fazer upload da imagem: ${error.message}`)
         return
       }
-      
+
       // Get public URL
-      const { data: urlData } = supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from('avatars')
-        .getPublicUrl(fileName)
-      
-      if (!urlData?.publicUrl) {
-        showNotification('error', 'Erro ao obter URL da imagem')
+        .getPublicUrl(filePath)
+
+      if (!publicUrlData || !publicUrlData.publicUrl) {
+        showNotification('error', 'Erro ao obter URL pública da imagem.')
         return
       }
-      
-      // Update user profile with the public URL
-      const result = await updateProfile({ avatar_url: urlData.publicUrl })
-      
-      if (result.success) {
+
+      // Update user profile with new avatar URL
+      const updateResult = await updateProfile({ avatar_url: publicUrlData.publicUrl })
+
+      if (updateResult.success) {
         showNotification('success', 'Foto de perfil atualizada com sucesso!')
       } else {
-        showNotification('error', result.error || 'Erro ao atualizar perfil')
+        showNotification('error', updateResult.error || 'Erro ao atualizar perfil com nova foto.')
       }
       
     } catch (error) {
@@ -434,23 +438,10 @@ export const Settings: React.FC = () => {
                   {/* Company Logo Section */}
                   <div className="flex items-center mb-6">
                     <div className="relative">
-                      <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                        <Building className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <label className="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors">
-                        <Upload className="w-3 h-3 text-white" />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleCompanyLogoUpload}
-                          className="hidden"
-                        />
-                      </label>
+                
+                   
                     </div>
-                    <div className="ml-4">
-                      <h4 className="font-medium text-gray-900">Logotipo da Empresa</h4>
-                      <p className="text-sm text-gray-600">Clique no ícone para fazer upload do logo</p>
-                    </div>
+                    
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -528,25 +519,28 @@ export const Settings: React.FC = () => {
             )}
 
             {/* Save Button */}
-            <div className="flex justify-end pt-6 border-t border-gray-200">
-              <button
-                onClick={handleSave}
-                disabled={loading}
-                className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Salvar Configurações
-                  </>
-                )}
-              </button>
-            </div>
+        {activeTab !== 'integrations' && activeTab !== 'billing' && (
+  <div className="flex justify-end pt-6 border-t border-gray-200">
+    <button
+      onClick={handleSave}
+      disabled={loading}
+      className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+    >
+      {loading ? (
+        <>
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+          Salvando...
+        </>
+      ) : (
+        <>
+          <Save className="w-4 h-4 mr-2" />
+          Salvar Configurações
+        </>
+      )}
+    </button>
+  </div>
+)}
+
             {/* Notifications Tab */}
             {activeTab === 'notifications' && (
               <div className="space-y-6">
@@ -660,6 +654,58 @@ export const Settings: React.FC = () => {
                 <BillingSection />
               </div>
             )}
+
+            {/* Integrations Tab */}
+            {activeTab === 'integrations' && (
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-gray-900">Integrações</h3>
+                
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Globe className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <h4 className="text-xl font-semibold text-gray-900 mb-2">Integrações em Breve</h4>
+                  <p className="text-gray-600 max-w-md mx-auto mb-6">
+                    Estamos trabalhando para trazer integrações incríveis que vão conectar seu ERP Smart 
+                    com as principais ferramentas do mercado.
+                  </p>
+                  
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
+                    <h5 className="font-semibold text-gray-900 mb-3">🚀 Próximas Integrações:</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+                        Mercado Livre & OLX
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                        WhatsApp Business
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
+                        Correios & Transportadoras
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-amber-500 rounded-full mr-2"></div>
+                        Bancos & PIX
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                        Nota Fiscal Eletrônica
+                      </div>
+                      <div className="flex items-center text-gray-700">
+                        <div className="w-2 h-2 bg-indigo-500 rounded-full mr-2"></div>
+                        Google Analytics
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-500 mt-4">
+                    Quer sugerir uma integração? Entre em contato conosco!
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -690,7 +736,11 @@ const BillingSection: React.FC = () => {
             Você não possui um plano ativo no momento. Escolha um plano para começar a usar todas as funcionalidades.
           </p>
           <button
-            onClick={() => window.location.href = '/pricing'}
+            onClick={() => {
+              // Navigate to pricing page using the parent component's navigation
+              const event = new CustomEvent('navigate-to-pricing');
+              window.dispatchEvent(event);
+            }}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Ver Planos Disponíveis
@@ -774,7 +824,11 @@ const BillingSection: React.FC = () => {
 
       <div className="flex space-x-3">
         <button
-          onClick={() => window.location.href = '/pricing'}
+          onClick={() => {
+            // Use the onPageChange function from Layout to navigate to pricing
+            const event = new CustomEvent('navigate-to-pricing');
+            window.dispatchEvent(event);
+          }}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           Alterar Plano
