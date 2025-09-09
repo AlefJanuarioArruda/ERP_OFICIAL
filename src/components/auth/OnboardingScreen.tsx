@@ -124,7 +124,7 @@ Controle estoque, impulsione vendas e antecipe resultados com um ERP inteligente
                 </div>
                 <div className="flex items-center bg-white rounded-full px-6 py-3 shadow-md">
                   <CheckCircle className="w-5 h-5 text-purple-500 mr-2" />
-                  <span className="font-semibold text-gray-900">A partir de R$ 59,90/mês</span>
+                  <span className="font-semibold text-gray-900">A partir de R$ 29,90/mês</span>
                 </div>
               </div>
 
