@@ -15,7 +15,7 @@ export interface StripeProduct {
 export const stripeProducts: StripeProduct[] = [
   {
     id: 'plano-mensal',
-    priceId: 'price_1QdVGJRyTupwgwOOhKQZyQzV', // Production Price ID - Plano Mensal R$ 29,90
+    priceId: 'price_1S5CgDRyTupwgwOO1LH6xXol', // Production Price ID - Plano Mensal R$ 29,90
     name: 'Plano Mensal',
     description: 'Acesso completo ao ERP Smart com flexibilidade mensal',
     price: 2990, // R$ 29.90 em centavos
@@ -33,7 +33,7 @@ export const stripeProducts: StripeProduct[] = [
   },
   {
     id: 'plano-semestral',
-    priceId: 'price_1QdVGcRyTupwgwOOZJa8yy4A', // Production Price ID - Plano Semestral R$ 149,90
+    priceId: 'price_1S5CgcRyTupwgwOOZJa8yy4A', // Production Price ID - Plano Semestral R$ 149,90
     name: 'Plano Semestral',
     description: 'Acesso completo ao ERP Smart por 6 meses com melhor custo-benefício',
     price: 14990, // R$ 149.90 em centavos
@@ -52,7 +52,7 @@ export const stripeProducts: StripeProduct[] = [
   },
   {
     id: 'plano-anual',
-    priceId: 'price_1QdVGwRyTupwgwOOuSFgfryG', // Production Price ID - Plano Anual R$ 259,90
+    priceId: 'price_1S5CgwRyTupwgwOOuSFgfryG', // Production Price ID - Plano Anual R$ 259,90
     name: 'Plano Anual',
     description: 'Acesso completo ao ERP Smart por 12 meses com máximo desconto',
     price: 25990, // R$ 259.90 em centavos
