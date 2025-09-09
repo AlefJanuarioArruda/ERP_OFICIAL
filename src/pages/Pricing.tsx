@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Zap, Crown, Star, ArrowRight, ExternalLink, AlertTriangle } from 'lucide-react';
-import { stripeProducts, formatPrice, getStripeCheckoutUrl } from '../stripe-config';
+import { stripeProducts, formatPrice, createCheckoutSession } from '../stripe-config';
 import { useStripe } from '../hooks/useStripe';
 
 export const Pricing: React.FC = () => {
@@ -12,28 +12,25 @@ export const Pricing: React.FC = () => {
     setRedirectingTo(productName);
     
     try {
-      // Obter URL de checkout direto
-      const checkoutUrl = getStripeCheckoutUrl(productId);
-      
-      // Verificar se a URL foi configurada
-      if (checkoutUrl === '#' || checkoutUrl.includes('SUBSTITUA_PELA_URL')) {
-        // Mostrar modal de configuração necessária
-        alert(`⚠️ Configuração Necessária\n\nPara ativar os pagamentos, você precisa:\n\n1. Ir ao seu Stripe Dashboard\n2. Criar Payment Links para cada plano\n3. Substituir as URLs no arquivo stripe-config.ts\n\nConsulte a documentação para mais detalhes.`);
-        setRedirectingTo(null);
-        return;
+      // Encontrar o produto pelo ID
+      const product = stripeProducts.find(p => p.id === productId);
+      if (!product) {
+        throw new Error('Produto não encontrado');
       }
       
-      // Redirecionar para o Stripe Checkout
-      window.open(checkoutUrl, '_blank');
+      // Criar sessão de checkout
+      const { url } = await createCheckoutSession(product.priceId);
       
-      // Reset loading state after a delay
-      setTimeout(() => {
-        setRedirectingTo(null);
-      }, 2000);
+      if (url) {
+        // Redirecionar para o Stripe Checkout
+        window.location.href = url;
+      } else {
+        throw new Error('URL de checkout não recebida');
+      }
       
     } catch (error) {
       console.error('Erro ao redirecionar para checkout:', error);
-      alert('Erro inesperado. Tente novamente.');
+      alert(`Erro ao processar pagamento: ${error instanceof Error ? error.message : 'Erro inesperado'}`);
       setRedirectingTo(null);
     }
   };
@@ -112,13 +109,13 @@ export const Pricing: React.FC = () => {
       </div>
 
       {/* Configuration Notice */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-4xl mx-auto">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-4xl mx-auto">
         <div className="flex items-start">
-          <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
+          <Check className="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
           <div>
-            <h3 className="font-semibold text-amber-900 mb-1">Configuração de Pagamentos</h3>
-            <p className="text-sm text-amber-800">
-              Para ativar os pagamentos, configure os Payment Links no seu Stripe Dashboard e atualize as URLs no arquivo <code>stripe-config.ts</code>
+            <h3 className="font-semibold text-green-900 mb-1">Pagamentos Configurados</h3>
+            <p className="text-sm text-green-800">
+              Sistema de pagamentos ativo e funcionando. Processamento seguro via Stripe.
             </p>
           </div>
         </div>
@@ -178,7 +175,7 @@ export const Pricing: React.FC = () => {
               ) : (
                 <>
                   Assinar Agora
-                  <ExternalLink className="w-5 h-5 ml-2" />
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </>
               )}
             </button>
@@ -186,86 +183,56 @@ export const Pricing: React.FC = () => {
         ))}
       </div>
 
-      {/* Setup Instructions */}
+      {/* Payment Security Section */}
       <div className="bg-blue-50 rounded-2xl p-8 max-w-4xl mx-auto">
         <h2 className="text-2xl font-bold text-blue-900 mb-6 text-center">
-          🔧 Como Configurar os Pagamentos
+          🔒 Pagamento 100% Seguro
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
-            <h3 className="text-lg font-semibold text-blue-900 mb-4">1. Criar Payment Links no Stripe</h3>
+            <h3 className="text-lg font-semibold text-blue-900 mb-4">Processamento Seguro</h3>
             <div className="space-y-3 text-sm text-blue-800">
-              <div className="flex items-start">
-                <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</div>
-                <div>
-                  <p className="font-medium">Acesse seu Stripe Dashboard</p>
-                  <p className="text-blue-700">dashboard.stripe.com</p>
-                </div>
+              <div className="flex items-center">
+                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <span>Processado pelo Stripe (certificação PCI DSS)</span>
               </div>
-              
-              <div className="flex items-start">
-                <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</div>
-                <div>
-                  <p className="font-medium">Vá em "Payment Links"</p>
-                  <p className="text-blue-700">No menu lateral esquerdo</p>
-                </div>
+              <div className="flex items-center">
+                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <span>Criptografia SSL 256-bit</span>
               </div>
-              
-              <div className="flex items-start">
-                <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</div>
-                <div>
-                  <p className="font-medium">Criar 3 Payment Links:</p>
-                  <ul className="text-blue-700 mt-1 space-y-1">
-                    <li>• Plano Mensal: R$ 29,90/mês</li>
-                    <li>• Plano Semestral: R$ 149,90 (6 meses)</li>
-                    <li>• Plano Anual: R$ 259,90/ano</li>
-                  </ul>
-                </div>
+              <div className="flex items-center">
+                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <span>Proteção contra fraude</span>
+              </div>
+              <div className="flex items-center">
+                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <span>Dados nunca armazenados em nossos servidores</span>
               </div>
             </div>
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-blue-900 mb-4">2. Configurar URLs no Código</h3>
+            <h3 className="text-lg font-semibold text-blue-900 mb-4">Formas de Pagamento</h3>
             <div className="space-y-3 text-sm text-blue-800">
-              <div className="flex items-start">
-                <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">4</div>
-                <div>
-                  <p className="font-medium">Copie as URLs dos Payment Links</p>
-                  <p className="text-blue-700">Cada link terá uma URL única</p>
-                </div>
+              <div className="flex items-center">
+                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <span>Cartão de crédito (Visa, Mastercard, Elo)</span>
               </div>
-              
-              <div className="flex items-start">
-                <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">5</div>
-                <div>
-                  <p className="font-medium">Edite o arquivo stripe-config.ts</p>
-                  <p className="text-blue-700">Substitua as URLs de exemplo pelas reais</p>
-                </div>
+              <div className="flex items-center">
+                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <span>Cartão de débito</span>
               </div>
-              
-              <div className="flex items-start">
-                <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">6</div>
-                <div>
-                  <p className="font-medium">Configure URLs de retorno</p>
-                  <p className="text-blue-700">Success: {window.location.origin}/?session_id={'{CHECKOUT_SESSION_ID}'}</p>
-                  <p className="text-blue-700">Cancel: {window.location.origin}/?page=pricing</p>
-                </div>
+              <div className="flex items-center">
+                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <span>PIX (disponível em breve)</span>
+              </div>
+              <div className="flex items-center">
+                <Check className="w-4 h-4 text-blue-600 mr-2" />
+                <span>Cancelamento a qualquer momento</span>
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="mt-8 p-4 bg-blue-100 rounded-lg">
-          <h4 className="font-semibold text-blue-900 mb-2">📋 Exemplo de Configuração:</h4>
-          <pre className="text-xs text-blue-800 bg-white p-3 rounded overflow-x-auto">
-{`const checkoutUrls: Record<string, string> = {
-  'plano-mensal': 'https://buy.stripe.com/test_abc123...',
-  'plano-semestral': 'https://buy.stripe.com/test_def456...',
-  'plano-anual': 'https://buy.stripe.com/test_ghi789...'
-};`}
-          </pre>
         </div>
       </div>
 

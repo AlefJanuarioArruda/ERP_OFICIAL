@@ -1,6 +1,6 @@
 import React from 'react';
 import { Crown, X, Check, Zap, Star, ExternalLink } from 'lucide-react';
-import { stripeProducts, formatPrice, getStripeCheckoutUrl } from '../stripe-config';
+import { stripeProducts, formatPrice, createCheckoutSession } from '../stripe-config';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -21,27 +21,19 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     setRedirectingTo(productName);
     
     try {
-      // Obter URL de checkout do Stripe
-      const checkoutUrl = getStripeCheckoutUrl(priceId);
+      // Criar sessão de checkout
+      const { url } = await createCheckoutSession(priceId);
       
-      if (checkoutUrl === '#') {
-        alert('Erro: URL de checkout não configurada para este produto');
-        setRedirectingTo(null);
-        return;
+      if (url) {
+        // Redirecionar para o Stripe Checkout
+        window.location.href = url;
+      } else {
+        throw new Error('URL de checkout não recebida');
       }
-      
-      // Adicionar parâmetros de sucesso e cancelamento
-      const successUrl = encodeURIComponent(`${window.location.origin}/?session_id={CHECKOUT_SESSION_ID}`);
-      const cancelUrl = encodeURIComponent(`${window.location.origin}/`);
-      
-      const finalUrl = `${checkoutUrl}?success_url=${successUrl}&cancel_url=${cancelUrl}`;
-      
-      // Redirecionar para o Stripe Checkout
-      window.location.href = finalUrl;
       
     } catch (error) {
       console.error('Erro ao redirecionar para checkout:', error);
-      alert('Erro inesperado. Tente novamente.');
+      alert(`Erro ao processar pagamento: ${error instanceof Error ? error.message : 'Erro inesperado'}`);
       setRedirectingTo(null);
     }
   };
@@ -172,7 +164,6 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   ) : (
                     <>
                       Assinar Agora
-                      <ExternalLink className="w-4 h-4 ml-2" />
                     </>
                   )}
                 </button>
