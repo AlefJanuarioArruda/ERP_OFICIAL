@@ -152,7 +152,7 @@ const getCurrentPlan = (): string => {
 
   
   if (isActive) {
-    return `Plano ${product.name} Ativo`;
+    return `${product.name} Ativo`;
   }
 
   return 'Nenhum plano ativo';
