@@ -135,10 +135,11 @@ export const createCheckoutSession = async (priceId: string, accessToken?: strin
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${accessToken}`,
       },
+      
       body: JSON.stringify({
         price_id: priceId,
         mode: 'subscription',
-        success_url: `https://erpsmart.com.br/?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${window.location.origin/?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${window.location.origin}/?page=pricing`,
       }),
     });
