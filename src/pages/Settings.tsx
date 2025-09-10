@@ -715,34 +715,9 @@ export const Settings: React.FC = () => {
 
 // Billing Section Component
 const BillingSection: React.FC = () => {
-  const { subscription, getActiveSubscription, loading } = useStripe();
-  const { createCheckoutSession } = useStripe();
-  const [managingSubscription, setManagingSubscription] = useState(false);
+  const { subscription, getActiveSubscription, loading, createCheckoutSession } = useStripe();
   const { product, isActive } = getActiveSubscription();
-
-  const handleManageSubscription = async () => {
-    if (!product || !isActive) {
-      alert('Nenhuma assinatura ativa encontrada');
-      return;
-    }
-
-    setManagingSubscription(true);
-    
-    try {
-      const result = await createCheckoutSession(product.priceId, 'subscription');
-      
-      if (result.success && result.url) {
-        window.location.href = result.url;
-      } else {
-        alert(result.error || 'Erro ao abrir gerenciamento de assinatura');
-      }
-    } catch (error) {
-      console.error('Error opening subscription management:', error);
-      alert('Erro inesperado. Tente novamente.');
-    } finally {
-      setManagingSubscription(false);
-    }
-  };
+  const [loadingManageSubscription, setLoadingManageSubscription] = useState(false);
 
   if (loading) {
     return (
@@ -810,6 +785,27 @@ const BillingSection: React.FC = () => {
     }
   };
 
+  const handleManageSubscription = async () => {
+    if (!product) return;
+    
+    setLoadingManageSubscription(true);
+    
+    try {
+      const result = await createCheckoutSession(product.priceId, 'subscription');
+      
+      if (result.success && result.url) {
+        window.location.href = result.url;
+      } else {
+        alert(result.error || 'Erro ao abrir gerenciamento de assinatura');
+      }
+    } catch (error) {
+      console.error('Error opening subscription management:', error);
+      alert('Erro inesperado. Tente novamente.');
+    } finally {
+      setLoadingManageSubscription(false);
+    }
+  };
+
   return (
     <>
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
@@ -861,13 +857,13 @@ const BillingSection: React.FC = () => {
         </button>
         <button 
           onClick={handleManageSubscription}
-          disabled={managingSubscription || !isActive}
+          disabled={loadingManageSubscription || !product}
           className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {managingSubscription ? (
+          {loadingManageSubscription ? (
             <div className="flex items-center">
               <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-              Abrindo...
+              Carregando...
             </div>
           ) : (
             'Gerenciar Assinatura'
