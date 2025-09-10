@@ -716,7 +716,33 @@ export const Settings: React.FC = () => {
 // Billing Section Component
 const BillingSection: React.FC = () => {
   const { subscription, getActiveSubscription, loading } = useStripe();
+  const { createCheckoutSession } = useStripe();
+  const [managingSubscription, setManagingSubscription] = useState(false);
   const { product, isActive } = getActiveSubscription();
+
+  const handleManageSubscription = async () => {
+    if (!product || !isActive) {
+      alert('Nenhuma assinatura ativa encontrada');
+      return;
+    }
+
+    setManagingSubscription(true);
+    
+    try {
+      const result = await createCheckoutSession(product.priceId, 'subscription');
+      
+      if (result.success && result.url) {
+        window.location.href = result.url;
+      } else {
+        alert(result.error || 'Erro ao abrir gerenciamento de assinatura');
+      }
+    } catch (error) {
+      console.error('Error opening subscription management:', error);
+      alert('Erro inesperado. Tente novamente.');
+    } finally {
+      setManagingSubscription(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -833,8 +859,19 @@ const BillingSection: React.FC = () => {
         >
           Alterar Plano
         </button>
-        <button className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-          Gerenciar Assinatura
+        <button 
+          onClick={handleManageSubscription}
+          disabled={managingSubscription || !isActive}
+          className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {managingSubscription ? (
+            <div className="flex items-center">
+              <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+              Abrindo...
+            </div>
+          ) : (
+            'Gerenciar Assinatura'
+          )}
         </button>
       </div>
     </>
