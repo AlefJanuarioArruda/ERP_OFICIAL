@@ -13,7 +13,7 @@ export const Success: React.FC = () => {
 
   useEffect(() => {
     // Get session ID from URL
-    const urlParams = new URLSearchParams('https://erpsmart.com.br/');
+    const urlParams = new URLSearchParams('https://erpsmart.com.br/success?');
     const sessionIdParam = urlParams.get('session_id');
     setSessionId(sessionIdParam);
 
