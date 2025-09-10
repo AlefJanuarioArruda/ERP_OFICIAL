@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, AlertCircle, CheckCircle, Clock, Edit, Trash2, Check, X,Crown } from 'lucide-react';
+import { Plus, Search, DollarSign, TrendingUp, TrendingDown, Calendar, AlertCircle, CheckCircle, Clock, Edit, Trash2, Check, X, Crown } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UsageLimitBanner } from '../components/UsageLimitBanner';
 import { UpgradeModal } from '../components/UpgradeModal';
+
+type TransactionType = 'income' | 'expense' | 'receivable' | 'payable';
 
 export const Finance: React.FC = () => {
   const { financialRecords, customers, addFinancialRecord, updateFinancialRecord, deleteFinancialRecord, loading } = useSupabaseData();
@@ -12,6 +14,7 @@ export const Finance: React.FC = () => {
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'paid' | 'overdue'>('all');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [transactionType, setTransactionType] = useState<TransactionType>('income');
   const [editingStatus, setEditingStatus] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -47,13 +50,32 @@ export const Finance: React.FC = () => {
     });
     setShowAddForm(false);
     setShowUpgradeModal(false);
+    setTransactionType('income');
   };
 
-  const handleAddTransaction = () => {
+  const handleAddTransaction = (type: TransactionType) => {
     if (!usageStatus.isSubscriptionActive) {
       setShowUpgradeModal(true);
       return;
     }
+    setTransactionType(type);
+    
+    // Set form defaults based on transaction type
+    switch (type) {
+      case 'income':
+        setFormData(prev => ({ ...prev, type: 'income', category: 'Vendas' }));
+        break;
+      case 'expense':
+        setFormData(prev => ({ ...prev, type: 'expense', category: 'Fornecedores' }));
+        break;
+      case 'receivable':
+        setFormData(prev => ({ ...prev, type: 'income', category: 'A Receber' }));
+        break;
+      case 'payable':
+        setFormData(prev => ({ ...prev, type: 'expense', category: 'A Pagar' }));
+        break;
+    }
+    
     setShowAddForm(true);
   };
 
@@ -63,7 +85,7 @@ export const Finance: React.FC = () => {
   };
 
   const handleStatusUpdate = async (recordId: string, newStatus: 'pending' | 'paid' | 'overdue') => {
-    if (!usageStatus.canEdit.products) {
+    if (!usageStatus.isSubscriptionActive) {
       setShowUpgradeModal(true);
       return;
     }
@@ -89,7 +111,7 @@ export const Finance: React.FC = () => {
   };
 
   const handleDelete = async (recordId: string) => {
-    if (!usageStatus.canDelete.products) {
+    if (!usageStatus.isSubscriptionActive) {
       setShowUpgradeModal(true);
       return;
     }
@@ -113,9 +135,9 @@ export const Finance: React.FC = () => {
       category: formData.category,
       amount: parseFloat(formData.amount),
       description: formData.description,
-      status: 'pending' as const,
+      status: (transactionType === 'receivable' || transactionType === 'payable') ? 'pending' as const : 'paid' as const,
       due_date: formData.due_date,
-      paid_date: null,
+      paid_date: (transactionType === 'income' || transactionType === 'expense') ? new Date().toISOString() : null,
       customer_id: formData.customer_id || null,
       sale_id: null
     };
@@ -125,7 +147,13 @@ export const Finance: React.FC = () => {
     if (error) {
       showNotification('error', 'Erro ao adicionar transação');
     } else {
-      showNotification('success', 'Transação adicionada com sucesso');
+      const typeLabels = {
+        income: 'receita',
+        expense: 'despesa',
+        receivable: 'conta a receber',
+        payable: 'conta a pagar'
+      };
+      showNotification('success', `${typeLabels[transactionType]} adicionada com sucesso`);
       resetForm();
     }
   };
@@ -174,6 +202,26 @@ export const Finance: React.FC = () => {
       default:
         return status;
     }
+  };
+
+  const getTransactionTypeLabel = (type: TransactionType) => {
+    const labels = {
+      income: 'Receita',
+      expense: 'Despesa',
+      receivable: 'A Receber',
+      payable: 'A Pagar'
+    };
+    return labels[type];
+  };
+
+  const getTransactionTypeColor = (type: TransactionType) => {
+    const colors = {
+      income: 'bg-green-600 hover:bg-green-700',
+      expense: 'bg-red-600 hover:bg-red-700',
+      receivable: 'bg-blue-600 hover:bg-blue-700',
+      payable: 'bg-orange-600 hover:bg-orange-700'
+    };
+    return colors[type];
   };
 
   // Calculate financial summary
@@ -243,18 +291,61 @@ export const Finance: React.FC = () => {
             )}
           </p>
         </div>
-        <button
-          onClick={handleAddTransaction}
-          disabled={!usageStatus.isSubscriptionActive}
-          className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
-            usageStatus.isSubscriptionActive
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          {usageStatus.isSubscriptionActive ? 'Nova Transação' : 'Assinar para Usar'}
-        </button>
+        
+        {/* Transaction Type Buttons */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => handleAddTransaction('income')}
+            disabled={!usageStatus.isSubscriptionActive}
+            className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm ${
+              usageStatus.isSubscriptionActive
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Receita
+          </button>
+          
+          <button
+            onClick={() => handleAddTransaction('expense')}
+            disabled={!usageStatus.isSubscriptionActive}
+            className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm ${
+              usageStatus.isSubscriptionActive
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Despesa
+          </button>
+          
+          <button
+            onClick={() => handleAddTransaction('receivable')}
+            disabled={!usageStatus.isSubscriptionActive}
+            className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm ${
+              usageStatus.isSubscriptionActive
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            A Receber
+          </button>
+          
+          <button
+            onClick={() => handleAddTransaction('payable')}
+            disabled={!usageStatus.isSubscriptionActive}
+            className={`flex items-center px-3 py-2 rounded-lg transition-colors text-sm ${
+              usageStatus.isSubscriptionActive
+                ? 'bg-orange-600 text-white hover:bg-orange-700'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            A Pagar
+          </button>
+        </div>
       </div>
 
       {/* Financial Summary */}
@@ -446,25 +537,25 @@ export const Finance: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => setEditingStatus(record.id)}
-                          disabled={!usageStatus.canEdit.products}
+                          disabled={!usageStatus.isSubscriptionActive}
                           className={`p-2 rounded-lg transition-colors ${
-                            usageStatus.canEdit.products
+                            usageStatus.isSubscriptionActive
                               ? 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
                               : 'text-gray-300 cursor-not-allowed'
                           }`}
-                          title="Alterar status"
+                          title={usageStatus.isSubscriptionActive ? "Alterar status" : "Disponível apenas na versão paga"}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setShowDeleteConfirm(record.id)}
-                          disabled={!usageStatus.canDelete.products}
+                          disabled={!usageStatus.isSubscriptionActive}
                           className={`p-2 rounded-lg transition-colors ${
-                            usageStatus.canDelete.products
+                            usageStatus.isSubscriptionActive
                               ? 'text-gray-400 hover:text-red-600 hover:bg-red-50'
                               : 'text-gray-300 cursor-not-allowed'
                           }`}
-                          title="Excluir transação"
+                          title={usageStatus.isSubscriptionActive ? "Excluir transação" : "Disponível apenas na versão paga"}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -484,13 +575,22 @@ export const Finance: React.FC = () => {
             {searchTerm ? 'Tente ajustar sua busca' : 'Comece adicionando sua primeira transação financeira'}
           </p>
           {!searchTerm && usageStatus.isSubscriptionActive && (
-            <button
-              onClick={handleAddTransaction}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Transação
-            </button>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button
+                onClick={() => handleAddTransaction('income')}
+                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Receita
+              </button>
+              <button
+                onClick={() => handleAddTransaction('expense')}
+                className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Despesa
+              </button>
+            </div>
           )}
           {!searchTerm && !usageStatus.isSubscriptionActive && (
             <button
@@ -512,26 +612,41 @@ export const Finance: React.FC = () => {
             
             <div className="inline-block w-full max-w-lg p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">Nova Transação</h3>
+                <div className="flex items-center">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${
+                    transactionType === 'income' ? 'bg-green-100' :
+                    transactionType === 'expense' ? 'bg-red-100' :
+                    transactionType === 'receivable' ? 'bg-blue-100' :
+                    'bg-orange-100'
+                  }`}>
+                    {transactionType === 'income' || transactionType === 'receivable' ? (
+                      <TrendingUp className={`w-5 h-5 ${
+                        transactionType === 'income' ? 'text-green-600' : 'text-blue-600'
+                      }`} />
+                    ) : (
+                      <TrendingDown className={`w-5 h-5 ${
+                        transactionType === 'expense' ? 'text-red-600' : 'text-orange-600'
+                      }`} />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Nova {getTransactionTypeLabel(transactionType)}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {transactionType === 'income' && 'Receita já recebida'}
+                      {transactionType === 'expense' && 'Despesa já paga'}
+                      {transactionType === 'receivable' && 'Valor a ser recebido'}
+                      {transactionType === 'payable' && 'Valor a ser pago'}
+                    </p>
+                  </div>
+                </div>
                 <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
                   <Plus className="w-5 h-5 transform rotate-45" />
                 </button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({...formData, type: e.target.value as any})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="income">Receita</option>
-                    <option value="expense">Despesa</option>
-                  </select>
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
@@ -540,7 +655,12 @@ export const Finance: React.FC = () => {
                       value={formData.category}
                       onChange={(e) => setFormData({...formData, category: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Ex: Vendas, Fornecedores"
+                      placeholder={
+                        transactionType === 'income' ? 'Ex: Vendas, Serviços' :
+                        transactionType === 'expense' ? 'Ex: Fornecedores, Aluguel' :
+                        transactionType === 'receivable' ? 'Ex: Vendas a Prazo' :
+                        'Ex: Fornecedores, Impostos'
+                      }
                       required
                     />
                   </div>
@@ -564,13 +684,21 @@ export const Finance: React.FC = () => {
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     rows={2}
+                    placeholder={
+                      transactionType === 'income' ? 'Ex: Venda de produtos para cliente X' :
+                      transactionType === 'expense' ? 'Ex: Compra de materiais' :
+                      transactionType === 'receivable' ? 'Ex: Venda parcelada - parcela 1/3' :
+                      'Ex: Pagamento de fornecedor - vencimento 30/12'
+                    }
                     required
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Data de Vencimento</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {transactionType === 'income' || transactionType === 'expense' ? 'Data da Transação' : 'Data de Vencimento'}
+                    </label>
                     <input
                       type="date"
                       value={formData.due_date}
@@ -579,7 +707,7 @@ export const Finance: React.FC = () => {
                       required
                     />
                   </div>
-                  {formData.type === 'income' && (
+                  {(transactionType === 'income' || transactionType === 'receivable') && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Cliente (opcional)</label>
                       <select
@@ -598,6 +726,24 @@ export const Finance: React.FC = () => {
                   )}
                 </div>
 
+                {/* Status Info */}
+                <div className={`p-3 rounded-lg border ${
+                  transactionType === 'income' || transactionType === 'expense' 
+                    ? 'bg-green-50 border-green-200' 
+                    : 'bg-amber-50 border-amber-200'
+                }`}>
+                  <p className={`text-sm font-medium ${
+                    transactionType === 'income' || transactionType === 'expense' 
+                      ? 'text-green-800' 
+                      : 'text-amber-800'
+                  }`}>
+                    {transactionType === 'income' && '✅ Esta receita será marcada como "Paga" automaticamente'}
+                    {transactionType === 'expense' && '✅ Esta despesa será marcada como "Paga" automaticamente'}
+                    {transactionType === 'receivable' && '⏳ Esta conta será marcada como "Pendente" até o recebimento'}
+                    {transactionType === 'payable' && '⏳ Esta conta será marcada como "Pendente" até o pagamento'}
+                  </p>
+                </div>
+
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
                     type="button"
@@ -608,9 +754,9 @@ export const Finance: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className={`px-4 py-2 text-white rounded-lg transition-colors ${getTransactionTypeColor(transactionType)}`}
                   >
-                    Adicionar Transação
+                    Adicionar {getTransactionTypeLabel(transactionType)}
                   </button>
                 </div>
               </form>
