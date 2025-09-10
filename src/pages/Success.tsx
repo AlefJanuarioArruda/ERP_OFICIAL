@@ -13,7 +13,7 @@ export const Success: React.FC = () => {
 
   useEffect(() => {
     // Get session ID from URL
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams();
     const sessionIdParam = urlParams.get('session_id');
     setSessionId(sessionIdParam);
 
