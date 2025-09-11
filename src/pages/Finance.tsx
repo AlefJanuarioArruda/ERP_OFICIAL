@@ -363,7 +363,154 @@ export const Finance: React.FC = () => {
           </div>
         </div>
       </div>
+            {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Meu Financeiro</h1>
+          <p className="text-gray-600">
+            Controle pessoal de contas a pagar e receber
+            {!usageStatus.isSubscriptionActive && (
+              <span className="text-amber-600 font-medium"> (Funcionalidade Premium)</span>
+            )}
+          </p>
+        </div>
 
+        
+        {/* Transaction Actions Container */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+          <div className="flex items-center mb-3">
+            <DollarSign className="w-5 h-5 text-gray-600 mr-2" />
+            <span className="text-sm font-medium text-gray-700">Adicionar Transação</span>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            {/* Income Button */}
+            <button
+              onClick={() => handleAddTransaction('income')}
+              disabled={!usageStatus.isSubscriptionActive}
+              className={`group flex flex-col items-center p-4 rounded-lg border-2 border-dashed transition-all duration-200 ${
+                usageStatus.isSubscriptionActive
+                  ? 'border-green-300 bg-green-50 hover:bg-green-100 hover:border-green-400'
+                  : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
+                usageStatus.isSubscriptionActive ? 'bg-green-100' : 'bg-gray-100'
+              }`}>
+                <TrendingUp className={`w-4 h-4 ${
+                  usageStatus.isSubscriptionActive ? 'text-green-600' : 'text-gray-400'
+                }`} />
+              </div>
+              <span className={`text-sm font-medium ${
+                usageStatus.isSubscriptionActive ? 'text-green-700' : 'text-gray-400'
+              }`}>
+                Receita
+              </span>
+              <span className={`text-xs ${
+                usageStatus.isSubscriptionActive ? 'text-green-600' : 'text-gray-400'
+              }`}>
+                Já recebida
+              </span>
+            </button>
+
+            {/* Expense Button */}
+            <button
+              onClick={() => handleAddTransaction('expense')}
+              disabled={!usageStatus.isSubscriptionActive}
+              className={`group flex flex-col items-center p-4 rounded-lg border-2 border-dashed transition-all duration-200 ${
+                usageStatus.isSubscriptionActive
+                  ? 'border-red-300 bg-red-50 hover:bg-red-100 hover:border-red-400'
+                  : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
+                usageStatus.isSubscriptionActive ? 'bg-red-100' : 'bg-gray-100'
+              }`}>
+                <TrendingDown className={`w-4 h-4 ${
+                  usageStatus.isSubscriptionActive ? 'text-red-600' : 'text-gray-400'
+                }`} />
+              </div>
+              <span className={`text-sm font-medium ${
+                usageStatus.isSubscriptionActive ? 'text-red-700' : 'text-gray-400'
+              }`}>
+                Despesa
+              </span>
+              <span className={`text-xs ${
+                usageStatus.isSubscriptionActive ? 'text-red-600' : 'text-gray-400'
+              }`}>
+                Já paga
+              </span>
+            </button>
+
+            {/* Receivable Button */}
+            <button
+              onClick={() => handleAddTransaction('receivable')}
+              disabled={!usageStatus.isSubscriptionActive}
+              className={`group flex flex-col items-center p-4 rounded-lg border-2 border-dashed transition-all duration-200 ${
+                usageStatus.isSubscriptionActive
+                  ? 'border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400'
+                  : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
+                usageStatus.isSubscriptionActive ? 'bg-blue-100' : 'bg-gray-100'
+              }`}>
+                <Clock className={`w-4 h-4 ${
+                  usageStatus.isSubscriptionActive ? 'text-blue-600' : 'text-gray-400'
+                }`} />
+              </div>
+              <span className={`text-sm font-medium ${
+                usageStatus.isSubscriptionActive ? 'text-blue-700' : 'text-gray-400'
+              }`}>
+                A Receber
+              </span>
+              <span className={`text-xs ${
+                usageStatus.isSubscriptionActive ? 'text-blue-600' : 'text-gray-400'
+              }`}>
+                Pendente
+              </span>
+            </button>
+
+            {/* Payable Button */}
+            <button
+              onClick={() => handleAddTransaction('payable')}
+              disabled={!usageStatus.isSubscriptionActive}
+              className={`group flex flex-col items-center p-4 rounded-lg border-2 border-dashed transition-all duration-200 ${
+                usageStatus.isSubscriptionActive
+                  ? 'border-orange-300 bg-orange-50 hover:bg-orange-100 hover:border-orange-400'
+                  : 'border-gray-200 bg-gray-50 cursor-not-allowed'
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
+                usageStatus.isSubscriptionActive ? 'bg-orange-100' : 'bg-gray-100'
+              }`}>
+                <AlertCircle className={`w-4 h-4 ${
+                  usageStatus.isSubscriptionActive ? 'text-orange-600' : 'text-gray-400'
+                }`} />
+              </div>
+              <span className={`text-sm font-medium ${
+                usageStatus.isSubscriptionActive ? 'text-orange-700' : 'text-gray-400'
+              }`}>
+                A Pagar
+              </span>
+              <span className={`text-xs ${
+                usageStatus.isSubscriptionActive ? 'text-orange-600' : 'text-gray-400'
+              }`}>
+                Pendente
+              </span>
+            </button>
+          </div>
+
+          {!usageStatus.isSubscriptionActive && (
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <div className="flex items-center justify-center">
+                <Crown className="w-4 h-4 text-amber-500 mr-2" />
+                <span className="text-xs text-amber-600 font-medium">Assine para desbloquear</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
