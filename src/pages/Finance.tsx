@@ -311,9 +311,9 @@ export const Finance: React.FC = () => {
         </div>
       )}
 
-                  {/* Header */}
+      {/* Header */}
        
-          <h1 className="text-2xl font-bold text-gray-900">Meu Financeiro</h1>
+      <h1 className="text-2xl font-bold text-gray-900">Meu Financeiro</h1>
       
       
 
