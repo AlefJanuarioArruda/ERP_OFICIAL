@@ -322,6 +322,58 @@ export const Finance: React.FC = () => {
             )}
           </p>
         </div>
+      
+
+      {/* Financial Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Receitas Recebidas</p>
+              <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</p>
+            </div>
+            <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Despesas Pagas</p>
+              <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpense)}</p>
+            </div>
+            <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
+              <TrendingDown className="w-6 h-6 text-red-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">A Receber</p>
+              <p className="text-2xl font-bold text-amber-600">{formatCurrency(pendingIncome)}</p>
+            </div>
+            <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center">
+              <Clock className="w-6 h-6 text-amber-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">A Pagar</p>
+              <p className="text-2xl font-bold text-purple-600">{formatCurrency(pendingExpense)}</p>
+            </div>
+            <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
+              <AlertCircle className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+      </div>
         
         {/* Transaction Actions Container */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
@@ -457,59 +509,7 @@ export const Finance: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Financial Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Receitas Recebidas</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Despesas Pagas</p>
-              <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpense)}</p>
-            </div>
-            <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
-              <TrendingDown className="w-6 h-6 text-red-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">A Receber</p>
-              <p className="text-2xl font-bold text-amber-600">{formatCurrency(pendingIncome)}</p>
-            </div>
-            <div className="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center">
-              <Clock className="w-6 h-6 text-amber-600" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">A Pagar</p>
-              <p className="text-2xl font-bold text-purple-600">{formatCurrency(pendingExpense)}</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-              <AlertCircle className="w-6 h-6 text-purple-600" />
-            </div>
-          </div>
-        </div>
-      </div>
-
+      </div> 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
