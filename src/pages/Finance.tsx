@@ -315,12 +315,7 @@ export const Finance: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Meu Financeiro</h1>
-          <p className="text-gray-600">
-            Controle pessoal de contas a pagar e receber
-            {!usageStatus.isSubscriptionActive && (
-              <span className="text-amber-600 font-medium"> (Funcionalidade Premium)</span>
-            )}
-          </p>
+          
         </div>
 
       {/* Financial Summary */}
