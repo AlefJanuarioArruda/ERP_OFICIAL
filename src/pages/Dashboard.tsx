@@ -12,6 +12,7 @@ export const Dashboard: React.FC = () => {
 
   
 
+  
   useEffect(() => {
     trackEvent('dashboard_view', {
       event_category: 'engagement',
