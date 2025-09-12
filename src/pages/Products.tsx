@@ -239,6 +239,18 @@ export const Products: React.FC = () => {
       price: v.price
     })));
     
+    // Load existing variation images
+    const newVariationImages = new Map();
+    existingVariations.forEach((variation, index) => {
+      if (variation.image_url) {
+        newVariationImages.set(index, {
+          file: null, // No file object for existing images
+          preview: variation.image_url
+        });
+      }
+    });
+    setVariationImages(newVariationImages);
+    
     setEditingProduct(product);
     setShowAddForm(true);
     
