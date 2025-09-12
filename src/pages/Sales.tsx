@@ -628,10 +628,10 @@ export const Sales: React.FC = () => {
                                     <img
                                       src={product.image_url}
                                       alt={product.name}
-                                     className="w-full h-full object-cover rounded-full"
+                                     className="w-full h-full object-cover"
                                     />
                                   ) : (
-                                   <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center rounded-full">
+                                   <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
                                       <Package className="w-6 h-6 text-gray-400" />
                                     </div>
                                   )}
@@ -667,10 +667,10 @@ export const Sales: React.FC = () => {
                                           <img
                                             src={variation.image_url}
                                             alt={variation.variation_name}
-                                           className="w-full h-full object-cover rounded-full"
+                                           className="w-full h-full object-cover"
                                           />
                                         ) : (
-                                         <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center rounded-full">
+                                         <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
                                             <Package className="w-3 h-3 text-blue-400" />
                                           </div>
                                         )}
