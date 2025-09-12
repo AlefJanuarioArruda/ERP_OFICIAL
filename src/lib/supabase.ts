@@ -131,6 +131,7 @@ export interface ProductVariation {
   sku: string
   stock: number
   price: number | null
+  image_url: string | null
   created_at: string
   updated_at: string
 }

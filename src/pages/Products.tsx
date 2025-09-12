@@ -423,8 +423,16 @@ export const Products: React.FC = () => {
             <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Package className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center overflow-hidden">
+                    {product.image_url ? (
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="w-10 h-10 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <Package className="w-5 h-5 text-blue-600" />
+                    )}
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900">{product.name}</h3>
@@ -960,11 +968,26 @@ export const Products: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {variations.map((variation) => (
                         <div key={variation.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                          <div className="flex items-center justify-between mb-3">
-                            <h4 className="font-medium text-gray-900">{variation.variation_name}</h4>
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                              {variation.sku}
-                            </span>
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {variation.image_url ? (
+                                  <img
+                                    src={variation.image_url}
+                                    alt={variation.variation_name}
+                                    className="w-12 h-12 object-cover rounded-lg"
+                                  />
+                                ) : (
+                                  <Palette className="w-6 h-6 text-gray-400" />
+                                )}
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">{variation.variation_name}</h4>
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                                  {variation.sku}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                           
                           <div className="space-y-2">
