@@ -7,6 +7,15 @@ import { useSupabaseData } from '../hooks/useSupabaseData';
 export const Dashboard: React.FC = () => {
   const { dashboardMetrics, aiInsights, markInsightAsRead, products, customers, sales, loading } = useSupabaseData();
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+      window.gtag('event', 'dashboard_view', {
+        event_category: 'engagement',
+        event_label: 'User visited /dashboard'
+      });
+    }
+  }, []);
+  
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
