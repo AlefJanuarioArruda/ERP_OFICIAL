@@ -31,6 +31,10 @@ export const Products: React.FC = () => {
     supplier: '',
   });
 
+  // Image upload states
+  const [selectedProductImage, setSelectedProductImage] = useState<File | null>(null);
+  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+  const [variationImages, setVariationImages] = useState<Map<number, { file: File; preview: string }>>(new Map());
   // Effect to show limit banner when limit is reached
   React.useEffect(() => {
     if (usageStatus.isLimitReached.products && !usageStatus.isSubscriptionActive) {
@@ -61,6 +65,9 @@ export const Products: React.FC = () => {
     setProductVariationsFormData([]);
     setShowUpgradeModal(false);
     setShowVariationsModal(null);
+    setSelectedProductImage(null);
+    setProductImagePreview(null);
+    setVariationImages(new Map());
   };
 
   const showNotification = (type: 'success' | 'error', message: string) => {
@@ -140,9 +147,9 @@ export const Products: React.FC = () => {
 
     let result;
     if (editingProduct) {
-      result = await updateProduct(editingProduct.id, productData);
+      result = await updateProduct(editingProduct.id, productData, selectedProductImage || undefined);
     } else {
-      result = await addProduct(productData);
+      result = await addProduct(productData, selectedProductImage || undefined);
     }
 
     if (result?.error) {
@@ -164,7 +171,8 @@ export const Products: React.FC = () => {
         }
         
         // Add all variations from form
-        for (const variation of productVariationsFormData) {
+        for (let i = 0; i < productVariationsFormData.length; i++) {
+          const variation = productVariationsFormData[i];
           if (variation.sku && variation.sku.trim()) {
             // Generate variation name if not provided
             let variationName = variation.variation_name;
@@ -175,6 +183,8 @@ export const Products: React.FC = () => {
               variationName = `Variação ${variation.sku}`;
             }
             
+            const variationImageFile = variationImages.get(i)?.file;
+            
             await addProductVariation({
               product_id: newProductId,
               variation_name: variationName,
@@ -183,7 +193,7 @@ export const Products: React.FC = () => {
               sku: variation.sku,
               stock: variation.stock,
               price: variation.price
-            });
+            }, variationImageFile);
           }
         }
         
@@ -231,8 +241,49 @@ export const Products: React.FC = () => {
     
     setEditingProduct(product);
     setShowAddForm(true);
+    
+    // Set existing product image if available
+    if (product.image_url) {
+      setProductImagePreview(product.image_url);
+    }
   };
 
+  const handleProductImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedProductImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProductImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveProductImage = () => {
+    setSelectedProductImage(null);
+    setProductImagePreview(null);
+  };
+
+  const handleVariationImageSelect = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const preview = e.target?.result as string;
+        setVariationImages(prev => new Map(prev.set(index, { file, preview })));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveVariationImage = (index: number) => {
+    setVariationImages(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(index);
+      return newMap;
+    });
+  };
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -544,6 +595,54 @@ export const Products: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
+              {/* Product Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Imagem do Produto</label>
+                <div className="flex items-center space-x-4">
+                  {/* Image Preview */}
+                  <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden">
+                    {productImagePreview ? (
+                      <div className="relative w-full h-full">
+                        <img
+                          src={productImagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveProductImage}
+                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Package className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                        <span className="text-xs text-gray-500">Sem imagem</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Upload Button */}
+                  <div className="flex-1">
+                    <label className="cursor-pointer">
+                      <div className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        <span className="text-sm text-gray-700">
+                          {productImagePreview ? 'Alterar Imagem' : 'Adicionar Imagem'}
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProductImageSelect}
+                        className="hidden"
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG até 5MB</p>
+                  </div>
+                </div>
+              </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Preço de Venda</label>
                     <input
@@ -656,6 +755,55 @@ export const Products: React.FC = () => {
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Variation Image Upload */}
+                      <div className="mb-3">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Imagem da Variação</label>
+                        <div className="flex items-center space-x-3">
+                          {/* Image Preview */}
+                          <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden">
+                            {variationImages.get(index)?.preview ? (
+                              <div className="relative w-full h-full">
+                                <img
+                                  src={variationImages.get(index)?.preview}
+                                  alt="Preview"
+                                  className="w-full h-full object-cover"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveVariationImage(index)}
+                                  className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-center">
+                                <Palette className="w-4 h-4 text-gray-400 mx-auto mb-1" />
+                                <span className="text-xs text-gray-500">Sem foto</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Upload Button */}
+                          <div className="flex-1">
+                            <label className="cursor-pointer">
+                              <div className="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                <span className="text-xs text-gray-700">
+                                  {variationImages.get(index) ? 'Alterar' : 'Adicionar Foto'}
+                                </span>
+                              </div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleVariationImageSelect(index, e)}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">SKU da Variação</label>
