@@ -800,10 +800,10 @@ export const Products: React.FC = () => {
                         <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
                           {/* Image Preview */}
                           <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden flex-shrink-0">
-                            {variationImages.get(index)?.preview ? (
+                            {(variationImages.get(index)?.preview || variationImageUrls.get(index)) ? (
                               <div className="relative w-full h-full">
                                 <img
-                                  src={variationImages.get(index)?.preview}
+                                  src={variationImages.get(index)?.preview || variationImageUrls.get(index)}
                                   alt="Preview"
                                   className="w-full h-full object-cover"
                                 />
@@ -829,7 +829,7 @@ export const Products: React.FC = () => {
                               <div className="w-full flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                                 <Palette className="w-3 h-3 mr-2 text-gray-500" />
                                 <span className="text-xs text-gray-700 font-medium">
-                                  {variationImages.get(index) ? 'Alterar' : 'Adicionar Foto'}
+                                  {(variationImages.get(index) || variationImageUrls.get(index)) ? 'Alterar' : 'Adicionar Foto'}
                                 </span>
                               </div>
                               <input

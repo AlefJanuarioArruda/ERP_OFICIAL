@@ -269,7 +269,7 @@ export const useSupabaseData = () => {
   const addProductVariation = async (variationData: Omit<ProductVariation, 'id' | 'user_id' | 'created_at' | 'updated_at'>, imageFile?: File) => {
     if (!user) return
 
-    let imageUrl = null
+    let imageUrl = variationData.image_url || null
     
     // Upload image if provided
     if (imageFile) {
