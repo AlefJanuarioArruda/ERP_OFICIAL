@@ -3,10 +3,8 @@ import { DollarSign, TrendingUp, TrendingDown, Package, Users, ShoppingCart } fr
 import { MetricCard } from '../components/MetricCard';
 import { AIInsightCard } from '../components/AIInsightCard';
 import { useSupabaseData } from '../hooks/useSupabaseData';
-import { trackEvent } from '../lib/analytics';
 
-export const Dashboard: React.FC = () => {
-  const { dashboardMetrics, aiInsights, markInsightAsRead, products, customers, sales, loading } = useSupabaseData();
+
 
  export const trackEvent = (name: string, params?: Record<string, any>) => {
   if (typeof window !== 'undefined' && window.dataLayer) {
@@ -16,6 +14,9 @@ export const Dashboard: React.FC = () => {
     });
   }
 };
+
+export const Dashboard: React.FC = () => {
+  const { dashboardMetrics, aiInsights, markInsightAsRead, products, customers, sales, loading } = useSupabaseData();
 
   
 
