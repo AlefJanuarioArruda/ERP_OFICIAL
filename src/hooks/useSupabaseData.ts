@@ -93,10 +93,51 @@ export const useSupabaseData = () => {
   }, [user])
 
   // Product operations
+  const ensureBucketExists = async (bucketName: string): Promise<boolean> => {
+    try {
+      // Check if bucket exists
+      const { data: buckets, error: listError } = await supabase.storage.listBuckets()
+      
+      if (listError) {
+        console.error('Error listing buckets:', listError)
+        return false
+      }
+      
+      const bucketExists = buckets?.some(bucket => bucket.id === bucketName)
+      
+      if (!bucketExists) {
+        // Create the bucket
+        const { error: createError } = await supabase.storage.createBucket(bucketName, {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB
+          allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+        })
+        
+        if (createError) {
+          console.error('Error creating bucket:', createError)
+          return false
+        }
+        
+        console.log(`Bucket '${bucketName}' created successfully`)
+      }
+      
+      return true
+    } catch (error) {
+      console.error('Error ensuring bucket exists:', error)
+      return false
+    }
+  }
+
   const uploadProductImage = async (file: File, productId?: string): Promise<{ url: string | null; error: any }> => {
     if (!user) return { url: null, error: 'User not authenticated' }
 
     try {
+      // Ensure the bucket exists before uploading
+      const bucketReady = await ensureBucketExists('product-images')
+      if (!bucketReady) {
+        return { url: null, error: 'Não foi possível preparar o armazenamento de imagens. Tente novamente.' }
+      }
+      
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         return { url: null, error: 'Imagem muito grande. Máximo 5MB.' }
@@ -116,11 +157,37 @@ export const useSupabaseData = () => {
         .from('product-images')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true
         })
 
       if (error) {
         console.error('Supabase Storage upload error:', error)
+        
+        // If it's still a bucket not found error, try one more time
+        if (error.message?.includes('Bucket not found')) {
+          const bucketReady = await ensureBucketExists('product-images')
+          if (bucketReady) {
+            // Retry upload
+            const { data: retryData, error: retryError } = await supabase.storage
+              .from('product-images')
+              .upload(fileName, file, {
+                cacheControl: '3600',
+                upsert: true
+              })
+            
+            if (retryError) {
+              return { url: null, error: `Erro ao fazer upload da imagem: ${retryError.message}` }
+            }
+            
+            // Get public URL for retry
+            const { data: retryPublicUrlData } = supabase.storage
+              .from('product-images')
+              .getPublicUrl(fileName)
+            
+            return { url: retryPublicUrlData?.publicUrl || null, error: null }
+          }
+        }
+        
         return { url: null, error: `Erro ao fazer upload da imagem: ${error.message}` }
       }
 
