@@ -108,15 +108,13 @@ export const useSupabaseData = () => {
       }
 
       const fileExtension = file.name.split('.').pop()
-      const fileName = productId 
-        ? `product-${productId}-${Date.now()}.${fileExtension}`
-        : `product-${user.id}-${Date.now()}.${fileExtension}`
+      const fileName = `${user.id}/${productId || 'product'}-${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExtension}`
 
       const { data, error } = await supabase.storage
         .from('product-images')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: true
+          upsert: false
         })
 
       if (error) {
@@ -275,7 +273,7 @@ export const useSupabaseData = () => {
     
     // Upload image if provided
     if (imageFile) {
-      const uploadResult = await uploadProductImage(imageFile)
+      const uploadResult = await uploadProductImage(imageFile, `variation-${variationData.product_id}-${Date.now()}`)
       if (uploadResult.error) {
         return { data: null, error: uploadResult.error }
       }
@@ -313,7 +311,7 @@ export const useSupabaseData = () => {
       }
       
       // Upload new image
-      const uploadResult = await uploadProductImage(imageFile)
+      const uploadResult = await uploadProductImage(imageFile, `variation-${id}-${Date.now()}`)
       if (uploadResult.error) {
         return { data: null, error: uploadResult.error }
       }
