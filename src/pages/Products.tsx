@@ -450,4 +450,583 @@ export const Products: React.FC = () => {
                     <p className="text-sm text-gray-500">SKU: {product.sku}</p>
                   </div>
                 </div>
-                <div className="flex items-center space
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleEdit(product)}
+                    className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                    title="Editar produto"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(product.id)}
+                    className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                    title="Excluir produto"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-semibold text-gray-900">{formatCurrency(product.price)}</p>
+                    <p className="text-sm text-gray-500">Custo: {formatCurrency(product.cost_price)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm font-medium ${
+                      product.stock <= product.min_stock ? 'text-red-600' : 'text-green-600'
+                    }`}>
+                      {product.stock} em estoque
+                    </p>
+                    {product.stock <= product.min_stock && (
+                      <div className="flex items-center text-red-600 text-xs mt-1">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        Estoque baixo
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    {product.category}
+                  </span>
+                  
+                  {/* Show variations count if any exist */}
+                  {(() => {
+                    const variations = getVariationsForProduct(product.id);
+                    return variations.length > 0 && (
+                      <button
+                        onClick={() => setShowVariationsModal(product.id)}
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        {variations.length} variação{variations.length !== 1 ? 'ões' : ''}
+                      </button>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum produto encontrado</h3>
+          <p className="text-gray-500 mb-4">
+            {searchTerm ? 'Tente ajustar sua busca.' : 'Comece adicionando seu primeiro produto.'}
+          </p>
+          {!searchTerm && (
+            <button
+              onClick={handleAddProduct}
+              disabled={!usageStatus.canAdd.products}
+              className={`inline-flex items-center px-4 py-2 rounded-lg transition-colors ${
+                usageStatus.canAdd.products
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Produto
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Add/Edit Product Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {editingProduct ? 'Editar Produto' : 'Novo Produto'}
+              </h2>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* Product Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Imagem do Produto
+                </label>
+                <div className="flex items-center space-x-4">
+                  {imagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                      <Image className="w-8 h-8 text-gray-400" />
+                    </div>
+                  )}
+                  
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      id="product-image"
+                    />
+                    <label
+                      htmlFor="product-image"
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      {imagePreview ? 'Alterar Imagem' : 'Adicionar Imagem'}
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      PNG, JPG até 5MB
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Basic Product Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nome do Produto *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    SKU *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descrição
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Preço de Venda *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Preço de Custo *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={formData.cost_price}
+                    onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estoque Atual *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={formData.stock}
+                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estoque Mínimo *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={formData.min_stock}
+                    onChange={(e) => setFormData({ ...formData, min_stock: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Categoria *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fornecedor
+                </label>
+                <input
+                  type="text"
+                  value={formData.supplier}
+                  onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Product Variations Section */}
+              <div className="border-t border-gray-200 pt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Variações do Produto</h3>
+                  <button
+                    type="button"
+                    onClick={handleAddVariation}
+                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar Variação
+                  </button>
+                </div>
+
+                {productVariationsFormData.length > 0 && (
+                  <div className="space-y-4">
+                    {productVariationsFormData.map((variation, index) => (
+                      <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium text-gray-900">Variação {index + 1}</h4>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVariation(index.toString())}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Variation Image Upload */}
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Imagem da Variação
+                          </label>
+                          <div className="flex items-center space-x-3">
+                            {variationImages.get(index)?.preview ? (
+                              <div className="relative">
+                                <img
+                                  src={variationImages.get(index)?.preview}
+                                  alt="Preview da variação"
+                                  className="w-16 h-16 object-cover rounded-lg border border-gray-300"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeVariationImage(index)}
+                                  className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                                <Camera className="w-6 h-6 text-gray-400" />
+                              </div>
+                            )}
+                            
+                            <div>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleVariationImageSelect(index, e)}
+                                className="hidden"
+                                id={`variation-image-${index}`}
+                              />
+                              <label
+                                htmlFor={`variation-image-${index}`}
+                                className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+                              >
+                                <Upload className="w-3 h-3 mr-1" />
+                                {variationImages.get(index)?.preview ? 'Alterar' : 'Adicionar'}
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Nome da Variação
+                            </label>
+                            <input
+                              type="text"
+                              value={variation.variation_name}
+                              onChange={(e) => handleVariationChange(index, 'variation_name', e.target.value)}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="Ex: Azul Médio"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              <Palette className="w-3 h-3 inline mr-1" />
+                              Cor
+                            </label>
+                            <input
+                              type="text"
+                              value={variation.color || ''}
+                              onChange={(e) => handleVariationChange(index, 'color', e.target.value)}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="Ex: Azul"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              <Ruler className="w-3 h-3 inline mr-1" />
+                              Tamanho
+                            </label>
+                            <input
+                              type="text"
+                              value={variation.size || ''}
+                              onChange={(e) => handleVariationChange(index, 'size', e.target.value)}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="Ex: M"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              SKU *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={variation.sku}
+                              onChange={(e) => handleVariationChange(index, 'sku', e.target.value)}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="Ex: PROD-001-AZ-M"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Estoque *
+                            </label>
+                            <input
+                              type="number"
+                              required
+                              value={variation.stock}
+                              onChange={(e) => handleVariationChange(index, 'stock', parseInt(e.target.value))}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              <DollarSign className="w-3 h-3 inline mr-1" />
+                              Preço (opcional)
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={variation.price || ''}
+                              onChange={(e) => handleVariationChange(index, 'price', e.target.value ? parseFloat(e.target.value) : null)}
+                              className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                              placeholder="Usar preço do produto"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex items-center justify-end space-x-3 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {editingProduct ? 'Atualizar Produto' : 'Adicionar Produto'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Variations Modal */}
+      {showVariationsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[80vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Variações do Produto
+                </h2>
+                <button
+                  onClick={() => setShowVariationsModal(null)}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {(() => {
+                const variations = getVariationsForProduct(showVariationsModal);
+                return variations.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {variations.map((variation) => (
+                      <div key={variation.id} className="bg-gray-50 p-4 rounded-lg">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                            {variation.image_url ? (
+                              <img
+                                src={variation.image_url}
+                                alt={variation.variation_name}
+                                className="w-12 h-12 rounded-lg object-cover"
+                              />
+                            ) : (
+                              <Package className="w-6 h-6 text-gray-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-900 truncate">
+                              {variation.variation_name}
+                            </h4>
+                            <p className="text-sm text-gray-500">SKU: {variation.sku}</p>
+                            
+                            <div className="flex items-center space-x-4 mt-2">
+                              {variation.color && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  {variation.color}
+                                </span>
+                              )}
+                              {variation.size && (
+                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                  {variation.size}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center justify-between mt-3">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {variation.price ? formatCurrency(variation.price) : 'Preço padrão'}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  Estoque: {variation.stock}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Nenhuma variação encontrada para este produto.</p>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center mr-3">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Confirmar Exclusão</h3>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex items-center justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => handleDelete(showDeleteConfirm)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Excluir
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
+      )}
+    </div>
+  );
+};
