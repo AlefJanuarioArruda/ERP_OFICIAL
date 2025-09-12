@@ -300,6 +300,12 @@ export const useSupabaseData = () => {
   }) => {
     if (!user) return
 
+    // Helper function to validate UUID format
+    const isValidUUID = (uuid: string): boolean => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(uuid);
+    }
+
     // Generate invoice number
     const invoiceNumber = `INV-${user.id.slice(0, 8)}-${String(sales.length + 1).padStart(3, '0')}`
 
@@ -331,7 +337,15 @@ export const useSupabaseData = () => {
     const saleItemsToInsert = saleData.items.map(item => ({
       user_id: user.id,
       sale_id: saleRecord.id,
-      product_id: item.product_id?.includes('-') ? item.product_id.split('-')[0] : item.product_id,
+      product_id: (() => {
+        if (!item.product_id) return null;
+        
+        // Extract main product ID if it's a variation (contains hyphen)
+        const extractedId = item.product_id.includes('-') ? item.product_id.split('-')[0] : item.product_id;
+        
+        // Validate UUID format
+        return isValidUUID(extractedId) ? extractedId : null;
+      })(),
       product_name: item.product_name,
       quantity: item.quantity,
       unit_price: item.unit_price,
