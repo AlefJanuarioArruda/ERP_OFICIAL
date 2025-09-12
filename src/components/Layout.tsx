@@ -223,7 +223,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <img
                           src={user.user_metadata.avatar_url}
                           alt={user?.user_metadata?.full_name || 'Usuário'}
-                          className="w-12 h-12 rounded-full object-cover"
+                          className="w-8 h-8 rounded-full object-cover"
                         />
                       ) : (
                         <User className="w-6 h-6 text-blue-600" />
