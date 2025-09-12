@@ -450,38 +450,4 @@ export const Products: React.FC = () => {
                     <p className="text-sm text-gray-500">SKU: {product.sku}</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleEdit(product)}
-                    className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                    title="Editar produto"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setShowDeleteConfirm(product.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                    title="Excluir produto"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum produto encontrado</h3>
-          <p className="text-gray-500">Comece adicionando seu primeiro produto.</p>
-        </div>
-      )}
-
-      {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
-      )}
-    </div>
-  );
-};
+                <div className="flex items-center space
