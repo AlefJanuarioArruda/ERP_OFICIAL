@@ -636,30 +636,6 @@ export const useSupabaseData = () => {
       }
     }
   };
-          const lowStockInsight = {
-            user_id: user.id,
-            type: 'alert' as const,
-            title: 'Estoque Baixo Após Venda',
-            description: `O produto "${item.product_name}" ficou com estoque baixo após a venda. Considere reabastecer.`,
-            priority: 'high' as const,
-            category: 'inventory' as const,
-            data: { product_id: item.product_id, current_stock: product.stock - item.quantity },
-            is_read: false
-          }
-
-          const { data: lowStockData } = await supabase
-            .from('ai_insights')
-            .insert(lowStockInsight)
-            .select()
-            .single()
-
-          if (lowStockData) {
-            setAiInsights(prev => [lowStockData, ...prev])
-          }
-        }
-      }
-    }
-  }
 
   // Calculate dashboard metrics
   const getDashboardMetrics = () => {
