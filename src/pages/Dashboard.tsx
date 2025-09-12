@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { DollarSign, TrendingUp, TrendingDown, Package, Users, ShoppingCart } from 'lucide-react';
 import { MetricCard } from '../components/MetricCard';
 import { AIInsightCard } from '../components/AIInsightCard';
