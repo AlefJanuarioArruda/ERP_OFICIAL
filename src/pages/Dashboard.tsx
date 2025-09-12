@@ -4,11 +4,23 @@ import { MetricCard } from '../components/MetricCard';
 import { AIInsightCard } from '../components/AIInsightCard';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 
-
+declare global {
+  interface Window {
+    gtag: (command: string, targetId: string, params?: object) => void;
+  }
+}
 
 export const Dashboard: React.FC = () => {
   const { dashboardMetrics, aiInsights, markInsightAsRead, products, customers, sales, loading } = useSupabaseData();
 
+   // 2. Use o hook useEffect para disparar a tag quando o componente montar
+  useEffect(() => {
+    // Verifica se a função gtag está disponível na window antes de chamá-la
+    if (window.gtag) {
+      window.gtag('config', 'AW-11484241332');
+      console.log("Evento de visualização do Dashboard enviado para o Google Ads.");
+    }
+  }, []);
 
   
   const formatCurrency = (value: number) => {
