@@ -17,6 +17,7 @@ export interface Product {
   category: string;
   sku: string;
   supplier?: string;
+  imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
