@@ -646,60 +646,6 @@ export const Sales: React.FC = () => {
                                       <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
                                       <div className="flex items-center space-x-2 text-xs text-gray-600">
                                         {variation.color && <span>Cor: {variation.color}</span>}
-                                        {variation.size && <span>Tam: {variation.size}</span>}
-                                        <span>SKU: {variation.sku}</span>
-                                      </div>
-                                      <p className="text-xs text-gray-500">
-                                        {formatCurrency(variation.price || product.price)} • Estoque: {variation.stock}
-                                      </p>
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => addVariationToSale(variation)}
-                                      className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
-                                      disabled={variation.stock === 0}
-                                    >
-                                      Add
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 border border-gray-200 rounded-lg">
-                      <p className="text-gray-500">Nenhum produto cadastrado</p>
-                      <p className="text-sm text-gray-400">Cadastre produtos primeiro para criar vendas</p>
-                    </div>
-                  )}
-                </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{product.name}</p>
-                            <p className="text-sm text-gray-600">{formatCurrency(product.price)}</p>
-                            <p className="text-xs text-gray-500">Estoque: {product.stock}</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => addItemToSale(product.id)}
-                            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                            disabled={product.stock === 0}
-                          >
-                            Adicionar
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 border border-gray-200 rounded-lg">
-                      <p className="text-gray-500">Nenhum produto cadastrado</p>
-                      <p className="text-sm text-gray-400">Cadastre produtos primeiro para criar vendas</p>
-                    </div>
-                  )}
-                </div>
-
                 {/* Selected Items */}
                 {selectedItems.length > 0 && (
                   <div>
