@@ -53,15 +53,6 @@ export const AIInsightCard: React.FC<AIInsightCardProps> = ({ insight, onMarkAsR
             </div>
           </div>
         </div>
-        {!insight.isRead && (
-          <button
-            onClick={() => onMarkAsRead(insight.id)}
-            className="p-1 rounded-full hover:bg-white hover:bg-opacity-50 transition-colors"
-            title="Marcar como lido"
-          >
-            <X className="w-4 h-4 text-gray-500" />
-          </button>
-        )}
       </div>
     </div>
   );

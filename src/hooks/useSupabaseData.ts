@@ -128,6 +128,11 @@ export const useSupabaseData = () => {
 
     if (!error && data) {
       setProducts(prev => prev.map(p => p.id === id ? data : p))
+      
+      // Check if stock was updated and resolve insights if needed
+      if (updates.stock !== undefined) {
+        await checkAndResolveStockInsights(id, updates.stock);
+      }
     }
 
     return { data, error }
@@ -547,8 +552,90 @@ export const useSupabaseData = () => {
     // Check for low stock and generate insights
     for (const item of items) {
       if (item.product_id) {
-        const product = products.find(p => p.id === item.product_id)
-        if (product && (product.stock - item.quantity) <= product.min_stock) {
+        // Extract main product ID if it's a variation
+        const mainProductId = item.product_id.includes('-') ? item.product_id.split('-')[0] : item.product_id;
+        const product = products.find(p => p.id === mainProductId);
+        
+        if (product) {
+          // Calculate new stock after sale
+          let newStock = product.stock - item.quantity;
+          
+          // If it's a variation, get the variation's stock instead
+          if (item.product_id.includes('-')) {
+            const variationId = item.product_id.split('-')[1];
+            const variation = productVariations.find(v => v.id === variationId);
+            if (variation) {
+              newStock = variation.stock - item.quantity;
+            }
+          }
+          
+          if (newStock <= product.min_stock) {
+            // Check if we already have a low stock insight for this product
+            const existingInsight = aiInsights.find(insight => 
+              insight.category === 'inventory' && 
+              insight.data?.product_id === mainProductId &&
+              !insight.is_read
+            );
+            
+            // Only create new insight if one doesn't exist
+            if (!existingInsight) {
+              const lowStockInsight = {
+                user_id: user.id,
+                type: 'alert' as const,
+                title: 'Estoque Baixo Após Venda',
+                description: `O produto "${item.product_name}" ficou com estoque baixo após a venda. Considere reabastecer.`,
+                priority: 'high' as const,
+                category: 'inventory' as const,
+                data: { product_id: mainProductId, current_stock: newStock },
+                is_read: false
+              };
+
+              const { data: lowStockData } = await supabase
+                .from('ai_insights')
+                .insert(lowStockInsight)
+                .select()
+                .single();
+
+              if (lowStockData) {
+                setAiInsights(prev => [lowStockData, ...prev]);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Auto-resolve low stock insights when product is restocked
+  const checkAndResolveStockInsights = async (productId: string, newStock: number) => {
+    if (!user) return;
+    
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+    
+    // If stock is now above minimum, mark related low stock insights as read
+    if (newStock > product.min_stock) {
+      const lowStockInsights = aiInsights.filter(insight => 
+        insight.category === 'inventory' && 
+        insight.data?.product_id === productId &&
+        !insight.is_read &&
+        insight.title.includes('Estoque Baixo')
+      );
+      
+      for (const insight of lowStockInsights) {
+        await supabase
+          .from('ai_insights')
+          .update({ is_read: true })
+          .eq('id', insight.id)
+          .eq('user_id', user.id);
+        
+        // Update local state
+        setAiInsights(prev => prev.map(i => 
+          i.id === insight.id ? { ...i, is_read: true } : i
+        ));
+      }
+    }
+  };
           const lowStockInsight = {
             user_id: user.id,
             type: 'alert' as const,
@@ -684,6 +771,7 @@ export const useSupabaseData = () => {
     updateProductVariation,
     deleteProductVariation,
     getVariationsForProduct,
+    checkAndResolveStockInsights,
     addSale,
     addFinancialRecord,
     updateFinancialRecord,

@@ -54,7 +54,13 @@ export const Settings: React.FC = () => {
   ];
 
   const handleSave = () => {
-    handleProfileSave();
+    if (activeTab === 'profile') {
+      handleProfileSave();
+    } else if (activeTab === 'company') {
+      handleCompanySave();
+    } else if (activeTab === 'notifications') {
+      handleNotificationsSave();
+    }
   };
 
   const showNotification = (type: 'success' | 'error', message: string) => {
