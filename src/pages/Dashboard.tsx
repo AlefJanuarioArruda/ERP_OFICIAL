@@ -4,6 +4,7 @@ import { MetricCard } from '../components/MetricCard';
 import { AIInsightCard } from '../components/AIInsightCard';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 
+
 declare global {
   interface Window {
     gtag: (command: string, targetId: string, params?: object) => void;
