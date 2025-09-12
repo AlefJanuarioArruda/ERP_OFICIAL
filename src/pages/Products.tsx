@@ -35,6 +35,7 @@ export const Products: React.FC = () => {
   const [selectedProductImage, setSelectedProductImage] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
   const [variationImages, setVariationImages] = useState<Map<number, { file: File; preview: string }>>(new Map());
+  const [variationImageUrls, setVariationImageUrls] = useState<Map<number, string>>(new Map());
   // Effect to show limit banner when limit is reached
   React.useEffect(() => {
     if (usageStatus.isLimitReached.products && !usageStatus.isSubscriptionActive) {
@@ -68,6 +69,7 @@ export const Products: React.FC = () => {
     setSelectedProductImage(null);
     setProductImagePreview(null);
     setVariationImages(new Map());
+    setVariationImageUrls(new Map());
   };
 
   const showNotification = (type: 'success' | 'error', message: string) => {
@@ -184,6 +186,7 @@ export const Products: React.FC = () => {
             }
             
             const variationImageFile = variationImages.get(i)?.file;
+            const existingImageUrl = variationImageUrls.get(i);
             
             await addProductVariation({
               product_id: newProductId,
@@ -192,7 +195,8 @@ export const Products: React.FC = () => {
               size: variation.size || null,
               sku: variation.sku,
               stock: variation.stock,
-              price: variation.price
+              price: variation.price,
+              image_url: existingImageUrl || null
             }, variationImageFile);
           }
         }
@@ -236,20 +240,20 @@ export const Products: React.FC = () => {
       size: v.size,
       sku: v.sku,
       stock: v.stock,
-      price: v.price
+      price: v.price,
+      image_url: v.image_url
     })));
     
-    // Load existing variation images
+    // Load existing variation images for preview
     const newVariationImages = new Map();
+    const newVariationImageUrls = new Map();
     existingVariations.forEach((variation, index) => {
       if (variation.image_url) {
-        newVariationImages.set(index, {
-          file: null, // No file object for existing images
-          preview: variation.image_url
-        });
+        newVariationImageUrls.set(index, variation.image_url);
       }
     });
-    setVariationImages(newVariationImages);
+    setVariationImages(new Map()); // Clear file uploads
+    setVariationImageUrls(newVariationImageUrls);
     
     setEditingProduct(product);
     setShowAddForm(true);
@@ -284,6 +288,12 @@ export const Products: React.FC = () => {
       reader.onload = (e) => {
         const preview = e.target?.result as string;
         setVariationImages(prev => new Map(prev.set(index, { file, preview })));
+        // Clear the existing URL when a new file is selected
+        setVariationImageUrls(prev => {
+          const newMap = new Map(prev);
+          newMap.delete(index);
+          return newMap;
+        });
       };
       reader.readAsDataURL(file);
     }
@@ -291,6 +301,11 @@ export const Products: React.FC = () => {
 
   const handleRemoveVariationImage = (index: number) => {
     setVariationImages(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(index);
+      return newMap;
+    });
+    setVariationImageUrls(prev => {
       const newMap = new Map(prev);
       newMap.delete(index);
       return newMap;
@@ -313,6 +328,7 @@ export const Products: React.FC = () => {
         sku: '',
         stock: 0,
         price: null,
+        image_url: null,
       }
     ]);
   };
