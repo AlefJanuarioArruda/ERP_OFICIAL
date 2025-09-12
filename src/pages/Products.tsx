@@ -595,54 +595,6 @@ export const Products: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-              {/* Product Image Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Imagem do Produto</label>
-                <div className="flex items-center space-x-4">
-                  {/* Image Preview */}
-                  <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden">
-                    {productImagePreview ? (
-                      <div className="relative w-full h-full">
-                        <img
-                          src={productImagePreview}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleRemoveProductImage}
-                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="text-center">
-                        <Package className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                        <span className="text-xs text-gray-500">Sem imagem</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Upload Button */}
-                  <div className="flex-1">
-                    <label className="cursor-pointer">
-                      <div className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        <span className="text-sm text-gray-700">
-                          {productImagePreview ? 'Alterar Imagem' : 'Adicionar Imagem'}
-                        </span>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleProductImageSelect}
-                        className="hidden"
-                      />
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">PNG, JPG até 5MB</p>
-                  </div>
-                </div>
-              </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Preço de Venda</label>
                     <input
@@ -664,6 +616,56 @@ export const Products: React.FC = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                     />
+                  </div>
+                </div>
+
+                {/* Product Image Upload - Full Width */}
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Imagem do Produto</label>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                    {/* Image Preview */}
+                    <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden flex-shrink-0">
+                      {productImagePreview ? (
+                        <div className="relative w-full h-full">
+                          <img
+                            src={productImagePreview}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleRemoveProductImage}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <Package className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                          <span className="text-xs text-gray-500">Sem imagem</span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Upload Button - Responsive */}
+                    <div className="flex-1 w-full sm:w-auto">
+                      <label className="cursor-pointer block">
+                        <div className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                          <Package className="w-4 h-4 mr-2 text-gray-500" />
+                          <span className="text-sm text-gray-700 font-medium">
+                            {productImagePreview ? 'Alterar Imagem' : 'Adicionar Imagem'}
+                          </span>
+                        </div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleProductImageSelect}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="text-xs text-gray-500 mt-2 text-center sm:text-left">PNG, JPG até 5MB</p>
+                    </div>
                   </div>
                 </div>
 
@@ -759,9 +761,9 @@ export const Products: React.FC = () => {
                       {/* Variation Image Upload */}
                       <div className="mb-3">
                         <label className="block text-xs font-medium text-gray-700 mb-1">Imagem da Variação</label>
-                        <div className="flex items-center space-x-3">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
                           {/* Image Preview */}
-                          <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden">
+                          <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden flex-shrink-0">
                             {variationImages.get(index)?.preview ? (
                               <div className="relative w-full h-full">
                                 <img
@@ -786,10 +788,11 @@ export const Products: React.FC = () => {
                           </div>
                           
                           {/* Upload Button */}
-                          <div className="flex-1">
+                          <div className="flex-1 w-full sm:w-auto">
                             <label className="cursor-pointer">
-                              <div className="flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                <span className="text-xs text-gray-700">
+                              <div className="w-full flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                                <Palette className="w-3 h-3 mr-2 text-gray-500" />
+                                <span className="text-xs text-gray-700 font-medium">
                                   {variationImages.get(index) ? 'Alterar' : 'Adicionar Foto'}
                                 </span>
                               </div>
@@ -800,6 +803,7 @@ export const Products: React.FC = () => {
                                 className="hidden"
                               />
                             </label>
+                            <p className="text-xs text-gray-400 mt-1 text-center sm:text-left">Opcional</p>
                           </div>
                         </div>
                       </div>
