@@ -60,8 +60,9 @@ export const Success: React.FC = () => {
           pollSubscriptionStatus();
         }, 2000); // Wait 2 seconds before next attempt
       } else {
-        // Max attempts reached, stop polling but don't show error
+        // Max attempts reached, force refresh and stop polling
         console.log('Max polling attempts reached, stopping polling');
+        await refetch(); // Force one final refresh
         setLoading(false);
         setIsPolling(false);
       }
