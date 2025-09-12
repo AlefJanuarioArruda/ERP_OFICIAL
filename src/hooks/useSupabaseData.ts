@@ -128,11 +128,6 @@ export const useSupabaseData = () => {
 
     if (!error && data) {
       setProducts(prev => prev.map(p => p.id === id ? data : p))
-      
-      // Check if stock was updated and resolve insights if needed
-      if (updates.stock !== undefined) {
-        await checkAndResolveStockInsights(id, updates.stock);
-      }
     }
 
     return { data, error }
@@ -747,7 +742,6 @@ export const useSupabaseData = () => {
     updateProductVariation,
     deleteProductVariation,
     getVariationsForProduct,
-    checkAndResolveStockInsights,
     addSale,
     addFinancialRecord,
     updateFinancialRecord,
