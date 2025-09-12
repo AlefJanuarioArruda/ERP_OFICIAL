@@ -334,7 +334,21 @@ export const Products: React.FC = () => {
   };
 
   const handleRemoveVariation = (id: string) => {
-    setProductVariationsFormData(productVariationsFormData.filter((_, index) => index.toString() !== id));
+    const indexToRemove = parseInt(id);
+    setProductVariationsFormData(productVariationsFormData.filter((_, index) => index !== indexToRemove));
+    
+    // Also remove any associated images for this variation
+    setVariationImages(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(indexToRemove);
+      return newMap;
+    });
+    
+    setVariationImageUrls(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(indexToRemove);
+      return newMap;
+    });
   };
 
   const handleVariationChange = (
