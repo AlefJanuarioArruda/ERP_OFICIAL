@@ -7,6 +7,12 @@ import { useSupabaseData } from '../hooks/useSupabaseData';
 export const Dashboard: React.FC = () => {
   const { dashboardMetrics, aiInsights, markInsightAsRead, products, customers, sales, loading } = useSupabaseData();
 
+  declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+  }
+}
+
   useEffect(() => {
     if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
       window.gtag('event', 'dashboard_view', {
