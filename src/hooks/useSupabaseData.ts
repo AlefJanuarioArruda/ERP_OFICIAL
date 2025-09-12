@@ -93,13 +93,91 @@ export const useSupabaseData = () => {
   }, [user])
 
   // Product operations
-  const addProduct = async (productData: Omit<Product, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const uploadProductImage = async (file: File, productId?: string): Promise<{ url: string | null; error: any }> => {
+    if (!user) return { url: null, error: 'User not authenticated' }
+
+    try {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        return { url: null, error: 'Imagem muito grande. Máximo 5MB.' }
+      }
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        return { url: null, error: 'Por favor, selecione uma imagem válida.' }
+      }
+
+      const fileExtension = file.name.split('.').pop()
+      const fileName = productId 
+        ? `product-${productId}-${Date.now()}.${fileExtension}`
+        : `product-${user.id}-${Date.now()}.${fileExtension}`
+
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        console.error('Supabase Storage upload error:', error)
+        return { url: null, error: `Erro ao fazer upload da imagem: ${error.message}` }
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName)
+
+      if (!publicUrlData || !publicUrlData.publicUrl) {
+        return { url: null, error: 'Erro ao obter URL pública da imagem.' }
+      }
+
+      return { url: publicUrlData.publicUrl, error: null }
+    } catch (error) {
+      console.error('Image upload error:', error)
+      return { url: null, error: 'Erro inesperado ao fazer upload da imagem' }
+    }
+  }
+
+  const deleteProductImage = async (imageUrl: string): Promise<{ error: any }> => {
+    if (!user) return { error: 'User not authenticated' }
+
+    try {
+      // Extract file path from URL
+      const urlParts = imageUrl.split('/')
+      const fileName = urlParts[urlParts.length - 1]
+      
+      const { error } = await supabase.storage
+        .from('product-images')
+        .remove([fileName])
+
+      return { error }
+    } catch (error) {
+      console.error('Image delete error:', error)
+      return { error: 'Erro ao excluir imagem' }
+    }
+  }
+
+  const addProduct = async (productData: Omit<Product, 'id' | 'user_id' | 'created_at' | 'updated_at'>, imageFile?: File) => {
     if (!user) return
+
+    let imageUrl = null
+    
+    // Upload image if provided
+    if (imageFile) {
+      const uploadResult = await uploadProductImage(imageFile)
+      if (uploadResult.error) {
+        return { data: null, error: uploadResult.error }
+      }
+      imageUrl = uploadResult.url
+    }
 
     const { data, error } = await supabase
       .from('products')
       .insert({
         ...productData,
+        image_url: imageUrl,
         user_id: user.id
       })
       .select()
@@ -115,12 +193,33 @@ export const useSupabaseData = () => {
     return { data, error }
   }
 
-  const updateProduct = async (id: string, updates: Partial<Product>) => {
+  const updateProduct = async (id: string, updates: Partial<Product>, imageFile?: File) => {
     if (!user) return
+
+    let imageUrl = updates.image_url
+    
+    // Handle image upload if new file provided
+    if (imageFile) {
+      // Delete old image if exists
+      const currentProduct = products.find(p => p.id === id)
+      if (currentProduct?.image_url) {
+        await deleteProductImage(currentProduct.image_url)
+      }
+      
+      // Upload new image
+      const uploadResult = await uploadProductImage(imageFile, id)
+      if (uploadResult.error) {
+        return { data: null, error: uploadResult.error }
+      }
+      imageUrl = uploadResult.url
+    }
 
     const { data, error } = await supabase
       .from('products')
-      .update(updates)
+      .update({
+        ...updates,
+        image_url: imageUrl
+      })
       .eq('id', id)
       .eq('user_id', user.id)
       .select()
@@ -141,6 +240,20 @@ export const useSupabaseData = () => {
   const deleteProduct = async (id: string) => {
     if (!user) return
 
+    // Delete product image if exists
+    const product = products.find(p => p.id === id)
+    if (product?.image_url) {
+      await deleteProductImage(product.image_url)
+    }
+    
+    // Delete variation images
+    const variations = getVariationsForProduct(id)
+    for (const variation of variations) {
+      if (variation.image_url) {
+        await deleteProductImage(variation.image_url)
+      }
+    }
+
     const { error } = await supabase
       .from('products')
       .delete()
@@ -155,13 +268,25 @@ export const useSupabaseData = () => {
   }
 
   // Product Variation operations
-  const addProductVariation = async (variationData: Omit<ProductVariation, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const addProductVariation = async (variationData: Omit<ProductVariation, 'id' | 'user_id' | 'created_at' | 'updated_at'>, imageFile?: File) => {
     if (!user) return
+
+    let imageUrl = null
+    
+    // Upload image if provided
+    if (imageFile) {
+      const uploadResult = await uploadProductImage(imageFile)
+      if (uploadResult.error) {
+        return { data: null, error: uploadResult.error }
+      }
+      imageUrl = uploadResult.url
+    }
 
     const { data, error } = await supabase
       .from('product_variations')
       .insert({
         ...variationData,
+        image_url: imageUrl,
         user_id: user.id
       })
       .select()
@@ -174,12 +299,33 @@ export const useSupabaseData = () => {
     return { data, error }
   }
 
-  const updateProductVariation = async (id: string, updates: Partial<ProductVariation>) => {
+  const updateProductVariation = async (id: string, updates: Partial<ProductVariation>, imageFile?: File) => {
     if (!user) return
+
+    let imageUrl = updates.image_url
+    
+    // Handle image upload if new file provided
+    if (imageFile) {
+      // Delete old image if exists
+      const currentVariation = productVariations.find(v => v.id === id)
+      if (currentVariation?.image_url) {
+        await deleteProductImage(currentVariation.image_url)
+      }
+      
+      // Upload new image
+      const uploadResult = await uploadProductImage(imageFile)
+      if (uploadResult.error) {
+        return { data: null, error: uploadResult.error }
+      }
+      imageUrl = uploadResult.url
+    }
 
     const { data, error } = await supabase
       .from('product_variations')
-      .update(updates)
+      .update({
+        ...updates,
+        image_url: imageUrl
+      })
       .eq('id', id)
       .eq('user_id', user.id)
       .select()
@@ -194,6 +340,12 @@ export const useSupabaseData = () => {
 
   const deleteProductVariation = async (id: string) => {
     if (!user) return
+
+    // Delete variation image if exists
+    const variation = productVariations.find(v => v.id === id)
+    if (variation?.image_url) {
+      await deleteProductImage(variation.image_url)
+    }
 
     const { error } = await supabase
       .from('product_variations')
@@ -779,6 +931,8 @@ export const useSupabaseData = () => {
     updateProductVariation,
     deleteProductVariation,
     getVariationsForProduct,
+    uploadProductImage,
+    deleteProductImage,
     addSale,
     addFinancialRecord,
     updateFinancialRecord,
