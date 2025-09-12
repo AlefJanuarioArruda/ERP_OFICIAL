@@ -503,6 +503,30 @@ export const useSupabaseData = () => {
   const generateProductInsight = async (product: Product) => {
     if (!user) return
 
+    // Check if product has low stock and generate alert
+    if (product.stock <= product.min_stock) {
+      const lowStockInsight = {
+        user_id: user.id,
+        type: 'alert' as const,
+        title: 'Produto com Estoque Baixo',
+        description: `O produto "${product.name}" está com estoque baixo (${product.stock} unidades). Considere reabastecer.`,
+        priority: 'high' as const,
+        category: 'inventory' as const,
+        data: { product_id: product.id, current_stock: product.stock },
+        is_read: false
+      };
+
+      const { data: lowStockData } = await supabase
+        .from('ai_insights')
+        .insert(lowStockInsight)
+        .select()
+        .single();
+
+      if (lowStockData) {
+        setAiInsights(prev => [lowStockData, ...prev]);
+      }
+    }
+
     const insight = {
       user_id: user.id,
       type: 'recommendation' as const,
