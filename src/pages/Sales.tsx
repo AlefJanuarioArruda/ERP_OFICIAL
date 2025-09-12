@@ -646,6 +646,34 @@ export const Sales: React.FC = () => {
                                       <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
                                       <div className="flex items-center space-x-2 text-xs text-gray-600">
                                         {variation.color && <span>Cor: {variation.color}</span>}
+                                        {variation.size && <span>Tamanho: {variation.size}</span>}
+                                        <span>Preço: {formatCurrency(variation.price || product.price)}</span>
+                                        <span>Estoque: {variation.stock}</span>
+                                      </div>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => addVariationToSale(variation)}
+                                      className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                      disabled={variation.stock === 0}
+                                    >
+                                      Adicionar
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>Nenhum produto cadastrado</p>
+                    </div>
+                  )}
+                </div>
+
                 {/* Selected Items */}
                 {selectedItems.length > 0 && (
                   <div>
