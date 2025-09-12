@@ -42,6 +42,9 @@ export const stripeProducts: StripeProduct[] = [
   }
 ];
 export const getProductByPriceId = (priceId: string): StripeProduct | undefined => {
+  return stripeProducts.find(product => product.priceId === priceId);
+};
+
 // Get the base URL for the application
 export const getBaseUrl = () => {
   return window.location.origin;
@@ -55,9 +58,6 @@ export const getSuccessUrl = () => {
 // Get cancel URL for Stripe checkout
 export const getCancelUrl = () => {
   return `${getBaseUrl()}/pricing`;
-};
-
-  return stripeProducts.find(product => product.priceId === priceId);
 };
 
 export const formatPrice = (price: number, currency: string = 'brl'): string => {
