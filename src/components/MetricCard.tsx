@@ -18,7 +18,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   icon,
   color
 }) => {
-  const isPositive = change > 0;
+  const isPositive = change >= 0;
   const colorClasses = {
     blue: 'bg-blue-50 text-blue-700',
     green: 'bg-emerald-50 text-emerald-700',

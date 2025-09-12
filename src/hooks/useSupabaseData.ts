@@ -503,30 +503,6 @@ export const useSupabaseData = () => {
   const generateProductInsight = async (product: Product) => {
     if (!user) return
 
-    // Check if product has low stock and generate alert
-    if (product.stock <= product.min_stock) {
-      const lowStockInsight = {
-        user_id: user.id,
-        type: 'alert' as const,
-        title: 'Produto com Estoque Baixo',
-        description: `O produto "${product.name}" está com estoque baixo (${product.stock} unidades). Considere reabastecer.`,
-        priority: 'high' as const,
-        category: 'inventory' as const,
-        data: { product_id: product.id, current_stock: product.stock },
-        is_read: false
-      };
-
-      const { data: lowStockData } = await supabase
-        .from('ai_insights')
-        .insert(lowStockInsight)
-        .select()
-        .single();
-
-      if (lowStockData) {
-        setAiInsights(prev => [lowStockData, ...prev]);
-      }
-    }
-
     const insight = {
       user_id: user.id,
       type: 'recommendation' as const,
@@ -657,6 +633,38 @@ export const useSupabaseData = () => {
         setAiInsights(prev => prev.map(i => 
           i.id === insight.id ? { ...i, is_read: true } : i
         ));
+      }
+    } else if (newStock <= product.min_stock) {
+      // If stock is still low or became low, check if we need to create a new alert
+      const existingInsight = aiInsights.find(insight => 
+        insight.category === 'inventory' && 
+        insight.data?.product_id === productId &&
+        !insight.is_read &&
+        insight.title.includes('Estoque Baixo')
+      );
+      
+      // Only create new insight if one doesn't exist
+      if (!existingInsight) {
+        const lowStockInsight = {
+          user_id: user.id,
+          type: 'alert' as const,
+          title: 'Produto com Estoque Baixo',
+          description: `O produto "${product.name}" está com estoque baixo (${newStock} unidades). Considere reabastecer.`,
+          priority: 'high' as const,
+          category: 'inventory' as const,
+          data: { product_id: productId, current_stock: newStock },
+          is_read: false
+        };
+
+        const { data: lowStockData } = await supabase
+          .from('ai_insights')
+          .insert(lowStockInsight)
+          .select()
+          .single();
+
+        if (lowStockData) {
+          setAiInsights(prev => [lowStockData, ...prev]);
+        }
       }
     }
   };
