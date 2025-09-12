@@ -26,23 +26,23 @@ export const Settings: React.FC = () => {
   });
 
   const [companySettings, setCompanySettings] = useState({
-    companyName: 'Minha Empresa LTDA',
-    cnpj: '12.345.678/0001-90',
-    address: 'Rua das Flores, 123',
-    city: 'São Paulo',
-    state: 'SP',
-    zipCode: '01234-567',
-    phone: '(11) 3333-4444',
-    email: 'contato@minhaempresa.com.br'
+    companyName: user?.user_metadata?.company_name || '',
+    cnpj: user?.user_metadata?.company_cnpj || '',
+    address: user?.user_metadata?.company_address || '',
+    city: user?.user_metadata?.company_city || '',
+    state: user?.user_metadata?.company_state || '',
+    zipCode: user?.user_metadata?.company_zip_code || '',
+    phone: user?.user_metadata?.company_phone || '',
+    email: user?.user_metadata?.company_email || ''
   });
 
   const [notifications, setNotifications] = useState({
-    email: true,
-    push: true,
-    lowStock: true,
-    sales: true,
-    financial: false,
-    reports: true
+    email: user?.user_metadata?.notifications_email ?? true,
+    push: user?.user_metadata?.notifications_push ?? true,
+    lowStock: user?.user_metadata?.notifications_low_stock ?? true,
+    sales: user?.user_metadata?.notifications_sales ?? true,
+    financial: user?.user_metadata?.notifications_financial ?? false,
+    reports: user?.user_metadata?.notifications_reports ?? true
   });
 
   const tabs = [
@@ -87,6 +87,62 @@ export const Settings: React.FC = () => {
         }
       } else {
         showNotification('success', 'Configurações salvas!');
+      }
+    } catch (error) {
+      showNotification('error', 'Erro inesperado ao salvar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompanySave = async () => {
+    setLoading(true);
+    
+    try {
+      // For now, we'll save company settings to user metadata
+      // In a real application, you might want a separate company table
+      const updates = {
+        company_name: companySettings.companyName,
+        company_cnpj: companySettings.cnpj,
+        company_address: companySettings.address,
+        company_city: companySettings.city,
+        company_state: companySettings.state,
+        company_zip_code: companySettings.zipCode,
+        company_phone: companySettings.phone,
+        company_email: companySettings.email
+      };
+      
+      const result = await updateProfile(updates);
+      if (result.success) {
+        showNotification('success', 'Informações da empresa atualizadas com sucesso!');
+      } else {
+        showNotification('error', result.error || 'Erro ao atualizar informações da empresa');
+      }
+    } catch (error) {
+      showNotification('error', 'Erro inesperado ao salvar');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNotificationsSave = async () => {
+    setLoading(true);
+    
+    try {
+      const updates = {
+        notifications_email: notifications.email,
+        notifications_push: notifications.push,
+        notifications_low_stock: notifications.lowStock,
+        notifications_sales: notifications.sales,
+        notifications_financial: notifications.financial,
+        notifications_reports: notifications.reports
+      };
+      
+      const result = await updateProfile(updates);
+      if (result.success) {
+        showNotification('success', 'Preferências de notificação atualizadas com sucesso!');
+      } else {
+        showNotification('error', result.error || 'Erro ao atualizar preferências');
       }
     } catch (error) {
       showNotification('error', 'Erro inesperado ao salvar');

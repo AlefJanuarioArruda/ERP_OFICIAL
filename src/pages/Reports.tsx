@@ -594,22 +594,93 @@ export const Reports: React.FC = () => {
 
         {/* Financial Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumo Financeiro</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Análise por Categoria</h3>
           <div className="space-y-4">
-            <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-              <span className="text-gray-700">Receitas</span>
-              <span className="font-semibold text-green-600">{formatCurrency(metrics.totalIncome)}</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-              <span className="text-gray-700">Despesas</span>
-              <span className="font-semibold text-red-600">{formatCurrency(metrics.totalExpenses)}</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg border-t-2 border-blue-200">
-              <span className="font-medium text-gray-900">Lucro Líquido</span>
-              <span className={`font-bold text-lg ${metrics.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(metrics.profit)}
-              </span>
-            </div>
+            {(() => {
+              const filteredFinancial = financialRecords.filter(record => {
+                const recordDate = new Date(record.created_at);
+                const now = new Date();
+                let startDate: Date;
+                
+                switch (selectedPeriod) {
+                  case 'week':
+                    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    break;
+                  case 'month':
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    break;
+                  case 'quarter':
+                    startDate = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+                    break;
+                  case 'year':
+                    startDate = new Date(now.getFullYear(), 0, 1);
+                    break;
+                  default:
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                }
+                
+                return recordDate >= startDate;
+              });
+              
+              // Group by category
+              const categoryData = new Map();
+              filteredFinancial.forEach(record => {
+                const current = categoryData.get(record.category) || { income: 0, expense: 0, count: 0 };
+                if (record.type === 'income' && record.status === 'paid') {
+                  current.income += record.amount;
+                } else if (record.type === 'expense' && record.status === 'paid') {
+                  current.expense += record.amount;
+                }
+                current.count += 1;
+                categoryData.set(record.category, current);
+              });
+              
+              const topCategories = Array.from(categoryData.entries())
+                .sort((a: any, b: any) => (b[1].income + b[1].expense) - (a[1].income + a[1].expense))
+                .slice(0, 5);
+
+              if (topCategories.length === 0) {
+                return (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>Nenhum registro financeiro no período</p>
+                  </div>
+                );
+              }
+
+              return topCategories.map(([category, data]: any) => (
+                <div key={category} className="p-3 bg-gray-50 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-900">{category}</span>
+                    <span className="text-sm text-gray-600">{data.count} transações</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    {data.income > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-green-600">Receitas:</span>
+                        <span className="font-medium text-green-600">{formatCurrency(data.income)}</span>
+                      </div>
+                    )}
+                    {data.expense > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-red-600">Despesas:</span>
+                        <span className="font-medium text-red-600">{formatCurrency(data.expense)}</span>
+                      </div>
+                    )}
+                  </div>
+                  {data.income > 0 && data.expense > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="flex justify-between">
+                        <span className="text-gray-700">Saldo:</span>
+                        <span className={`font-medium ${(data.income - data.expense) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(data.income - data.expense)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ));
+            })()}
           </div>
         </div>
       </div>
