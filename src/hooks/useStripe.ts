@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
-import { stripeProducts, getProductByPriceId, type StripeProduct } from '../stripe-config';
+import { stripeProducts, getProductByPriceId, getSuccessUrl, getCancelUrl, type StripeProduct } from '../stripe-config';
 
 interface SubscriptionData {
   customer_id: string;
@@ -109,8 +109,8 @@ export const useStripe = () => {
         body: JSON.stringify({
           price_id: priceId,
           mode,
-          success_url: `https://erpsmart.com.br/success?session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `https://erpsmart.com.br/pricing`,
+          success_url: getSuccessUrl(),
+          cancel_url: getCancelUrl(),
         }),
       });
 

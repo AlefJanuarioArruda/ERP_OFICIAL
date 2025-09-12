@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Menu, 
   X, 
@@ -24,8 +25,6 @@ import { useStripe } from '../hooks/useStripe';
 
 interface LayoutProps {
   children: React.ReactNode;
-  currentPage: string;
-  onPageChange: (page: string) => void;
 }
 
 
@@ -41,11 +40,13 @@ const navigationItems = [
   { id: 'settings', label: 'Configurações', icon: Settings },
 ];
 
-export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageChange }) => {
+export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { getCurrentPlan, isSubscriptionActive } = useStripe();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -58,31 +59,24 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
       }
     };
 
-    // Listen for navigation events from Settings page
-    const handleNavigateToPricing = () => {
-      onPageChange('pricing');
-    };
-
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('navigate-to-pricing', handleNavigateToPricing);
     
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('navigate-to-pricing', handleNavigateToPricing);
     };
-  }, [onPageChange]);
+  }, []);
 
   const handleLogout = () => {
     signOut();
   };
 
   const handleViewProfile = () => {
-    onPageChange('settings');
+    navigate('/settings');
     setProfileOpen(false);
   };
 
   const handleEditProfile = () => {
-    onPageChange('settings');
+    navigate('/settings');
     setProfileOpen(false);
   };
 
@@ -90,6 +84,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
   const userName = user?.user_metadata?.full_name || 'Usuário';
   const userEmail = user?.email || 'usuario@email.com';
 
+  // Get current page from URL
+  const getCurrentPage = () => {
+    const path = location.pathname;
+    if (path === '/' || path === '/dashboard') return 'dashboard';
+    return path.substring(1); // Remove leading slash
+  };
+
+  const currentPage = getCurrentPage();
   return (
     <div className="h-screen bg-gray-50 flex overflow-hidden">
       {/* Mobile sidebar overlay */}
@@ -132,7 +134,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
                 <button
                   key={item.id}
                   onClick={() => {
-                    onPageChange(item.id);
+                    navigate(`/${item.id === 'dashboard' ? 'dashboard' : item.id}`);
                     setSidebarOpen(false);
                   }}
                   className={`
@@ -177,7 +179,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentPage, onPageCha
               </div>
               {!isSubscriptionActive() && (
                 <button
-                  onClick={() => onPageChange('pricing')}
+                  onClick={() => navigate('/pricing')}
                   className="w-full mt-2 px-3 py-1 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition-colors"
                 >
                   Assinar Agora

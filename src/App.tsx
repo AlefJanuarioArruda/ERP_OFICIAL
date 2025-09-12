@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { AuthProvider } from './components/AuthProvider'
 import { Layout } from './components/Layout'
 import { Dashboard } from './pages/Dashboard'
@@ -19,13 +20,14 @@ import { PasswordResetPage } from './components/auth/PasswordResetPage'
 import { useAuth } from './hooks/useAuth'
 import { useStripe } from './hooks/useStripe'
 
-type AuthScreen = 'onboarding' | 'login' | 'signup' | 'forgot-password' | 'reset-password'
+type AuthScreen = 'onboarding' | 'login' | 'signup' | 'forgot-password'
 
 function AppContent() {
   const { user, loading, isAuthenticated } = useAuth()
   const { getCurrentPlan, refetch } = useStripe()
-  const [currentPage, setCurrentPage] = useState('dashboard')
   const [authScreen, setAuthScreen] = useState<AuthScreen>('onboarding')
+  const location = useLocation()
+  const navigate = useNavigate()
 
   // Force refresh subscription data when user becomes authenticated
   React.useEffect(() => {
@@ -38,16 +40,6 @@ function AppContent() {
       return () => clearTimeout(timer)
     }
   }, [isAuthenticated, user, refetch])
-
-  // Check URL parameters and hash for routing
-  React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const hash = window.location.hash
-    
-    if (urlParams.get('session_id') && window.location.pathname === '/') {
-      setCurrentPage('success')
-    }
-  }, [])
 
   // Check for password reset hash
   React.useEffect(() => {
@@ -133,37 +125,69 @@ function AppContent() {
   }
 
   // Main application for authenticated users
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'dashboard':
-        return <Dashboard />
-      case 'products':
-        return <Products />
-      case 'customers':
-        return <Customers />
-      case 'sales':
-        return <Sales />
-      case 'finance':
-        return <Finance />
-      case 'reports':
-        return <Reports />
-      case 'ai-insights':
-        return <AIInsights />
-      case 'settings':
-        return <Settings />
-      case 'pricing':
-        return <Pricing />
-      case 'success':
-        return <Success />
-      default:
-        return <Dashboard />
-    }
+  if (isAuthenticated) {
+    return (
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/customers" element={<Customers />} />
+          <Route path="/sales" element={<Sales />} />
+          <Route path="/finance" element={<Finance />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/ai-insights" element={<AIInsights />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/success" element={<Success />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Layout>
+    )
   }
 
+  // Auth screens for non-authenticated users
   return (
-    <Layout currentPage={currentPage} onPageChange={setCurrentPage}>
-      {renderPage()}
-    </Layout>
+    <Routes>
+      <Route path="/reset-password" element={
+        <PasswordResetPage
+          onBack={() => {
+            setAuthScreen('login')
+            navigate('/')
+          }}
+        />
+      } />
+      <Route path="*" element={
+        <>
+          {authScreen === 'onboarding' && (
+            <OnboardingScreen
+              onGetStarted={() => setAuthScreen('login')}
+            />
+          )}
+          
+          {authScreen === 'login' && (
+            <LoginScreen
+              onBack={() => setAuthScreen('onboarding')}
+              onSignUp={() => setAuthScreen('signup')}
+              onForgotPassword={() => setAuthScreen('forgot-password')}
+            />
+          )}
+          
+          {authScreen === 'signup' && (
+            <SignUpScreen
+              onBack={() => setAuthScreen('login')}
+              onLogin={() => setAuthScreen('login')}
+            />
+          )}
+          
+          {authScreen === 'forgot-password' && (
+            <ForgotPasswordScreen
+              onBack={() => setAuthScreen('login')}
+            />
+          )}
+        </>
+      } />
+    </Routes>
   )
 }
 

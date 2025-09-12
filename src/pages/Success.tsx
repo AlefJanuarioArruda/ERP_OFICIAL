@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, ArrowRight, Home, CreditCard, Calendar, RefreshCw, Clock } from 'lucide-react';
 import { useStripe } from '../hooks/useStripe';
 import { formatPrice } from '../stripe-config';
 
 export const Success: React.FC = () => {
   const { refetch, getCurrentPlan, getActiveSubscription } = useStripe();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [pollingAttempts, setPollingAttempts] = useState(0);
@@ -12,9 +15,7 @@ export const Success: React.FC = () => {
   const MAX_POLLING_ATTEMPTS = 15; // 30 seconds total (15 attempts x 2 seconds)
 
   useEffect(() => {
-    // Get session ID from URL
-    const urlParams = new URLSearchParams('https://erpsmart.com.br/success?');
-    const sessionIdParam = urlParams.get('session_id');
+    const sessionIdParam = searchParams.get('session_id');
     setSessionId(sessionIdParam);
 
     // Start polling for subscription status
@@ -23,7 +24,7 @@ export const Success: React.FC = () => {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   const startPollingSubscriptionStatus = async () => {
     setIsPolling(true);
@@ -275,7 +276,7 @@ export const Success: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => window.location.href = '/dashboard'}
+              onClick={() => navigate('/dashboard')}
               className="flex items-center justify-center px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105"
             >
               <Home className="w-5 h-5 mr-2" />
@@ -284,7 +285,7 @@ export const Success: React.FC = () => {
             </button>
             
             <button
-              onClick={() => window.location.href = '/settings'}
+              onClick={() => navigate('/settings')}
               className="flex items-center justify-center px-8 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
             >
               Configurar Perfil

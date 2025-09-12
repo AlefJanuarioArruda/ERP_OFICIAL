@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Bell, Shield, CreditCard, Database, Palette, Mail, Globe, Save, Camera, Eye, EyeOff, Building, Phone, MapPin, Upload, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useStripe } from '../hooks/useStripe';
@@ -7,6 +8,7 @@ import { supabase } from '../lib/supabase';
 
 export const Settings: React.FC = () => {
   const { user, updateProfile } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -847,11 +849,7 @@ const BillingSection: React.FC = () => {
       <div className="flex space-x-3">
         <button
           onClick={() => {
-            // Use the onPageChange function from Layout to navigate to pricing
-            const event = new CustomEvent('navigate-to-pricing');
-            window.dispatchEvent(event);
-          }}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            navigate('/pricing');
         >
           Alterar Plano
         </button>
