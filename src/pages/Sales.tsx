@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, ShoppingCart, FileText, CreditCard, Clock, CheckCircle, XCircle, User, Crown, X } from 'lucide-react';
+import { Plus, Search, ShoppingCart, FileText, CreditCard, Clock, CheckCircle, XCircle, User, Crown, X, Package } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UpgradeModal } from '../components/UpgradeModal';
@@ -621,10 +621,28 @@ export const Sales: React.FC = () => {
                           <div key={product.id} className="mb-4">
                             {/* Main Product */}
                             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2">
-                              <div>
+                              <div className="flex items-center space-x-3">
+                                {/* Product Image */}
+                                <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                                  {product.image_url ? (
+                                    <img
+                                      src={product.image_url}
+                                      alt={product.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                      <Package className="w-6 h-6 text-gray-400" />
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {/* Product Info */}
+                                <div>
                                 <p className="font-medium text-gray-900">{product.name}</p>
                                 <p className="text-sm text-gray-600">{formatCurrency(product.price)}</p>
                                 <p className="text-xs text-gray-500">Estoque: {product.stock}</p>
+                                </div>
                               </div>
                               <button
                                 type="button"
@@ -642,13 +660,31 @@ export const Sales: React.FC = () => {
                                 <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">Variações:</p>
                                 {variations.map((variation) => (
                                   <div key={variation.id} className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
-                                    <div>
+                                    <div className="flex items-center space-x-2">
+                                      {/* Variation Image */}
+                                      <div className="w-8 h-8 bg-gray-200 rounded overflow-hidden flex-shrink-0">
+                                        {variation.image_url ? (
+                                          <img
+                                            src={variation.image_url}
+                                            alt={variation.variation_name}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        ) : (
+                                          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                                            <Package className="w-3 h-3 text-blue-400" />
+                                          </div>
+                                        )}
+                                      </div>
+                                      
+                                      {/* Variation Info */}
+                                      <div>
                                       <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
                                       <div className="flex items-center space-x-2 text-xs text-gray-600">
                                         {variation.color && <span>Cor: {variation.color}</span>}
                                         {variation.size && <span>Tamanho: {variation.size}</span>}
                                         <span>Preço: {formatCurrency(variation.price || product.price)}</span>
                                         <span>Estoque: {variation.stock}</span>
+                                      </div>
                                       </div>
                                     </div>
                                     <button
