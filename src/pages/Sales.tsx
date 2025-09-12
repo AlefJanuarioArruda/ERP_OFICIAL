@@ -6,7 +6,7 @@ import { UpgradeModal } from '../components/UpgradeModal';
 import { UsageLimitBanner } from '../components/UsageLimitBanner';
 
 export const Sales: React.FC = () => {
-  const { sales, customers, products, addSale, loading } = useSupabaseData();
+  const { sales, customers, products, addSale, loading, getVariationsForProduct } = useSupabaseData();
   const usageStatus = useUsageLimits();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
