@@ -331,7 +331,7 @@ export const useSupabaseData = () => {
     const saleItemsToInsert = saleData.items.map(item => ({
       user_id: user.id,
       sale_id: saleRecord.id,
-      product_id: item.product_id,
+      product_id: item.product_id?.includes('-') ? item.product_id.split('-')[0] : item.product_id,
       product_name: item.product_name,
       quantity: item.quantity,
       unit_price: item.unit_price,
@@ -347,14 +347,28 @@ export const useSupabaseData = () => {
       setSaleItems(prev => [...(itemsData || []), ...prev])
     }
 
-    // Update product stock
+    // Update product stock and variation stock
     for (const item of saleData.items) {
       if (item.product_id) {
-        const product = products.find(p => p.id === item.product_id)
-        if (product) {
-          await updateProduct(item.product_id, {
-            stock: product.stock - item.quantity
-          })
+        // Check if it's a variation (contains hyphen)
+        if (item.product_id.includes('-')) {
+          const [productId, variationId] = item.product_id.split('-');
+          const variation = productVariations.find(v => v.id === variationId);
+          if (variation) {
+            await updateProductVariation(variationId, {
+              stock: variation.stock - item.quantity
+            });
+            // Also update main product stock
+            await updateProductStockFromVariations(productId);
+          }
+        } else {
+          // Regular product
+          const product = products.find(p => p.id === item.product_id);
+          if (product) {
+            await updateProduct(item.product_id, {
+              stock: product.stock - item.quantity
+            });
+          }
         }
       }
     }

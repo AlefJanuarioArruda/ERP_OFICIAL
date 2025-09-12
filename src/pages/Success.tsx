@@ -67,21 +67,15 @@ export const Success: React.FC = () => {
       }
     } catch (error) {
       console.error('Error during polling:', error);
-      // Continue polling even if there's an error
-      if (pollingAttempts < MAX_POLLING_ATTEMPTS - 1) {
-        setPollingAttempts(prev => prev + 1);
-        setTimeout(() => {
-          pollSubscriptionStatus();
-        }, 2000);
-      } else {
-        setLoading(false);
-        setIsPolling(false);
-      }
+      // Stop polling on error and show the page
+      setLoading(false);
+      setIsPolling(false);
     }
   };
 
   const forceRefresh = async () => {
     setLoading(true);
+    setIsPolling(false);
     setPollingAttempts(0);
     await refetch();
     

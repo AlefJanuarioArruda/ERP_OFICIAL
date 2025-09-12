@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, Download, Calendar, TrendingUp, DollarSign, Package, Users, FileText, Crown } from 'lucide-react';
+import { BarChart3, Download, Calendar, TrendingUp, DollarSign, Package, Users, FileText, Crown, Filter, X } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UpgradeModal } from '../components/UpgradeModal';
@@ -12,6 +12,18 @@ export const Reports: React.FC = () => {
   const usageStatus = useUsageLimits();
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  
+  // Advanced filters state
+  const [filters, setFilters] = useState({
+    dateFrom: '',
+    dateTo: '',
+    category: '',
+    paymentMethod: '',
+    minAmount: '',
+    maxAmount: '',
+    customerType: 'all' // 'all', 'with_customer', 'direct'
+  });
 
   const handleExport = (format: 'excel' | 'pdf') => {
     if (!usageStatus.isSubscriptionActive) {
@@ -27,10 +39,12 @@ export const Reports: React.FC = () => {
   };
 
   const exportToExcel = () => {
+    const filteredSalesData = getFilteredSales();
+    
     const wb = XLSX.utils.book_new();
     
     // Sales sheet
-    const salesData = sales.map(sale => ({
+    const salesData = filteredSalesData.map(sale => ({
       'Data': new Date(sale.created_at).toLocaleDateString(),
       'Cliente': sale.customer_name,
       'Total': sale.total,
@@ -55,6 +69,8 @@ export const Reports: React.FC = () => {
   };
 
   const exportToPDF = () => {
+    const filteredSalesData = getFilteredSales();
+    
     const doc = new jsPDF();
     
     doc.setFontSize(20);
@@ -64,7 +80,7 @@ export const Reports: React.FC = () => {
     doc.text(`Gerado em: ${new Date().toLocaleDateString()}`, 20, 35);
     
     // Sales table
-    const salesTableData = sales.slice(0, 10).map(sale => [
+    const salesTableData = filteredSalesData.slice(0, 10).map(sale => [
       new Date(sale.created_at).toLocaleDateString(),
       sale.customer_name,
       `R$ ${sale.total.toFixed(2)}`,
@@ -89,7 +105,31 @@ export const Reports: React.FC = () => {
     }).format(value);
   };
 
-  // Calculate metrics based on selected period
+  // Apply advanced filters to sales data
+  const getFilteredSales = () => {
+    return sales.filter(sale => {
+      const saleDate = new Date(sale.created_at);
+      
+      // Date filters
+      if (filters.dateFrom && saleDate < new Date(filters.dateFrom)) return false;
+      if (filters.dateTo && saleDate > new Date(filters.dateTo + 'T23:59:59')) return false;
+      
+      // Payment method filter
+      if (filters.paymentMethod && sale.payment_method !== filters.paymentMethod) return false;
+      
+      // Amount filters
+      if (filters.minAmount && sale.total < parseFloat(filters.minAmount)) return false;
+      if (filters.maxAmount && sale.total > parseFloat(filters.maxAmount)) return false;
+      
+      // Customer type filter
+      if (filters.customerType === 'with_customer' && !sale.customer_id) return false;
+      if (filters.customerType === 'direct' && sale.customer_id) return false;
+      
+      return true;
+    });
+  };
+
+  // Calculate metrics based on selected period and filters
   const getMetricsForPeriod = () => {
     const now = new Date();
     let startDate: Date;
@@ -111,7 +151,8 @@ export const Reports: React.FC = () => {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     }
 
-    const periodSales = sales.filter(sale => new Date(sale.created_at) >= startDate);
+    const filteredSales = getFilteredSales();
+    const periodSales = filteredSales.filter(sale => new Date(sale.created_at) >= startDate);
     const periodFinancial = financialRecords.filter(record => new Date(record.created_at) >= startDate);
 
     const totalRevenue = periodSales.reduce((sum, sale) => sum + sale.total, 0);
@@ -133,7 +174,44 @@ export const Reports: React.FC = () => {
     };
   };
 
+  // Generate chart data for sales
+  const getSalesChartData = () => {
+    const filteredSales = getFilteredSales();
+    const now = new Date();
+    const days = [];
+    
+    // Get last 7 days
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dayName = date.toLocaleDateString('pt-BR', { weekday: 'short' });
+      const dayRevenue = filteredSales
+        .filter(sale => {
+          const saleDate = new Date(sale.created_at);
+          return saleDate.toDateString() === date.toDateString();
+        })
+        .reduce((sum, sale) => sum + sale.total, 0);
+      
+      days.push({ day: dayName, revenue: dayRevenue });
+    }
+    
+    return days;
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      dateFrom: '',
+      dateTo: '',
+      category: '',
+      paymentMethod: '',
+      minAmount: '',
+      maxAmount: '',
+      customerType: 'all'
+    });
+  };
+
   const metrics = getMetricsForPeriod();
+  const chartData = getSalesChartData();
+  const maxRevenue = Math.max(...chartData.map(d => d.revenue), 1);
 
   if (loading) {
     return (
@@ -161,6 +239,14 @@ export const Reports: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="flex items-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Filtros Avançados
+          </button>
+          
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
@@ -201,6 +287,110 @@ export const Reports: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Advanced Filters */}
+      {showAdvancedFilters && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Filtros Avançados</h3>
+            <button
+              onClick={() => setShowAdvancedFilters(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Data Inicial</label>
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(e) => setFilters({...filters, dateFrom: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Data Final</label>
+              <input
+                type="date"
+                value={filters.dateTo}
+                onChange={(e) => setFilters({...filters, dateTo: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento</label>
+              <select
+                value={filters.paymentMethod}
+                onChange={(e) => setFilters({...filters, paymentMethod: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Todas</option>
+                <option value="pix">PIX</option>
+                <option value="card">Cartão</option>
+                <option value="boleto">Boleto</option>
+                <option value="cash">Dinheiro</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Cliente</label>
+              <select
+                value={filters.customerType}
+                onChange={(e) => setFilters({...filters, customerType: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="all">Todos</option>
+                <option value="with_customer">Com Cliente</option>
+                <option value="direct">Venda Direta</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Valor Mínimo</label>
+              <input
+                type="number"
+                step="0.01"
+                value={filters.minAmount}
+                onChange={(e) => setFilters({...filters, minAmount: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="R$ 0,00"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Valor Máximo</label>
+              <input
+                type="number"
+                step="0.01"
+                value={filters.maxAmount}
+                onChange={(e) => setFilters({...filters, maxAmount: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="R$ 999,99"
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Limpar Filtros
+            </button>
+            <button
+              onClick={() => setShowAdvancedFilters(false)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Aplicar Filtros
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Premium Banner for Non-Subscribers */}
       {!usageStatus.isSubscriptionActive && (
@@ -282,13 +472,39 @@ export const Reports: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sales Chart */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Vendas por Período</h3>
-          <div className="h-64 flex items-center justify-center text-gray-500">
-            <div className="text-center">
-              <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <p>Gráfico de vendas em desenvolvimento</p>
-              <p className="text-sm">Dados: {sales.length} vendas registradas</p>
-            </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Vendas dos Últimos 7 Dias</h3>
+          <div className="h-64">
+            {chartData.some(d => d.revenue > 0) ? (
+              <div className="h-full flex items-end justify-between space-x-2">
+                {chartData.map((data, index) => (
+                  <div key={index} className="flex-1 flex flex-col items-center">
+                    <div className="w-full flex flex-col items-center justify-end h-48">
+                      <div
+                        className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg transition-all duration-500 hover:from-blue-600 hover:to-blue-500 relative group"
+                        style={{
+                          height: `${(data.revenue / maxRevenue) * 100}%`,
+                          minHeight: data.revenue > 0 ? '8px' : '0px'
+                        }}
+                      >
+                        {/* Tooltip */}
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                          {formatCurrency(data.revenue)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs font-medium text-gray-600">{data.day}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <p>Nenhuma venda no período selecionado</p>
+                  <p className="text-sm">Ajuste os filtros para ver dados</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -297,8 +513,10 @@ export const Reports: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Produtos Mais Vendidos</h3>
           <div className="space-y-4">
             {(() => {
+              const filteredSales = getFilteredSales();
               const productSales = new Map();
-              sales.forEach(sale => {
+              
+              filteredSales.forEach(sale => {
                 if (sale.items) {
                   sale.items.forEach((item: any) => {
                     const current = productSales.get(item.product_name) || { quantity: 0, revenue: 0 };
@@ -318,7 +536,7 @@ export const Reports: React.FC = () => {
                 return (
                   <div className="text-center py-8 text-gray-500">
                     <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>Nenhuma venda registrada ainda</p>
+                    <p>Nenhuma venda no período filtrado</p>
                   </div>
                 );
               }
@@ -348,24 +566,27 @@ export const Reports: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Sales */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Vendas Recentes</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Vendas Filtradas</h3>
           <div className="space-y-3">
-            {sales.slice(0, 5).map((sale) => (
-              <div key={sale.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div>
-                  <p className="font-medium text-gray-900">{sale.customer_name}</p>
-                  <p className="text-sm text-gray-600">{new Date(sale.created_at).toLocaleDateString()}</p>
+            {(() => {
+              const filteredSales = getFilteredSales();
+              return filteredSales.slice(0, 5).map((sale) => (
+                <div key={sale.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-gray-900">{sale.customer_name}</p>
+                    <p className="text-sm text-gray-600">{new Date(sale.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-green-600">{formatCurrency(sale.total)}</p>
+                    <p className="text-sm text-gray-600">{sale.payment_method}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-medium text-green-600">{formatCurrency(sale.total)}</p>
-                  <p className="text-sm text-gray-600">{sale.payment_method}</p>
-                </div>
-              </div>
-            ))}
-            {sales.length === 0 && (
+              ));
+            })()}
+            {getFilteredSales().length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>Nenhuma venda registrada</p>
+                <p>Nenhuma venda encontrada com os filtros aplicados</p>
               </div>
             )}
           </div>

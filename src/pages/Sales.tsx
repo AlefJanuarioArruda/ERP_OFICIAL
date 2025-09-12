@@ -68,6 +68,30 @@ export const Sales: React.FC = () => {
     }
   };
 
+  const addVariationToSale = (variation: any) => {
+    const product = products.find(p => p.id === variation.product_id);
+    if (!product) return;
+
+    const variationKey = `${variation.product_id}-${variation.id}`;
+    const existingItem = selectedItems.find(item => item.product_id === variationKey);
+    
+    if (existingItem) {
+      setSelectedItems(selectedItems.map(item =>
+        item.product_id === variationKey
+          ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
+          : item
+      ));
+    } else {
+      const newItem = {
+        product_id: variationKey,
+        product_name: `${product.name} - ${variation.variation_name}`,
+        quantity: 1,
+        unit_price: variation.price || product.price,
+        total: variation.price || product.price
+      };
+      setSelectedItems([...selectedItems, newItem]);
+    }
+  };
   const removeItemFromSale = (productId: string) => {
     setSelectedItems(selectedItems.filter(item => item.product_id !== productId));
   };
@@ -589,9 +613,69 @@ export const Sales: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Produtos</label>
                   {products.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-60 overflow-y-auto p-4 border border-gray-200 rounded-lg">
-                      {products.map((product) => (
-                        <div key={product.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="max-h-60 overflow-y-auto p-4 border border-gray-200 rounded-lg">
+                      {products.map((product) => {
+                        const variations = getVariationsForProduct(product.id);
+                        
+                        return (
+                          <div key={product.id} className="mb-4">
+                            {/* Main Product */}
+                            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2">
+                              <div>
+                                <p className="font-medium text-gray-900">{product.name}</p>
+                                <p className="text-sm text-gray-600">{formatCurrency(product.price)}</p>
+                                <p className="text-xs text-gray-500">Estoque: {product.stock}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => addItemToSale(product.id)}
+                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                                disabled={product.stock === 0}
+                              >
+                                Adicionar
+                              </button>
+                            </div>
+                            
+                            {/* Product Variations */}
+                            {variations.length > 0 && (
+                              <div className="ml-4 space-y-2">
+                                <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">Variações:</p>
+                                {variations.map((variation) => (
+                                  <div key={variation.id} className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
+                                      <div className="flex items-center space-x-2 text-xs text-gray-600">
+                                        {variation.color && <span>Cor: {variation.color}</span>}
+                                        {variation.size && <span>Tam: {variation.size}</span>}
+                                        <span>SKU: {variation.sku}</span>
+                                      </div>
+                                      <p className="text-xs text-gray-500">
+                                        {formatCurrency(variation.price || product.price)} • Estoque: {variation.stock}
+                                      </p>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => addVariationToSale(variation)}
+                                      className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                      disabled={variation.stock === 0}
+                                    >
+                                      Add
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 border border-gray-200 rounded-lg">
+                      <p className="text-gray-500">Nenhum produto cadastrado</p>
+                      <p className="text-sm text-gray-400">Cadastre produtos primeiro para criar vendas</p>
+                    </div>
+                  )}
+                </div>
                           <div>
                             <p className="font-medium text-gray-900">{product.name}</p>
                             <p className="text-sm text-gray-600">{formatCurrency(product.price)}</p>
