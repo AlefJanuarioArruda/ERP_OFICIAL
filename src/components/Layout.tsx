@@ -218,7 +218,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                   {user?.user_metadata?.avatar_url ? (
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                       {user?.user_metadata?.avatar_url ? (
                         <img
                           src={user.user_metadata.avatar_url}
