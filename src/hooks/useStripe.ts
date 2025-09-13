@@ -139,21 +139,30 @@ export const useStripe = () => {
   };
 
   const isSubscriptionActive = (): boolean => {
-    return getActiveSubscription().isActive;
+    const { isActive } = getActiveSubscription();
+    const currentPlan = getCurrentPlan();
+    
+    // Se o plano atual é "Nenhum plano ativo", a assinatura está desativada
+    if (currentPlan === 'Nenhum plano ativo') {
+      return false;
+    }
+    
+    return isActive;
   };
 
 
 const getCurrentPlan = (): string => {
   const { product, isActive } = getActiveSubscription();
 
-  if (!product) {
+  // Se não há produto ou a assinatura não está ativa, retorna "Nenhum plano ativo"
+  if (!product || !isActive) {
     return 'Nenhum plano ativo';
   }
 
-  
-  if (isActive) {
-    return `${product.name} Ativo`;
-  }
+  // Se há produto e está ativo, retorna o nome do plano
+  return `${product.name} Ativo`;
+};
+
 
   return 'Nenhum plano ativo';
    //if (!isActive || !product) { return 'Nenhum plano ativo'; }
