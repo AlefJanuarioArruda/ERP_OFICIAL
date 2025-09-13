@@ -163,12 +163,6 @@ const getCurrentPlan = (): string => {
   return `${product.name} Ativo`;
 };
 
-
-  return 'Nenhum plano ativo';
-   //if (!isActive || !product) { return 'Nenhum plano ativo'; }
-  //return product.name;
-};
-
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
