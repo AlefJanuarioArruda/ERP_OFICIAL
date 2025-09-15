@@ -276,7 +276,7 @@ export const useSupabaseData = () => {
         .select('id')
         .eq('user_id', user.id)
         .eq('sku', variationData.sku)
-        .single()
+        .maybeSingle()
 
       if (existingVariation) {
         return { data: null, error: 'SKU já existe para este produto. Por favor, use um SKU único.' }
