@@ -10,114 +10,86 @@ export const Success: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [pollingAttempts, setPollingAttempts] = useState(0);
-  const [isPolling, setIsPolling] = useState(false);
-  const MAX_POLLING_ATTEMPTS = 15; // 30 seconds total (15 attempts x 2 seconds)
+  const [isChecking, setIsChecking] = useState(false);
 
 useEffect(() => {
   const sessionIdParam = searchParams.get('session_id');
   setSessionId(sessionIdParam);
 
   if (sessionIdParam) {
-    startPollingSubscriptionStatus();
+    startAutoRefresh();
   } else {
     setLoading(false);
   }
 
-  // 🔄 Após 15 segundos, força uma nova verificação automática
-  const timeoutId = setTimeout(() => {
-    console.log("⏱️ 15 segundos passaram, verificando status novamente...");
-    forceRefresh();
-  }, 15000);
-
-  // cleanup
-  return () => clearTimeout(timeoutId);
 }, [searchParams]);
 
-  const startPollingSubscriptionStatus = async () => {
-    setIsPolling(true);
-    setPollingAttempts(0);
-    
+  const startAutoRefresh = async () => {
     // Initial delay to allow webhook processing
     await new Promise(resolve => setTimeout(resolve, 3000));
     
-    pollSubscriptionStatus();
-  };
-
-  const pollSubscriptionStatus = async () => {
-    try {
-      console.log(`Polling attempt ${pollingAttempts + 1}/${MAX_POLLING_ATTEMPTS}`);
-      
-      // Refetch subscription data
-      await refetch();
-      
-      // Check if subscription is now active
+    // Check status immediately
+    await forceRefresh();
+    
+    // Set up interval to check every 5 seconds
+    const intervalId = setInterval(async () => {
       const { isActive } = getActiveSubscription();
       
       if (isActive) {
         console.log('Subscription is now active!');
         setLoading(false);
-        setIsPolling(false);
+        clearInterval(intervalId);
         return;
       }
       
-      // If not active and we haven't reached max attempts, try again
-      if (pollingAttempts < MAX_POLLING_ATTEMPTS - 1) {
-        setPollingAttempts(prev => prev + 1);
-        setTimeout(() => {
-          pollSubscriptionStatus();
-        }, 2000); // Wait 2 seconds before next attempt
-      } else {
-        // Max attempts reached, force refresh and stop polling
-        console.log('Max polling attempts reached, stopping polling');
-        await refetch(); // Force one final refresh
-        setLoading(false);
-        setIsPolling(false);
-      }
-    } catch (error) {
-      console.error('Error during polling:', error);
-      // Stop polling on error and show the page
+      // Continue checking every 5 seconds
+      await forceRefresh();
+    }, 5000);
+    
+    // Stop checking after 2 minutes (24 attempts)
+    setTimeout(() => {
+      clearInterval(intervalId);
       setLoading(false);
-      setIsPolling(false);
-    }
+      console.log('Auto-refresh stopped after 2 minutes');
+    }, 120000);
+    
+    // Cleanup function
+    return () => clearInterval(intervalId);
   };
 
   const forceRefresh = async () => {
-    setLoading(true);
-    setIsPolling(false);
-    setPollingAttempts(0);
+    setIsChecking(true);
     await refetch();
     
     const { isActive } = getActiveSubscription();
     if (!isActive) {
-      startPollingSubscriptionStatus();
+      // Continue auto-refresh if not active
+      console.log('Subscription not active yet, continuing to check...');
     } else {
       setLoading(false);
     }
+    setIsChecking(false);
   };
 
   const { product, isActive } = getActiveSubscription();
   const currentPlan = getCurrentPlan();
 
-  if (loading || isPolling) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="w-20 h-20 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
           
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-            {pollingAttempts === 0 ? 'Processando sua assinatura...' : 'Confirmando status da assinatura...'}
+            Processando sua assinatura...
           </h2>
           
           <div className="space-y-3 mb-6">
             <p className="text-gray-600">
-              {pollingAttempts === 0 
-                ? 'Aguarde enquanto confirmamos seu pagamento e ativamos sua conta'
-                : `Verificando status... (Tentativa ${pollingAttempts + 1}/${MAX_POLLING_ATTEMPTS})`
-              }
+              Aguarde enquanto confirmamos seu pagamento e ativamos sua conta
             </p>
             
-            {isPolling && (
+            {isChecking && (
               <div className="flex items-center justify-center space-x-2 text-sm text-blue-600">
                 <Clock className="w-4 h-4 animate-pulse" />
                 <span>Sincronizando com o sistema de pagamentos...</span>
@@ -130,19 +102,18 @@ useEffect(() => {
             <div className="text-sm text-blue-800 space-y-1 text-left">
               <p>✅ Pagamento processado com sucesso</p>
               <p>🔄 Ativando sua assinatura no sistema</p>
-              <p>⏱️ Isso pode levar até 30 segundos</p>
+              <p>⏱️ Verificação automática a cada 5 segundos</p>
             </div>
           </div>
 
-          {pollingAttempts > 5 && (
-            <button
-              onClick={forceRefresh}
-              className="mt-4 flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Verificar Novamente
-            </button>
-          )}
+          <button
+            onClick={forceRefresh}
+            disabled={isChecking}
+            className="mt-4 flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isChecking ? 'animate-spin' : ''}`} />
+            {isChecking ? 'Verificando...' : 'Verificar Novamente'}
+          </button>
         </div>
       </div>
     );
@@ -303,10 +274,11 @@ useEffect(() => {
               </p>
               <button
                 onClick={forceRefresh}
-                className="flex items-center justify-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto"
+                disabled={isChecking}
+                className="flex items-center justify-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Verificar Status Novamente
+                <RefreshCw className={`w-4 h-4 mr-2 ${isChecking ? 'animate-spin' : ''}`} />
+                {isChecking ? 'Verificando...' : 'Verificar Status Novamente'}
               </button>
             </div>
           )}
