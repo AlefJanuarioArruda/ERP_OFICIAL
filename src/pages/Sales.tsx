@@ -246,6 +246,30 @@ const updateItemQuantity = (productId: string, quantity: number) => {
     
     if (selectedItems.length === 0) return;
 
+    // Verificar se há estoque suficiente antes de finalizar a venda
+    for (const item of selectedItems) {
+      if (item.product_id) {
+        let availableStock = 0;
+        let productName = item.product_name;
+        
+        if (item.product_id.includes('-')) {
+          // É uma variação
+          const [mainProductId, variationId] = item.product_id.split('-');
+          const variations = getVariationsForProduct(mainProductId);
+          const variation = variations.find(v => v.id === variationId);
+          availableStock = variation ? variation.stock : 0;
+        } else {
+          // É um produto normal
+          const product = products.find(p => p.id === item.product_id);
+          availableStock = product ? product.stock : 0;
+        }
+        
+        if (item.quantity > availableStock) {
+          alert(`Estoque insuficiente para ${productName}. Disponível: ${availableStock}, Solicitado: ${item.quantity}`);
+          return;
+        }
+      }
+    }
     let customerData = {
       customer_id: null as string | null,
       customer_name: 'Venda Direta'
@@ -550,7 +574,12 @@ const updateItemQuantity = (productId: string, quantity: number) => {
                                 <button
                                   key={customer.id}
                                   type="button"
-                                  onClick={() => handleCustomerSelect(customer.id, customer.name)}
+                                 disabled={product.stock === 0}
+                                 className={`px-3 py-1 text-sm rounded transition-colors ${
+                                   product.stock === 0 
+                                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                     : 'bg-blue-600 text-white hover:bg-blue-700'
+                                 }`}
                                   className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center"
                                 >
                                   <User className="w-4 h-4 mr-3 text-gray-400" />
@@ -710,7 +739,7 @@ const updateItemQuantity = (productId: string, quantity: number) => {
                                 className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
                                 disabled={product.stock === 0}
                               >
-                                Adicionar
+                                {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
                               </button>
                             </div>
                             
@@ -750,10 +779,15 @@ const updateItemQuantity = (productId: string, quantity: number) => {
                                     <button
                                       type="button"
                                       onClick={() => addVariationToSale(variation)}
-                                      className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+                                     disabled={variation.stock === 0}
+                                     className={`px-2 py-1 text-xs rounded transition-colors ${
+                                       variation.stock === 0 
+                                         ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                         : 'bg-blue-600 text-white hover:bg-blue-700'
+                                     }`}
                                       disabled={variation.stock === 0}
                                     >
-                                      Adicionar
+                                     {variation.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
                                     </button>
                                   </div>
                                 ))}
@@ -777,7 +811,6 @@ const updateItemQuantity = (productId: string, quantity: number) => {
                           window.location.href = '/products';
                         }}
                         className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
                         <Plus className="w-4 h-4 mr-2" />
                         Ir para Produtos
                       </button>
