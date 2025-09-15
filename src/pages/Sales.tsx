@@ -44,71 +44,107 @@ export const Sales: React.FC = () => {
     customer.email.toLowerCase().includes(customerSearchTerm.toLowerCase())
   );
 
-  const addItemToSale = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
+ // Função para adicionar produto simples à venda
+const addItemToSale = (productId: string) => {
+  const product = products.find(p => p.id === productId);
+  if (!product) return;
 
-    const existingItem = selectedItems.find(item => item.product_id === productId);
-    
-    if (existingItem) {
-      setSelectedItems(selectedItems.map(item =>
-        item.product_id === productId
-          ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
-          : item
-      ));
-    } else {
-      const newItem = {
-        product_id: product.id,
-        product_name: product.name,
-        quantity: 1,
-        unit_price: product.price,
-        total: product.price
-      };
-      setSelectedItems([...selectedItems, newItem]);
-    }
-  };
+  const existingItem = selectedItems.find(item => item.product_id === productId);
 
-  const addVariationToSale = (variation: any) => {
-    const product = products.find(p => p.id === variation.product_id);
-    if (!product) return;
-
-    const variationKey = `${variation.product_id}-${variation.id}`;
-    const existingItem = selectedItems.find(item => item.product_id === variationKey);
-    
-    if (existingItem) {
-      setSelectedItems(selectedItems.map(item =>
-        item.product_id === variationKey
-          ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
-          : item
-      ));
-    } else {
-      const newItem = {
-        product_id: variationKey,
-        product_name: `${product.name} - ${variation.variation_name}`,
-        quantity: 1,
-        unit_price: variation.price || product.price,
-        total: variation.price || product.price
-      };
-      setSelectedItems([...selectedItems, newItem]);
-    }
-  };
-  const removeItemFromSale = (productId: string) => {
-    setSelectedItems(selectedItems.filter(item => item.product_id !== productId));
-  };
-
-  const updateItemQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeItemFromSale(productId);
+  if (existingItem) {
+    // 🚨 Bloqueia quando atingir estoque máximo
+    if (existingItem.quantity >= product.stock) {
+      alert("Estoque máximo atingido!");
       return;
     }
 
     setSelectedItems(selectedItems.map(item =>
       item.product_id === productId
-        ? { ...item, quantity, total: quantity * item.unit_price }
+        ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
         : item
     ));
-  };
+  } else {
+    if (product.stock <= 0) {
+      alert("Produto sem estoque!");
+      return;
+    }
 
+    const newItem = {
+      product_id: product.id,
+      product_name: product.name,
+      quantity: 1,
+      unit_price: product.price,
+      total: product.price
+    };
+    setSelectedItems([...selectedItems, newItem]);
+  }
+};
+
+// Função para adicionar variação à venda
+const addVariationToSale = (variation: any) => {
+  const product = products.find(p => p.id === variation.product_id);
+  if (!product) return;
+
+  const variationKey = `${variation.product_id}-${variation.id}`;
+  const existingItem = selectedItems.find(item => item.product_id === variationKey);
+
+  if (existingItem) {
+    if (existingItem.quantity >= variation.stock) {
+      alert("Estoque máximo atingido!");
+      return;
+    }
+
+    setSelectedItems(selectedItems.map(item =>
+      item.product_id === variationKey
+        ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
+        : item
+    ));
+  } else {
+    if (variation.stock <= 0) {
+      alert("Variação sem estoque!");
+      return;
+    }
+
+    const newItem = {
+      product_id: variationKey,
+      product_name: `${product.name} - ${variation.variation_name}`,
+      quantity: 1,
+      unit_price: variation.price || product.price,
+      total: variation.price || product.price
+    };
+    setSelectedItems([...selectedItems, newItem]);
+  }
+};
+
+// Atualizar quantidade manualmente (input)
+const updateItemQuantity = (productId: string, quantity: number) => {
+  if (quantity < 1) return;
+
+  setSelectedItems(selectedItems.map(item => {
+    if (item.product_id === productId) {
+      // Detecta se é variação ou produto
+      const [baseId, variationId] = productId.split("-");
+      let stock = 0;
+
+      if (variationId) {
+        const variation = products.find(p => p.id === baseId)?.variations?.find((v: any) => v.id === variationId);
+        stock = variation?.stock || 0;
+      } else {
+        const product = products.find(p => p.id === productId);
+        stock = product?.stock || 0;
+      }
+
+      // 🚨 Impede valor maior que o estoque
+      if (quantity > stock) {
+        alert("Quantidade não pode ultrapassar o estoque!");
+        return { ...item, quantity: stock, total: stock * item.unit_price };
+      }
+
+      return { ...item, quantity, total: quantity * item.unit_price };
+    }
+    return item;
+  }));
+};
   const calculateTotal = () => {
     const subtotal = selectedItems.reduce((sum, item) => sum + item.total, 0);
     let discount = 0;
