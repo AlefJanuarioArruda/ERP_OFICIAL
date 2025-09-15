@@ -51,20 +51,31 @@ export const Sales: React.FC = () => {
     const existingItem = selectedItems.find(item => item.product_id === productId);
     
     if (existingItem) {
-      setSelectedItems(selectedItems.map(item =>
-        item.product_id === productId
-          ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
-          : item
-      ));
+      // ALTERADO: Adicionada a verificação de estoque antes de incrementar
+      if (existingItem.quantity < product.stock) {
+        setSelectedItems(selectedItems.map(item =>
+          item.product_id === productId
+            ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
+            : item
+        ));
+      }
+      // Opcional: Adicionar um feedback para o usuário de que o estoque máximo foi atingido
+      // else { alert(`Estoque máximo para ${product.name} atingido.`); }
+
     } else {
-      const newItem = {
-        product_id: product.id,
-        product_name: product.name,
-        quantity: 1,
-        unit_price: product.price,
-        total: product.price
-      };
-      setSelectedItems([...selectedItems, newItem]);
+      // ALTERADO: Adicionada a verificação de estoque antes de adicionar um novo item
+      if (product.stock > 0) {
+        const newItem = {
+          product_id: product.id,
+          product_name: product.name,
+          quantity: 1,
+          unit_price: product.price,
+          total: product.price
+        };
+        setSelectedItems([...selectedItems, newItem]);
+      }
+      // Opcional: Adicionar um feedback para o usuário de que o produto está sem estoque
+      // else { alert(`${product.name} está sem estoque.`); }
     }
   };
 
