@@ -30,6 +30,26 @@ export const Sales: React.FC = () => {
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
 
+  // Utility function to get stock status
+  const getStockStatus = (stock: number, minStock: number = 5) => {
+    if (stock === 0) {
+      return {
+        label: 'Sem Estoque',
+        color: 'bg-red-100 text-red-800'
+      };
+    } else if (stock <= minStock) {
+      return {
+        label: 'Estoque Baixo',
+        color: 'bg-yellow-100 text-yellow-800'
+      };
+    } else {
+      return {
+        label: 'Em Estoque',
+        color: 'bg-green-100 text-green-800'
+      };
+    }
+  };
+
   // Effect to show limit banner when limit is reached
   React.useEffect(() => {
     if (usageStatus.isLimitReached.sales && !usageStatus.isSubscriptionActive) {
