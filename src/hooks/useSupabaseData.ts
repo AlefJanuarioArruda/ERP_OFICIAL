@@ -269,6 +269,20 @@ export const useSupabaseData = () => {
   const addProductVariation = async (variationData: Omit<ProductVariation, 'id' | 'user_id' | 'created_at' | 'updated_at'>, imageFile?: File) => {
     if (!user) return
 
+    // Check for duplicate SKU if SKU is provided
+    if (variationData.sku) {
+      const { data: existingVariation } = await supabase
+        .from('product_variations')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('sku', variationData.sku)
+        .maybeSingle()
+
+      if (existingVariation) {
+        return { data: null, error: 'SKU já existe para este produto. Por favor, use um SKU único.' }
+      }
+    }
+
     let imageUrl = variationData.image_url || null
     
     // Upload image if provided
