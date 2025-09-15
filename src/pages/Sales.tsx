@@ -505,7 +505,7 @@ export const Sales: React.FC = () => {
                             className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center"
                           >
                             <>
-                              <ShoppingCart className="w-4 h-4 mr-3 text-blue-600" />
+                              return product.stock <= 0;
                               <div>
                                 <div className="font-medium text-gray-900">Venda Direta (sem cliente)</div>
                                 <div className="text-sm text-gray-500">Venda anônima sem vínculo com cliente</div>
@@ -728,7 +728,7 @@ export const Sales: React.FC = () => {
                                         const variationKey = `${variation.product_id}-${variation.id}`;
                                         const existingItem = selectedItems.find(item => item.product_id === variationKey);
                                         const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
-                                        return variation.stock === 0 || currentQuantityInCart >= variation.stock;
+                                        return variation.stock <= 0;
                                       })()}
                                       className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                                     >
@@ -737,8 +737,7 @@ export const Sales: React.FC = () => {
                                         const existingItem = selectedItems.find(item => item.product_id === variationKey);
                                         const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
                                         
-                                        if (variation.stock === 0) return 'Sem Estoque';
-                                        if (currentQuantityInCart >= variation.stock) return 'Limite';
+                                        if (variation.stock <= 0) return 'Sem Estoque';
                                         return 'Adicionar';
                                       })()}
                                     </button>
@@ -813,8 +812,7 @@ export const Sales: React.FC = () => {
                               type="button"
                               onClick={() => {
                                 if (item.product_id) {
-                                  updateItemQuantity(item.product_id, item.quantity - 1);
-                                }
+                              if (product.stock <= 0) return 'Sem Estoque';
                               }}
                               disabled={item.quantity <= 1}
                               className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
