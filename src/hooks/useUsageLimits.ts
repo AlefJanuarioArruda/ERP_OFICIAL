@@ -62,7 +62,7 @@ export const useUsageLimits = (): UsageStatus => {
         canAdd: {
           products: true,
           customers: true,
-          sales: true
+          sales: true,
           variationsForProduct: () => true
         },
         canEdit: true,
@@ -98,7 +98,7 @@ export const useUsageLimits = (): UsageStatus => {
         canAdd: {
           products: true,
           customers: true,
-          sales: true
+          sales: true,
           variationsForProduct: () => true
         },
         canEdit: true,
@@ -127,7 +127,7 @@ export const useUsageLimits = (): UsageStatus => {
     const canAdd = {
       products: !isLimitReached.products,
       customers: !isLimitReached.customers,
-      sales: !isLimitReached.sales
+      sales: !isLimitReached.sales,
       variationsForProduct: (productId: string) => {
         const variations = getVariationsForProduct(productId);
         return variations.length < limits.variationsPerProduct;
