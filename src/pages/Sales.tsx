@@ -784,22 +784,25 @@ export const Sales: React.FC = () => {
                             {(() => {
                               // Get available stock for this item
                               let availableStock = 0;
+                              let totalStock = 0;
                               
                               if (item.product_id && item.product_id.includes('-')) {
                                 // It's a variation
                                 const [mainProductId, variationId] = item.product_id.split('-');
                                 const variations = getVariationsForProduct(mainProductId);
                                 const variation = variations.find(v => v.id === variationId);
-                                availableStock = variation ? variation.stock : 0;
+                                totalStock = variation ? variation.stock : 0;
+                                availableStock = totalStock - item.quantity;
                               } else if (item.product_id) {
                                 // It's a regular product
                                 const product = products.find(p => p.id === item.product_id);
-                                availableStock = product ? product.stock : 0;
+                                totalStock = product ? product.stock : 0;
+                                availableStock = totalStock - item.quantity;
                               }
                               
                               return (
                                 <p className="text-xs text-gray-500">
-                                  Disponível: {availableStock} unidades
+                                  Disponível: {Math.max(0, availableStock)} de {totalStock} unidades
                                 </p>
                               );
                             })()}
@@ -807,7 +810,11 @@ export const Sales: React.FC = () => {
                           <div className="flex items-center space-x-2">
                             <button
                               type="button"
-                              onClick={() => updateItemQuantity(item.product_id!, item.quantity - 1)}
+                              onClick={() => {
+                                if (item.product_id) {
+                                  updateItemQuantity(item.product_id, item.quantity - 1);
+                                }
+                              }}
                               className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs"
                             >
                               -
@@ -815,7 +822,11 @@ export const Sales: React.FC = () => {
                             <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
                             <button
                               type="button"
-                              onClick={() => updateItemQuantity(item.product_id!, item.quantity + 1)}
+                              onClick={() => {
+                                if (item.product_id) {
+                                  updateItemQuantity(item.product_id, item.quantity + 1);
+                                }
+                              }}
                               disabled={(() => {
                                 // Check if we can add more
                                 let availableStock = 0;
@@ -843,7 +854,11 @@ export const Sales: React.FC = () => {
                             </span>
                             <button
                               type="button"
-                              onClick={() => removeItemFromSale(item.product_id!)}
+                              onClick={() => {
+                                if (item.product_id) {
+                                  removeItemFromSale(item.product_id);
+                                }
+                              }}
                               className="text-red-600 hover:text-red-800 ml-2"
                             >
                               ×
