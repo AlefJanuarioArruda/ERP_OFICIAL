@@ -14,17 +14,25 @@ export const Success: React.FC = () => {
   const [isPolling, setIsPolling] = useState(false);
   const MAX_POLLING_ATTEMPTS = 15; // 30 seconds total (15 attempts x 2 seconds)
 
-  useEffect(() => {
-    const sessionIdParam = searchParams.get('session_id');
-    setSessionId(sessionIdParam);
+useEffect(() => {
+  const sessionIdParam = searchParams.get('session_id');
+  setSessionId(sessionIdParam);
 
-    // Start polling for subscription status
-    if (sessionIdParam) {
-      startPollingSubscriptionStatus();
-    } else {
-      setLoading(false);
-    }
-  }, [searchParams]);
+  if (sessionIdParam) {
+    startPollingSubscriptionStatus();
+  } else {
+    setLoading(false);
+  }
+
+  // 🔄 Após 15 segundos, força uma nova verificação automática
+  const timeoutId = setTimeout(() => {
+    console.log("⏱️ 15 segundos passaram, verificando status novamente...");
+    forceRefresh();
+  }, 15000);
+
+  // cleanup
+  return () => clearTimeout(timeoutId);
+}, [searchParams]);
 
   const startPollingSubscriptionStatus = async () => {
     setIsPolling(true);
