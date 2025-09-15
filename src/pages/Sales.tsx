@@ -144,13 +144,18 @@ const updateItemQuantity = (productId: string, quantity: number) => {
         }
       }
 
-      // 🚨 Se o estoque for inválido, força 0 (bloqueia)
+      // 🚨 Garante que o estoque nunca seja inválido
       if (!Number.isFinite(stockLimit) || stockLimit < 0) {
         stockLimit = 0;
       }
 
-      // 🚨 Agora sim garante o limite
-      const newQuantity = Math.min(quantity, stockLimit);
+      let newQuantity = quantity;
+
+      // 🚨 Se passar do estoque, segura no limite
+      if (newQuantity > stockLimit) {
+        newQuantity = stockLimit;
+        alert("Quantidade não pode ultrapassar o estoque!");
+      }
 
       console.log({
         produto: item.product_name,
@@ -159,7 +164,11 @@ const updateItemQuantity = (productId: string, quantity: number) => {
         novaQuantidadeCalculada: newQuantity,
       });
 
-      return { ...item, quantity: newQuantity, total: newQuantity * item.unit_price };
+      return { 
+        ...item, 
+        quantity: newQuantity, 
+        total: newQuantity * item.unit_price 
+      };
     }
     return item;
   }));
