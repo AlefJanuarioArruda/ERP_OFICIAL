@@ -78,8 +78,7 @@ export const Sales: React.FC = () => {
       // else { alert(`${product.name} está sem estoque.`); }
     }
   };
-
-  const addVariationToSale = (variation: any) => {
+ const addVariationToSale = (variation: any) => {
     const product = products.find(p => p.id === variation.product_id);
     if (!product) return;
 
@@ -87,20 +86,31 @@ export const Sales: React.FC = () => {
     const existingItem = selectedItems.find(item => item.product_id === variationKey);
     
     if (existingItem) {
-      setSelectedItems(selectedItems.map(item =>
-        item.product_id === variationKey
-          ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
-          : item
-      ));
+      // ALTERADO: Adicionada a verificação de estoque da variação antes de incrementar
+      if (existingItem.quantity < variation.stock) {
+        setSelectedItems(selectedItems.map(item =>
+          item.product_id === variationKey
+            ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
+            : item
+        ));
+      }
+      // Opcional: Adicionar um feedback para o usuário
+      // else { alert(`Estoque máximo para a variação ${variation.variation_name} atingido.`); }
+
     } else {
-      const newItem = {
-        product_id: variationKey,
-        product_name: `${product.name} - ${variation.variation_name}`,
-        quantity: 1,
-        unit_price: variation.price || product.price,
-        total: variation.price || product.price
-      };
-      setSelectedItems([...selectedItems, newItem]);
+      // ALTERADO: Adicionada a verificação de estoque da variação antes de adicionar
+      if (variation.stock > 0) {
+        const newItem = {
+          product_id: variationKey,
+          product_name: `${product.name} - ${variation.variation_name}`,
+          quantity: 1,
+          unit_price: variation.price || product.price,
+          total: variation.price || product.price
+        };
+        setSelectedItems([...selectedItems, newItem]);
+      }
+      // Opcional: Adicionar um feedback para o usuário
+      // else { alert(`A variação ${variation.variation_name} está sem estoque.`); }
     }
   };
   const removeItemFromSale = (productId: string) => {
@@ -113,13 +123,35 @@ export const Sales: React.FC = () => {
       return;
     }
 
-    setSelectedItems(selectedItems.map(item =>
-      item.product_id === productId
-        ? { ...item, quantity, total: quantity * item.unit_price }
-        : item
-    ));
-  };
+    setSelectedItems(selectedItems.map(item => {
+      if (item.product_id === productId) {
+        // NOVO: Lógica para encontrar o limite de estoque do produto ou variação
+        let stockLimit = Infinity;
+        
+        const isVariation = productId.includes('-');
+        
+        if (isVariation) {
+          const [pId, vId] = productId.split('-');
+          const variations = getVariationsForProduct(pId);
+          const variation = variations.find(v => v.id === vId);
+          if (variation) {
+            stockLimit = variation.stock;
+          }
+        } else {
+          const product = products.find(p => p.id === productId);
+          if (product) {
+            stockLimit = product.stock;
+          }
+        }
 
+        // ALTERADO: Garante que a nova quantidade não ultrapasse o estoque
+        const newQuantity = Math.min(quantity, stockLimit);
+        
+        return { ...item, quantity: newQuantity, total: newQuantity * item.unit_price };
+      }
+      return item;
+    }));
+  };
   
   const calculateTotal = () => {
     const subtotal = selectedItems.reduce((sum, item) => sum + item.total, 0);
