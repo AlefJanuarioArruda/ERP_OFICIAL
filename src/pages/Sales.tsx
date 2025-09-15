@@ -47,9 +47,15 @@ export const Sales: React.FC = () => {
   const addItemToSale = (productId: string) => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
-
-    const existingItem = selectedItems.find(item => item.product_id === productId);
     
+    // Check if we can add more of this product
+    const existingItem = selectedItems.find(item => item.product_id === productId);
+    const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+    
+    if (currentQuantityInCart >= product.stock) {
+      return; // Can't add more than available stock
+    }
+
     if (existingItem) {
       setSelectedItems(selectedItems.map(item =>
         item.product_id === productId
@@ -71,10 +77,15 @@ export const Sales: React.FC = () => {
   const addVariationToSale = (variation: any) => {
     const product = products.find(p => p.id === variation.product_id);
     if (!product) return;
-
+    
     const variationKey = `${variation.product_id}-${variation.id}`;
     const existingItem = selectedItems.find(item => item.product_id === variationKey);
+    const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
     
+    if (currentQuantityInCart >= variation.stock) {
+      return; // Can't add more than available stock
+    }
+
     if (existingItem) {
       setSelectedItems(selectedItems.map(item =>
         item.product_id === variationKey
@@ -92,6 +103,7 @@ export const Sales: React.FC = () => {
       setSelectedItems([...selectedItems, newItem]);
     }
   };
+  
   const removeItemFromSale = (productId: string) => {
     setSelectedItems(selectedItems.filter(item => item.product_id !== productId));
   };
@@ -99,6 +111,26 @@ export const Sales: React.FC = () => {
   const updateItemQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeItemFromSale(productId);
+      return;
+    }
+    
+    // Get available stock for validation
+    let availableStock = 0;
+    
+    if (productId.includes('-')) {
+      // It's a variation
+      const [mainProductId, variationId] = productId.split('-');
+      const variations = getVariationsForProduct(mainProductId);
+      const variation = variations.find(v => v.id === variationId);
+      availableStock = variation ? variation.stock : 0;
+    } else {
+      // It's a regular product
+      const product = products.find(p => p.id === productId);
+      availableStock = product ? product.stock : 0;
+    }
+    
+    // Don't allow quantity greater than available stock
+    if (quantity > availableStock) {
       return;
     }
 
@@ -166,7 +198,6 @@ export const Sales: React.FC = () => {
     // Note: deleteSale function needs to be implemented in useSupabaseData
     // For now, we'll show a message that this feature is coming soon
     alert('Funcionalidade de exclusão de vendas em desenvolvimento');
-    setShowDeleteConfirm(null);
   };
 
   const handleCustomerSelect = (customerId: string, customerName: string) => {
@@ -471,9 +502,9 @@ export const Sales: React.FC = () => {
                           <button
                             type="button"
                             onClick={handleDirectSale}
-                            className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 flex items-center"
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center"
                           >
-                            <ShoppingCart className="w-4 h-4 mr-3 text-blue-600" />
+                            <ShoppingCart className="w-4 h-4 mr-3 text-gray-400" />
                             <div>
                               <div className="font-medium text-gray-900">Venda Direta (sem cliente)</div>
                               <div className="text-sm text-gray-500">Venda anônima sem vínculo com cliente</div>
@@ -609,6 +640,7 @@ export const Sales: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                
                 {/* Product Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Produtos</label>
@@ -690,10 +722,22 @@ export const Sales: React.FC = () => {
                                     <button
                                       type="button"
                                       onClick={() => addVariationToSale(variation)}
-                                      className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
-                                      disabled={variation.stock === 0}
+                                      disabled={(() => {
+                                        const variationKey = `${variation.product_id}-${variation.id}`;
+                                        const existingItem = selectedItems.find(item => item.product_id === variationKey);
+                                        const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+                                        return variation.stock <= 0;
+                                      })()}
+                                      className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                                     >
-                                      Adicionar
+                                      {(() => {
+                                        const variationKey = `${variation.product_id}-${variation.id}`;
+                                        const existingItem = selectedItems.find(item => item.product_id === variationKey);
+                                        const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+                                        
+                                        if (variation.stock <= 0) return 'Sem Estoque';
+                                        return 'Adicionar';
+                                      })()}
                                     </button>
                                   </div>
                                 ))}
@@ -735,20 +779,72 @@ export const Sales: React.FC = () => {
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">{item.product_name}</p>
                             <p className="text-sm text-gray-600">{formatCurrency(item.unit_price)} cada</p>
+                            {(() => {
+                              // Get available stock for this item
+                              let availableStock = 0;
+                              let totalStock = 0;
+                              
+                              if (item.product_id && item.product_id.includes('-')) {
+                                // It's a variation
+                                const [mainProductId, variationId] = item.product_id.split('-');
+                                const variations = getVariationsForProduct(mainProductId);
+                                const variation = variations.find(v => v.id === variationId);
+                                totalStock = variation ? variation.stock : 0;
+                                availableStock = totalStock;
+                              } else if (item.product_id) {
+                                // It's a regular product
+                                const product = products.find(p => p.id === item.product_id);
+                                totalStock = product ? product.stock : 0;
+                                availableStock = totalStock;
+                              }
+                              
+                              return (
+                                <p className="text-xs text-gray-500">
+                                  Disponível: {Math.max(0, availableStock - item.quantity)} de {totalStock} unidades
+                                </p>
+                              );
+                            })()}
                           </div>
                           <div className="flex items-center space-x-2">
                             <button
                               type="button"
-                              onClick={() => updateItemQuantity(item.product_id!, item.quantity - 1)}
-                              className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs"
+                              onClick={() => {
+                                if (item.product_id) {
+                                  updateItemQuantity(item.product_id, item.quantity - 1);
+                                }
+                              }}
+                              disabled={item.quantity <= 1}
+                              className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                             >
                               -
                             </button>
                             <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
                             <button
                               type="button"
-                              onClick={() => updateItemQuantity(item.product_id!, item.quantity + 1)}
-                              className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs"
+                              onClick={() => {
+                                if (item.product_id) {
+                                  updateItemQuantity(item.product_id, item.quantity + 1);
+                                }
+                              }}
+                              disabled={(() => {
+                                // Check if we can add more
+                                let availableStock = 0;
+                                
+                                if (item.product_id && item.product_id.includes('-')) {
+                                  // It's a variation
+                                  const [mainProductId, variationId] = item.product_id.split('-');
+                                  const variations = getVariationsForProduct(mainProductId);
+                                  const variation = variations.find(v => v.id === variationId);
+                                  availableStock = variation ? variation.stock : 0;
+                                } else if (item.product_id) {
+                                  // It's a regular product
+                                  const product = products.find(p => p.id === item.product_id);
+                                  availableStock = product ? product.stock : 0;
+                                }
+                                
+                                return item.quantity >= availableStock;
+                              })()}
+                              className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                             >
                               +
                             </button>
@@ -757,7 +853,11 @@ export const Sales: React.FC = () => {
                             </span>
                             <button
                               type="button"
-                              onClick={() => removeItemFromSale(item.product_id!)}
+                              onClick={() => {
+                                if (item.product_id) {
+                                  removeItemFromSale(item.product_id);
+                                }
+                              }}
                               className="text-red-600 hover:text-red-800 ml-2"
                             >
                               ×
