@@ -62,7 +62,7 @@ export const useUsageLimits = (): UsageStatus => {
         canAdd: {
           products: true,
           customers: true,
-          sales: true,
+          sales: true
           variationsForProduct: () => true
         },
         canEdit: true,
@@ -98,7 +98,7 @@ export const useUsageLimits = (): UsageStatus => {
         canAdd: {
           products: true,
           customers: true,
-          sales: true,
+          sales: true
           variationsForProduct: () => true
         },
         canEdit: true,
@@ -127,16 +127,25 @@ export const useUsageLimits = (): UsageStatus => {
     const canAdd = {
       products: !isLimitReached.products,
       customers: !isLimitReached.customers,
-      sales: !isLimitReached.sales,
+      sales: !isLimitReached.sales
       variationsForProduct: (productId: string) => {
         const variations = getVariationsForProduct(productId);
         return variations.length < limits.variationsPerProduct;
       }
     };
 
-    // Usuários gratuitos PODEM editar e excluir sempre (incluindo variações)
-    const canEdit = true;
-    const canDelete = true;
+    // Usuários gratuitos NÃO podem editar/excluir quando atingem o limite ESPECÍFICO de cada seção
+    const canEdit = {
+      products: !isLimitReached.products,
+      customers: !isLimitReached.customers,
+      sales: !isLimitReached.sales
+    };
+    
+    const canDelete = {
+      products: !isLimitReached.products,
+      customers: !isLimitReached.customers,
+      sales: !isLimitReached.sales
+    };
 
     const showLimitMessage = {
       products: isLimitReached.products,

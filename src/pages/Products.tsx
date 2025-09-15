@@ -33,17 +33,6 @@ export const Products: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [variationImageFile, setVariationImageFile] = useState<File | null>(null);
   const [variationImagePreview, setVariationImagePreview] = useState<string | null>(null);
-  const [showVariationsInForm, setShowVariationsInForm] = useState(false);
-  const [tempVariations, setTempVariations] = useState<Array<{
-    id: string;
-    variation_name: string;
-    color: string;
-    size: string;
-    sku: string;
-    stock: number;
-    price: number | null;
-    image_url: string | null;
-  }>>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -93,8 +82,6 @@ export const Products: React.FC = () => {
     });
     setImageFile(null);
     setImagePreview(null);
-    setShowVariationsInForm(false);
-    setTempVariations([]);
     setShowAddForm(false);
     setEditingProduct(null);
     setShowUpgradeModal(false);
@@ -124,10 +111,12 @@ export const Products: React.FC = () => {
   };
 
   const handleAddVariation = (product: any) => {
-    const currentVariations = getVariationsForProduct(product.id);
-    if (!usageStatus.canAdd.variationsForProduct(product.id)) {
-      setShowUpgradeModal(true);
-      return;
+    if (!usageStatus.isSubscriptionActive) {
+      const currentVariations = getVariationsForProduct(product.id);
+      if (!usageStatus.canAdd.variationsForProduct(product.id)) {
+        setShowUpgradeModal(true);
+        return;
+      }
     }
     
     setSelectedProduct(product);
@@ -157,6 +146,11 @@ export const Products: React.FC = () => {
   };
 
   const handleEditVariation = (variation: any) => {
+    if (!usageStatus.isSubscriptionActive) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    
     setVariationFormData({
       variation_name: variation.variation_name,
       color: variation.color || '',
@@ -181,6 +175,11 @@ export const Products: React.FC = () => {
   };
 
   const handleDeleteVariation = async (variationId: string) => {
+    if (!usageStatus.isSubscriptionActive) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    
     await deleteProductVariation(variationId);
     setShowDeleteVariationConfirm(null);
   };
@@ -225,27 +224,10 @@ export const Products: React.FC = () => {
       image_url: imagePreview
     };
 
-    let productResult;
-    
     if (editingProduct) {
-      productResult = await updateProduct(editingProduct.id, productData, imageFile || undefined);
+      await updateProduct(editingProduct.id, productData, imageFile || undefined);
     } else {
-      productResult = await addProduct(productData, imageFile || undefined);
-    }
-    
-    // Se criou um novo produto e tem variações temporárias, adicionar as variações
-    if (!editingProduct && productResult?.data && tempVariations.length > 0) {
-      for (const variation of tempVariations) {
-        await addProductVariation({
-          product_id: productResult.data.id,
-          variation_name: variation.variation_name,
-          color: variation.color || null,
-          size: variation.size || null,
-          sku: variation.sku,
-          stock: variation.stock,
-          price: variation.price
-        });
-      }
+      await addProduct(productData, imageFile || undefined);
     }
     
     resetForm();
@@ -473,20 +455,25 @@ export const Products: React.FC = () => {
                     
                     <button
                       onClick={() => handleAddVariation(product)}
-                      disabled={!usageStatus.canAdd.variationsForProduct(selectedProduct.id)}
+                      disabled={!canAddVariation && !usageStatus.isSubscriptionActive}
                       className={`flex items-center px-3 py-1 text-xs rounded-lg transition-colors ${
-                        usageStatus.canAdd.variationsForProduct(selectedProduct.id)
+                        canAddVariation || usageStatus.isSubscriptionActive
                           ? 'bg-blue-600 text-white hover:bg-blue-700'
                           : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       }`}
                       title={
-                        !usageStatus.canAdd.variationsForProduct(selectedProduct.id)
-                          ? `Limite de ${usageStatus.limits.variationsPerProduct} variações atingido`
+                        !canAddVariation && !usageStatus.isSubscriptionActive
+                          ? `Limite de ${usageStatus.limits.variationsPerProduct} variações atingido (Plano Gratuito)`
                           : 'Adicionar variação'
                       }
                     >
                       <Plus className="w-3 h-3 mr-1" />
                       Variação
+                      {!usageStatus.isSubscriptionActive && (
+                        <span className="ml-1 text-xs">
+                          ({variations.length}/{usageStatus.limits.variationsPerProduct})
+                        </span>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -665,178 +652,6 @@ export const Products: React.FC = () => {
                   />
                 </div>
 
-                {/* Variações Section - Only for new products */}
-                {!editingProduct && (
-                  <div className="border-t border-gray-200 pt-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <label className="block text-sm font-medium text-gray-700">Variações do Produto (Opcional)</label>
-                      <button
-                        type="button"
-                        onClick={() => setShowVariationsInForm(!showVariationsInForm)}
-                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                      >
-                        {showVariationsInForm ? 'Ocultar' : 'Adicionar Variações'}
-                      </button>
-                    </div>
-                    
-                    {showVariationsInForm && (
-                      <div className="space-y-4">
-                        {/* Add Variation Button */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (tempVariations.length >= usageStatus.limits.variationsPerProduct) {
-                              setShowUpgradeModal(true);
-                              return;
-                            }
-                            const newVariation = {
-                              id: `temp-${Date.now()}`,
-                              variation_name: '',
-                              color: '',
-                              size: '',
-                              sku: '',
-                              stock: 0,
-                              price: null,
-                              image_url: null
-                            };
-                            setTempVariations([...tempVariations, newVariation]);
-                          }}
-                          disabled={tempVariations.length >= usageStatus.limits.variationsPerProduct}
-                          className={`w-full py-2 px-4 border-2 border-dashed rounded-lg transition-colors ${
-                            tempVariations.length < usageStatus.limits.variationsPerProduct
-                              ? 'border-blue-300 text-blue-600 hover:border-blue-400 hover:bg-blue-50'
-                              : 'border-gray-300 text-gray-400 cursor-not-allowed'
-                          }`}
-                        >
-                          <Plus className="w-4 h-4 mr-2 inline" />
-                          Adicionar Variação
-                          {!usageStatus.isSubscriptionActive && (
-                            <span className="ml-2 text-xs">
-                              (Máximo {usageStatus.limits.variationsPerProduct})
-                            </span>
-                          )}
-                        </button>
-                        
-                        {/* Temporary Variations List */}
-                        {tempVariations.map((variation, index) => (
-                          <div key={variation.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <div className="grid grid-cols-2 gap-3 mb-3">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Nome da Variação</label>
-                                <input
-                                  type="text"
-                                  value={variation.variation_name}
-                                  onChange={(e) => {
-                                    const updated = [...tempVariations];
-                                    updated[index].variation_name = e.target.value;
-                                    setTempVariations(updated);
-                                  }}
-                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                                  placeholder="Ex: Azul - M"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">SKU</label>
-                                <input
-                                  type="text"
-                                  value={variation.sku}
-                                  onChange={(e) => {
-                                    const updated = [...tempVariations];
-                                    updated[index].sku = e.target.value;
-                                    setTempVariations(updated);
-                                  }}
-                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                                  placeholder="SKU único"
-                                />
-                              </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-3 gap-3 mb-3">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Cor</label>
-                                <input
-                                  type="text"
-                                  value={variation.color}
-                                  onChange={(e) => {
-                                    const updated = [...tempVariations];
-                                    updated[index].color = e.target.value;
-                                    setTempVariations(updated);
-                                  }}
-                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                                  placeholder="Ex: Azul"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Tamanho</label>
-                                <input
-                                  type="text"
-                                  value={variation.size}
-                                  onChange={(e) => {
-                                    const updated = [...tempVariations];
-                                    updated[index].size = e.target.value;
-                                    setTempVariations(updated);
-                                  }}
-                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                                  placeholder="Ex: M, G"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Estoque</label>
-                                <input
-                                  type="number"
-                                  value={variation.stock}
-                                  onChange={(e) => {
-                                    const updated = [...tempVariations];
-                                    updated[index].stock = parseInt(e.target.value) || 0;
-                                    setTempVariations(updated);
-                                  }}
-                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                                />
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1 mr-3">
-                                <label className="block text-xs font-medium text-gray-700 mb-1">Preço (opcional)</label>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={variation.price || ''}
-                                  onChange={(e) => {
-                                    const updated = [...tempVariations];
-                                    updated[index].price = e.target.value ? parseFloat(e.target.value) : null;
-                                    setTempVariations(updated);
-                                  }}
-                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                                  placeholder="Usar preço do produto"
-                                />
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = tempVariations.filter((_, i) => i !== index);
-                                  setTempVariations(updated);
-                                }}
-                                className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
-                                title="Remover variação"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                        
-                        {tempVariations.length === 0 && (
-                          <div className="text-center py-4 text-gray-500">
-                            <p className="text-sm">Nenhuma variação adicionada</p>
-                            <p className="text-xs">Clique em "Adicionar Variação" para começar</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
                     type="button"
@@ -897,13 +712,16 @@ export const Products: React.FC = () => {
               </div>
 
               {/* Variations Limit Warning for Free Users */}
-              {!usageStatus.isSubscriptionActive && getVariationsForProduct(selectedProduct.id).length > 0 && (
+              {!usageStatus.isSubscriptionActive && (
                 <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <div className="flex items-center">
                     <Crown className="w-5 h-5 text-amber-600 mr-2" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-amber-900">
                         Plano Gratuito: Máximo {usageStatus.limits.variationsPerProduct} variações por produto
+                      </p>
+                      <p className="text-xs text-amber-700">
+                        Variações atuais: {getVariationsForProduct(selectedProduct.id).length}/{usageStatus.limits.variationsPerProduct}
                       </p>
                     </div>
                     {!usageStatus.canAdd.variationsForProduct(selectedProduct.id) && (
@@ -946,15 +764,25 @@ export const Products: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => handleEditVariation(variation)}
-                        className="p-2 rounded-lg transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
-                        title="Editar variação"
+                        disabled={!usageStatus.isSubscriptionActive}
+                        className={`p-2 rounded-lg transition-colors ${
+                          usageStatus.isSubscriptionActive
+                            ? 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                            : 'text-gray-300 cursor-not-allowed'
+                        }`}
+                        title={usageStatus.isSubscriptionActive ? "Editar variação" : "Disponível apenas na versão paga"}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setShowDeleteVariationConfirm(variation.id)}
-                        className="p-2 rounded-lg transition-colors text-gray-400 hover:text-red-600 hover:bg-red-50"
-                        title="Excluir variação"
+                        disabled={!usageStatus.isSubscriptionActive}
+                        className={`p-2 rounded-lg transition-colors ${
+                          usageStatus.isSubscriptionActive
+                            ? 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                            : 'text-gray-300 cursor-not-allowed'
+                        }`}
+                        title={usageStatus.isSubscriptionActive ? "Excluir variação" : "Disponível apenas na versão paga"}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1199,8 +1027,8 @@ export const Products: React.FC = () => {
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        title={usageStatus.isLimitReached.products ? "Você atingiu o limite gratuito de 5 registros nesta seção" : "Limite de variações atingido"}
-        message={usageStatus.isLimitReached.products ? "Faça upgrade para o plano pago para continuar adicionando." : "No plano gratuito você pode adicionar até 3 variações por produto. Assine para ter variações ilimitadas."}
+        title="Limite de variações atingido"
+        message="No plano gratuito você pode adicionar até 3 variações por produto. Assine para ter variações ilimitadas."
       />
     </div>
   );
