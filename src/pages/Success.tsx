@@ -9,115 +9,31 @@ export const Success: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [isChecking, setIsChecking] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
   const sessionIdParam = searchParams.get('session_id');
   setSessionId(sessionIdParam);
 
-  if (sessionIdParam) {
-    startAutoRefresh();
-  } else {
-    setLoading(false);
-  }
-
-}, [searchParams]);
-
-  const startAutoRefresh = async () => {
-    // Initial delay to allow webhook processing
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    // Check status immediately
-    await forceRefresh();
-    
-    // Set up interval to check every 5 seconds
-    const intervalId = setInterval(async () => {
-      const { isActive } = getActiveSubscription();
+    // Se há session_id, significa que veio do Stripe
+    // Fazer uma verificação inicial após 2 segundos
+    if (sessionIdParam) {
+      const timer = setTimeout(() => {
+        refetch();
+      }, 2000);
       
-      if (isActive) {
-        console.log('Subscription is now active!');
-        setLoading(false);
-        clearInterval(intervalId);
-        return;
-      }
-      
-      // Continue checking every 5 seconds
-      await forceRefresh();
-    }, 5000);
-    
-    // Stop checking after 2 minutes (24 attempts)
-    setTimeout(() => {
-      clearInterval(intervalId);
-      setLoading(false);
-      console.log('Auto-refresh stopped after 2 minutes');
-    }, 120000);
-    
-    // Cleanup function
-    return () => clearInterval(intervalId);
-  };
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, refetch]);
 
   const forceRefresh = async () => {
     setIsChecking(true);
     await refetch();
-    
-    const { isActive } = getActiveSubscription();
-    if (!isActive) {
-      // Continue auto-refresh if not active
-      console.log('Subscription not active yet, continuing to check...');
-    } else {
-      setLoading(false);
-    }
     setIsChecking(false);
   };
 
   const { product, isActive } = getActiveSubscription();
   const currentPlan = getCurrentPlan();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-          
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
-            Processando sua assinatura...
-          </h2>
-          
-          <div className="space-y-3 mb-6">
-            <p className="text-gray-600">
-              Aguarde enquanto confirmamos seu pagamento e ativamos sua conta
-            </p>
-            
-            {isChecking && (
-              <div className="flex items-center justify-center space-x-2 text-sm text-blue-600">
-                <Clock className="w-4 h-4 animate-pulse" />
-                <span>Sincronizando com o sistema de pagamentos...</span>
-              </div>
-            )}
-          </div>
-
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <h3 className="font-semibold text-blue-900 mb-2">O que está acontecendo?</h3>
-            <div className="text-sm text-blue-800 space-y-1 text-left">
-              <p>✅ Pagamento processado com sucesso</p>
-              <p>🔄 Ativando sua assinatura no sistema</p>
-              <p>⏱️ Verificação automática a cada 5 segundos</p>
-            </div>
-          </div>
-
-          <button
-            onClick={forceRefresh}
-            disabled={isChecking}
-            className="mt-4 flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isChecking ? 'animate-spin' : ''}`} />
-            {isChecking ? 'Verificando...' : 'Verificar Novamente'}
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
@@ -131,41 +47,68 @@ useEffect(() => {
 
           {/* Success Message */}
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            🎉 Pagamento Realizado com Sucesso!
+            {isActive ? '🎉 Pagamento Realizado com Sucesso!' : '✅ Pagamento Processado'}
           </h1>
           
           <p className="text-lg text-gray-600 mb-8">
-            Bem-vindo ao ERP Smart! Sua assinatura foi ativada e você já pode começar a usar 
-            todas as funcionalidades da plataforma.
+            {isActive 
+              ? 'Bem-vindo ao ERP Smart! Sua assinatura foi ativada e você já pode começar a usar todas as funcionalidades da plataforma.'
+              : 'Seu pagamento foi processado com sucesso. Aguarde alguns instantes para a ativação da assinatura.'
+            }
           </p>
 
           {/* Subscription Status */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 mb-8 border border-green-200">
+          <div className={`rounded-xl p-6 mb-8 border ${
+            isActive 
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
+              : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200'
+          }`}>
             <h2 className="text-xl font-semibold text-green-900 mb-4">Status da Assinatura</h2>
             
             <div className="flex items-center justify-center mb-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 ${
+                isActive ? 'bg-green-100' : 'bg-amber-100'
+              }`}>
+                {isActive ? (
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                ) : (
+                  <Clock className="w-6 h-6 text-amber-600" />
+                )}
               </div>
               <div className="text-left">
-                <p className="font-semibold text-green-900">
+                <p className={`font-semibold ${isActive ? 'text-green-900' : 'text-amber-900'}`}>
                   {isActive ? 'Assinatura Ativa' : 'Processando Ativação...'}
                 </p>
-                <p className="text-sm text-green-700">
+                <p className={`text-sm ${isActive ? 'text-green-700' : 'text-amber-700'}`}>
                   {isActive ? currentPlan : 'Aguardando confirmação do sistema'}
                 </p>
               </div>
             </div>
 
             {!isActive && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                <div className="flex items-center justify-center">
-                  <div className="w-5 h-5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                  <span className="text-amber-800 text-sm">
-                    Ativando assinatura... Isso pode levar alguns minutos.
-                  </span>
+              <>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-center">
+                    {isChecking ? (
+                      <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                    ) : (
+                      <Clock className="w-5 h-5 text-blue-600 mr-2" />
+                    )}
+                    <span className="text-blue-800 text-sm">
+                      {isChecking ? 'Verificando status...' : 'Ativação em andamento...'}
+                    </span>
+                  </div>
                 </div>
-              </div>
+                
+                <button
+                  onClick={forceRefresh}
+                  disabled={isChecking}
+                  className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 inline ${isChecking ? 'animate-spin' : ''}`} />
+                  {isChecking ? 'Verificando...' : 'Verificar Status Agora'}
+                </button>
+              </>
             )}
           </div>
 
@@ -267,19 +210,12 @@ useEffect(() => {
           </div>
 
           {/* Manual Refresh Option */}
-          {!isActive && (
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <p className="text-sm text-gray-600 mb-4">
-                Assinatura ainda não ativada? Isso pode acontecer em casos raros.
+          {!isActive && sessionId && (
+            <div className="mt-6 bg-gray-50 rounded-lg p-4">
+              <p className="text-sm text-gray-600 text-center">
+                💡 <strong>Dica:</strong> A ativação geralmente é instantânea. Se não ativou ainda, 
+                pode ser um atraso temporário no processamento.
               </p>
-              <button
-                onClick={forceRefresh}
-                disabled={isChecking}
-                className="flex items-center justify-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isChecking ? 'animate-spin' : ''}`} />
-                {isChecking ? 'Verificando...' : 'Verificar Status Novamente'}
-              </button>
             </div>
           )}
         </div>
