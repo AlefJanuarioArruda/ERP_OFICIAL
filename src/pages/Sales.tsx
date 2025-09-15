@@ -52,10 +52,9 @@ const addItemToSale = (productId: string) => {
   const existingItem = selectedItems.find(item => item.product_id === productId);
 
   if (existingItem) {
-    // 🚨 Bloqueia acima do estoque
     if (existingItem.quantity >= product.stock) {
       alert("Estoque máximo atingido!");
-      return;
+      return; // 🚨 Sai da função sem alterar nada
     }
 
     setSelectedItems(selectedItems.map(item =>
@@ -91,7 +90,7 @@ const addVariationToSale = (variation: any) => {
   if (existingItem) {
     if (existingItem.quantity >= variation.stock) {
       alert("Estoque máximo atingido!");
-      return;
+      return; // 🚨 Sai da função sem alterar nada
     }
 
     setSelectedItems(selectedItems.map(item =>
@@ -122,7 +121,6 @@ const updateItemQuantity = (productId: string, quantity: number) => {
 
   setSelectedItems(selectedItems.map(item => {
     if (item.product_id === productId) {
-      // Detecta se é variação ou produto simples
       const [baseId, variationId] = productId.split("-");
       let stock = 0;
 
@@ -136,10 +134,10 @@ const updateItemQuantity = (productId: string, quantity: number) => {
         stock = product?.stock || 0;
       }
 
-      // 🚨 Não deixa ultrapassar o estoque
       if (quantity > stock) {
         alert("Quantidade não pode ultrapassar o estoque!");
-        return { ...item, quantity: stock, total: stock * item.unit_price };
+        return { ...item, quantity: item.quantity, total: item.quantity * item.unit_price }; 
+        // 🚨 Mantém a quantidade atual
       }
 
       return { ...item, quantity, total: quantity * item.unit_price };
