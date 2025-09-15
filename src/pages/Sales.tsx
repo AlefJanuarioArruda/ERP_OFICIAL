@@ -117,17 +117,20 @@ export const Sales: React.FC = () => {
     setSelectedItems(selectedItems.filter(item => item.product_id !== productId));
   };
 
-  const updateItemQuantity = (productId: string, quantity: number) => {
+const updateItemQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeItemFromSale(productId);
       return;
     }
 
     setSelectedItems(selectedItems.map(item => {
+      // Encontra o item que estamos tentando atualizar
       if (item.product_id === productId) {
-        // NOVO: Lógica para encontrar o limite de estoque do produto ou variação
+        
+        // 1. Inicia o limite de estoque como 'infinito' por segurança
         let stockLimit = Infinity;
         
+        // 2. Verifica se é um produto com variação (contém '-')
         const isVariation = productId.includes('-');
         
         if (isVariation) {
@@ -135,24 +138,36 @@ export const Sales: React.FC = () => {
           const variations = getVariationsForProduct(pId);
           const variation = variations.find(v => v.id === vId);
           if (variation) {
-            stockLimit = variation.stock;
+            stockLimit = variation.stock; // Pega o estoque da VARIAÇÃO
           }
         } else {
           const product = products.find(p => p.id === productId);
           if (product) {
-            stockLimit = product.stock;
+            stockLimit = product.stock; // Pega o estoque do PRODUTO PRINCIPAL
           }
         }
 
-        // ALTERADO: Garante que a nova quantidade não ultrapasse o estoque
+        // 3. A LÓGICA PRINCIPAL: Garante que a quantidade nunca passe do limite
+        // Usa Math.min para pegar o menor valor entre o desejado e o permitido
         const newQuantity = Math.min(quantity, stockLimit);
         
+        // --- PONTO DE DEPURAÇÃO ---
+        // Este log vai nos mostrar os valores exatos no momento do clique
+        console.log({
+          produto: item.product_name,
+          quantidadeDesejada: quantity,
+          limiteDeEstoque: stockLimit,
+          novaQuantidadeCalculada: newQuantity,
+        });
+
+        // 4. Retorna o item com a quantidade corrigida
         return { ...item, quantity: newQuantity, total: newQuantity * item.unit_price };
       }
+
+      // Se não for o item que estamos atualizando, apenas o retorna como está
       return item;
     }));
   };
-  
   const calculateTotal = () => {
     const subtotal = selectedItems.reduce((sum, item) => sum + item.total, 0);
     let discount = 0;
