@@ -502,24 +502,15 @@ export const Sales: React.FC = () => {
                           <button
                             type="button"
                             onClick={handleDirectSale}
-                            disabled={(() => {
-                              const existingItem = selectedItems.find(item => item.product_id === product.id);
-                              const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
-                              return product.stock === 0 || currentQuantityInCart >= product.stock;
-                            })()}
-                            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                            <ShoppingCart className="w-4 h-4 mr-3 text-blue-600" />
-                            <div>
-                              <div className="font-medium text-gray-900">Venda Direta (sem cliente)</div>
-                              <div className="text-sm text-gray-500">Venda anônima sem vínculo com cliente</div>
-                            {(() => {
-                              const existingItem = selectedItems.find(item => item.product_id === product.id);
-                              const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
-                              
-                              if (product.stock === 0) return 'Sem Estoque';
-                              if (currentQuantityInCart >= product.stock) return 'Limite Atingido';
-                              return 'Adicionar';
-                            })()}
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center"
+                          >
+                            <>
+                              <ShoppingCart className="w-4 h-4 mr-3 text-blue-600" />
+                              <div>
+                                <div className="font-medium text-gray-900">Venda Direta (sem cliente)</div>
+                                <div className="text-sm text-gray-500">Venda anônima sem vínculo com cliente</div>
+                              </div>
+                            </>
                           </button>
                           
                           {/* Customer List */}
