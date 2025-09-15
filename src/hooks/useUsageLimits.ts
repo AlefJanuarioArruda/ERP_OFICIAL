@@ -6,7 +6,6 @@ export interface UsageLimits {
   products: number;
   customers: number;
   sales: number;
-  variationsPerProduct: number;
 }
 
 export interface UsageStatus {
@@ -21,7 +20,6 @@ export interface UsageStatus {
     products: boolean;
     customers: boolean;
     sales: boolean;
-    variationsForProduct: (productId: string) => boolean;
   };
   canEdit: boolean;
   canDelete: boolean;
@@ -40,13 +38,12 @@ export interface UsageStatus {
 const FREE_TIER_LIMITS: UsageLimits = {
   products: 5,
   customers: 5,
-  sales: 5,
-  variationsPerProduct: 3
+  sales: 5
 };
 
 export const useUsageLimits = (): UsageStatus => {
   const { isSubscriptionActive, loading } = useStripe()
-  const { products, customers, sales, getVariationsForProduct } = useSupabaseData();
+  const { products, customers, sales } = useSupabaseData();
 
   const usageStatus = useMemo(() => {
     // If still loading subscription data, be conservative and allow access
@@ -62,8 +59,7 @@ export const useUsageLimits = (): UsageStatus => {
         canAdd: {
           products: true,
           customers: true,
-          sales: true,
-          variationsForProduct: () => true
+          sales: true
         },
         canEdit: true,
         canDelete: true,
@@ -98,8 +94,7 @@ export const useUsageLimits = (): UsageStatus => {
         canAdd: {
           products: true,
           customers: true,
-          sales: true,
-          variationsForProduct: () => true
+          sales: true
         },
         canEdit: true,
         canDelete: true,
@@ -127,11 +122,7 @@ export const useUsageLimits = (): UsageStatus => {
     const canAdd = {
       products: !isLimitReached.products,
       customers: !isLimitReached.customers,
-      sales: !isLimitReached.sales,
-      variationsForProduct: (productId: string) => {
-        const variations = getVariationsForProduct(productId);
-        return variations.length < limits.variationsPerProduct;
-      }
+      sales: !isLimitReached.sales
     };
 
     // Usuários gratuitos NÃO podem editar/excluir quando atingem o limite ESPECÍFICO de cada seção
@@ -163,7 +154,7 @@ export const useUsageLimits = (): UsageStatus => {
       isLimitReached,
       showLimitMessage
     };
-  }, [isSubscriptionActive, loading, products.length, customers.length, sales.length, getVariationsForProduct]);
+  }, [isSubscriptionActive, loading, products.length, customers.length, sales.length]);
 
   return usageStatus;
 };
