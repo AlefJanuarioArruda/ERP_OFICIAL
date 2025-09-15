@@ -462,15 +462,16 @@ export const Products: React.FC = () => {
       {filteredProducts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+                        value={variation.stock === 0 ? '' : variation.stock || ''}
               <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
+                          const value = e.target.value;
+                          const newStock = value === '' ? 0 : parseInt(value) || 0;
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center overflow-hidden">
                     {product.image_url ? (
                       <img
                         src={product.image_url}
                         alt={product.name}
-                        className="w-10 h-10 object-cover rounded-lg"
+                        placeholder="Estoque"
                       />
                     ) : (
                       <Package className="w-5 h-5 text-blue-600" />
