@@ -44,45 +44,19 @@ export const Sales: React.FC = () => {
     customer.email.toLowerCase().includes(customerSearchTerm.toLowerCase())
   );
 
- // Helper: interpreta o stock de forma segura
-const parseStock = (value: any, treatMissingAsInfinite = true) => {
-  // Se vier null/undefined/'', tratar como infinito (ou 0 se preferir)
-  if (value === null || value === undefined || value === '') {
-    return treatMissingAsInfinite ? Infinity : 0;
-  }
-  const n = Number(value);
-  if (Number.isNaN(n)) return treatMissingAsInfinite ? Infinity : 0;
-  return Math.max(0, Math.floor(n));
-};
+  const addItemToSale = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
 
-// Adicionar produto simples (substitua a sua função)
-const addItemToSale = (productId: string) => {
-  const product = products.find(p => p.id === productId);
-  if (!product) return;
-
-  const stock = parseStock(product.stock); // número seguro ou Infinity
-
-  setSelectedItems(prev => {
-    const existing = prev.find(i => i.product_id === productId);
-
-    if (existing) {
-      if (existing.quantity >= stock) {
-        // já atingiu o estoque: não altera nada
-        alert("Estoque máximo atingido!");
-        return prev;
-      }
-
-      return prev.map(i =>
-        i.product_id === productId
-          ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unit_price }
-          : i
-      );
+    const existingItem = selectedItems.find(item => item.product_id === productId);
+    
+    if (existingItem) {
+      setSelectedItems(selectedItems.map(item =>
+        item.product_id === productId
+          ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
+          : item
+      ));
     } else {
-      if (stock <= 0) {
-        alert("Produto sem estoque!");
-        return prev;
-      }
-
       const newItem = {
         product_id: product.id,
         product_name: product.name,
@@ -90,40 +64,24 @@ const addItemToSale = (productId: string) => {
         unit_price: product.price,
         total: product.price
       };
-      return [...prev, newItem];
+      setSelectedItems([...selectedItems, newItem]);
     }
-  });
-};
+  };
 
-// Adicionar variação (substitua a sua função)
-const addVariationToSale = (variation: any) => {
-  const product = products.find(p => p.id === variation.product_id);
-  if (!product) return;
+  const addVariationToSale = (variation: any) => {
+    const product = products.find(p => p.id === variation.product_id);
+    if (!product) return;
 
-  const variationKey = `${variation.product_id}-${variation.id}`;
-  // preferir o stock da variação, senão o stock do produto
-  const stock = parseStock(variation.stock ?? product.stock);
-
-  setSelectedItems(prev => {
-    const existing = prev.find(i => i.product_id === variationKey);
-
-    if (existing) {
-      if (existing.quantity >= stock) {
-        alert("Estoque máximo atingido!");
-        return prev;
-      }
-
-      return prev.map(i =>
-        i.product_id === variationKey
-          ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.unit_price }
-          : i
-      );
+    const variationKey = `${variation.product_id}-${variation.id}`;
+    const existingItem = selectedItems.find(item => item.product_id === variationKey);
+    
+    if (existingItem) {
+      setSelectedItems(selectedItems.map(item =>
+        item.product_id === variationKey
+          ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unit_price }
+          : item
+      ));
     } else {
-      if (stock <= 0) {
-        alert("Variação sem estoque!");
-        return prev;
-      }
-
       const newItem = {
         product_id: variationKey,
         product_name: `${product.name} - ${variation.variation_name}`,
@@ -131,48 +89,27 @@ const addVariationToSale = (variation: any) => {
         unit_price: variation.price || product.price,
         total: variation.price || product.price
       };
-      return [...prev, newItem];
+      setSelectedItems([...selectedItems, newItem]);
     }
-  });
-};
+  };
+  const removeItemFromSale = (productId: string) => {
+    setSelectedItems(selectedItems.filter(item => item.product_id !== productId));
+  };
 
-// Atualizar quantidade manualmente (substitua a sua função)
-const updateItemQuantity = (productId: string, quantityInput: number) => {
-  // valida entrada
-  let quantity = Number(quantityInput);
-  if (!Number.isFinite(quantity) || quantity < 1) quantity = 1;
+  const updateItemQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeItemFromSale(productId);
+      return;
+    }
 
-  // calcula stock corretamente mesmo se o productId tiver '-' em outras partes
-  const lastDash = productId.lastIndexOf('-');
+    setSelectedItems(selectedItems.map(item =>
+      item.product_id === productId
+        ? { ...item, quantity, total: quantity * item.unit_price }
+        : item
+    ));
+  };
 
-  setSelectedItems(prev =>
-    prev.map(item => {
-      if (item.product_id !== productId) return item;
-
-      let stock = Infinity;
-      if (lastDash === -1) {
-        // produto simples
-        const product = products.find(p => p.id === productId);
-        stock = parseStock(product?.stock);
-      } else {
-        // variação -> separa pelo último '-'
-        const baseId = productId.slice(0, lastDash);
-        const variationId = productId.slice(lastDash + 1);
-        const product = products.find(p => p.id === baseId);
-        const variation = product?.variations?.find((v: any) => String(v.id) === String(variationId));
-        stock = parseStock(variation?.stock ?? product?.stock);
-      }
-
-      if (quantity > stock) {
-        alert("Quantidade não pode ultrapassar o estoque!");
-        return item; // mantém a quantidade atual
-      }
-
-      return { ...item, quantity, total: quantity * item.unit_price };
-    })
-  );
-};
-
+  
   const calculateTotal = () => {
     const subtotal = selectedItems.reduce((sum, item) => sum + item.total, 0);
     let discount = 0;
