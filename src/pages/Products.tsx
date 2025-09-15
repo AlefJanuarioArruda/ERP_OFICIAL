@@ -1,23 +1,49 @@
 import React, { useState } from 'react';
-import { Plus, Search, Package, AlertTriangle, Edit, Trash2, Crown, CheckCircle, AlertCircle, X, Palette, Ruler, DollarSign } from 'lucide-react';
+import { Plus, Search, Package, Edit, Trash2, Eye, X, Upload, Camera, Crown, AlertTriangle } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UpgradeModal } from '../components/UpgradeModal';
-import { ProductVariation } from '../lib/supabase';
+import { UsageLimitBanner } from '../components/UsageLimitBanner';
 
 export const Products: React.FC = () => {
-  const { products, addProduct, updateProduct, deleteProduct, loading, addProductVariation, updateProductVariation, deleteProductVariation, getVariationsForProduct } = useSupabaseData();
+  const { 
+    products, 
+    addProduct, 
+    updateProduct, 
+    deleteProduct, 
+    addProductVariation,
+    updateProductVariation,
+    deleteProductVariation,
+    getVariationsForProduct,
+    loading 
+  } = useSupabaseData();
   const usageStatus = useUsageLimits();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showLimitBanner, setShowLimitBanner] = useState(false);
-  const [productVariationsFormData, setProductVariationsFormData] = useState<Omit<ProductVariation, 'id' | 'user_id' | 'product_id' | 'created_at' | 'updated_at'>[]>([]);
-  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
-  const [showVariationsModal, setShowVariationsModal] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [showVariationsModal, setShowVariationsModal] = useState(false);
+  const [showAddVariationForm, setShowAddVariationForm] = useState(false);
+  const [editingVariation, setEditingVariation] = useState<any>(null);
+  const [showDeleteVariationConfirm, setShowDeleteVariationConfirm] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [variationImageFile, setVariationImageFile] = useState<File | null>(null);
+  const [variationImagePreview, setVariationImagePreview] = useState<string | null>(null);
+  const [showVariationsInForm, setShowVariationsInForm] = useState(false);
+  const [tempVariations, setTempVariations] = useState<Array<{
+    id: string;
+    variation_name: string;
+    color: string;
+    size: string;
+    sku: string;
+    stock: number;
+    price: number | null;
+    image_url: string | null;
+  }>>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -28,14 +54,18 @@ export const Products: React.FC = () => {
     min_stock: '',
     category: '',
     sku: '',
-    supplier: '',
+    supplier: ''
   });
 
-  // Image upload states
-  const [selectedProductImage, setSelectedProductImage] = useState<File | null>(null);
-  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
-  const [variationImages, setVariationImages] = useState<Map<number, { file: File; preview: string }>>(new Map());
-  const [variationImageUrls, setVariationImageUrls] = useState<Map<number, string>>(new Map());
+  const [variationFormData, setVariationFormData] = useState({
+    variation_name: '',
+    color: '',
+    size: '',
+    sku: '',
+    stock: '',
+    price: ''
+  });
+
   // Effect to show limit banner when limit is reached
   React.useEffect(() => {
     if (usageStatus.isLimitReached.products && !usageStatus.isSubscriptionActive) {
@@ -45,8 +75,8 @@ export const Products: React.FC = () => {
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+    product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    product.sku.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const resetForm = () => {
@@ -59,22 +89,30 @@ export const Products: React.FC = () => {
       min_stock: '',
       category: '',
       sku: '',
-      supplier: '',
+      supplier: ''
     });
+    setImageFile(null);
+    setImagePreview(null);
+    setShowVariationsInForm(false);
+    setTempVariations([]);
     setShowAddForm(false);
     setEditingProduct(null);
-    setProductVariationsFormData([]);
     setShowUpgradeModal(false);
-    setShowVariationsModal(null);
-    setSelectedProductImage(null);
-    setProductImagePreview(null);
-    setVariationImages(new Map());
-    setVariationImageUrls(new Map());
   };
 
-  const showNotification = (type: 'success' | 'error', message: string) => {
-    setNotification({ type, message });
-    setTimeout(() => setNotification(null), 3000);
+  const resetVariationForm = () => {
+    setVariationFormData({
+      variation_name: '',
+      color: '',
+      size: '',
+      sku: '',
+      stock: '',
+      price: ''
+    });
+    setVariationImageFile(null);
+    setVariationImagePreview(null);
+    setShowAddVariationForm(false);
+    setEditingVariation(null);
   };
 
   const handleAddProduct = () => {
@@ -85,132 +123,15 @@ export const Products: React.FC = () => {
     setShowAddForm(true);
   };
 
-  const handleDelete = async (productId: string) => {
-    if (usageStatus.isLimitReached.products && !usageStatus.isSubscriptionActive) {
+  const handleAddVariation = (product: any) => {
+    const currentVariations = getVariationsForProduct(product.id);
+    if (!usageStatus.canAdd.variationsForProduct(product.id)) {
       setShowUpgradeModal(true);
       return;
     }
     
-    const { error } = await deleteProduct(productId);
-    
-    if (error) {
-      showNotification('error', 'Erro ao excluir produto');
-    } else {
-      showNotification('success', 'Produto excluído com sucesso');
-    }
-    
-    setShowDeleteConfirm(null);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate unique SKUs for variations
-    if (productVariationsFormData.length > 0) {
-      const variationSkus = productVariationsFormData
-        .filter(v => v.sku && v.sku.trim())
-        .map(v => v.sku.trim().toLowerCase());
-      
-      // Check for duplicates within the form
-      const duplicatesInForm = variationSkus.filter((sku, index) => variationSkus.indexOf(sku) !== index);
-      if (duplicatesInForm.length > 0) {
-        showNotification('error', 'SKUs das variações devem ser únicos');
-        return;
-      }
-      
-      // Check for duplicates with existing variations (excluding current product if editing)
-      const allExistingVariations = products.flatMap(product => {
-        if (editingProduct && product.id === editingProduct.id) {
-          return []; // Skip current product when editing
-        }
-        return getVariationsForProduct(product.id);
-      });
-      
-      const existingSkus = allExistingVariations.map(v => v.sku.toLowerCase());
-      const duplicateWithExisting = variationSkus.find(sku => existingSkus.includes(sku));
-      
-      if (duplicateWithExisting) {
-        showNotification('error', `SKU "${duplicateWithExisting}" já está em uso em outro produto`);
-        return;
-      }
-    }
-    
-    const productData = {
-      name: formData.name,
-      description: formData.description,
-      price: parseFloat(formData.price),
-      cost_price: parseFloat(formData.cost_price),
-      stock: parseInt(formData.stock),
-      min_stock: parseInt(formData.min_stock),
-      category: formData.category,
-      sku: formData.sku,
-      supplier: formData.supplier
-    };
-
-    let result;
-    if (editingProduct) {
-      result = await updateProduct(editingProduct.id, productData, selectedProductImage || undefined);
-    } else {
-      result = await addProduct(productData, selectedProductImage || undefined);
-    }
-
-    if (result?.error) {
-      showNotification('error', editingProduct ? 'Erro ao atualizar produto' : 'Erro ao adicionar produto');
-      return;
-    }
-    
-    const newProductId = editingProduct?.id || result?.data?.id;
-
-    // Handle product variations
-    if (newProductId && productVariationsFormData.length > 0) {
-      try {
-        // Clear existing variations if editing
-        if (editingProduct) {
-          const existingVariations = getVariationsForProduct(newProductId);
-          for (const variation of existingVariations) {
-            await deleteProductVariation(variation.id);
-          }
-        }
-        
-        // Add all variations from form
-        for (let i = 0; i < productVariationsFormData.length; i++) {
-          const variation = productVariationsFormData[i];
-          if (variation.sku && variation.sku.trim()) {
-            // Generate variation name if not provided
-            let variationName = variation.variation_name;
-            if (!variationName && (variation.color || variation.size)) {
-              variationName = [variation.color, variation.size].filter(Boolean).join(' - ');
-            }
-            if (!variationName) {
-              variationName = `Variação ${variation.sku}`;
-            }
-            
-            const variationImageFile = variationImages.get(i)?.file;
-            const existingImageUrl = variationImageUrls.get(i);
-            
-            await addProductVariation({
-              product_id: newProductId,
-              variation_name: variationName,
-              color: variation.color || null,
-              size: variation.size || null,
-              sku: variation.sku,
-              stock: variation.stock,
-              price: variation.price,
-              image_url: existingImageUrl || null
-            }, variationImageFile);
-          }
-        }
-        
-        showNotification('success', editingProduct ? 'Produto e variações atualizados com sucesso' : 'Produto e variações adicionados com sucesso');
-      } catch (error) {
-        console.error('Error handling variations:', error);
-        showNotification('error', 'Produto salvo, mas houve erro ao salvar variações');
-      }
-    } else {
-      showNotification('success', editingProduct ? 'Produto atualizado com sucesso' : 'Produto adicionado com sucesso');
-    }
-
-    resetForm();
+    setSelectedProduct(product);
+    setShowAddVariationForm(true);
   };
 
   const handleEdit = (product: any) => {
@@ -228,89 +149,133 @@ export const Products: React.FC = () => {
       min_stock: product.min_stock.toString(),
       category: product.category,
       sku: product.sku,
-      supplier: product.supplier || '',
-
+      supplier: product.supplier
     });
-    
-    // Load existing variations for editing
-    const existingVariations = getVariationsForProduct(product.id);
-    setProductVariationsFormData(existingVariations.map(v => ({
-      variation_name: v.variation_name,
-      color: v.color,
-      size: v.size,
-      sku: v.sku,
-      stock: v.stock,
-      price: v.price,
-      image_url: v.image_url
-    })));
-    
-    // Load existing variation images for preview
-    const newVariationImages = new Map();
-    const newVariationImageUrls = new Map();
-    existingVariations.forEach((variation, index) => {
-      if (variation.image_url) {
-        newVariationImageUrls.set(index, variation.image_url);
-      }
-    });
-    setVariationImages(new Map()); // Clear file uploads
-    setVariationImageUrls(newVariationImageUrls);
-    
+    setImagePreview(product.image_url);
     setEditingProduct(product);
     setShowAddForm(true);
+  };
+
+  const handleEditVariation = (variation: any) => {
+    setVariationFormData({
+      variation_name: variation.variation_name,
+      color: variation.color || '',
+      size: variation.size || '',
+      sku: variation.sku,
+      stock: variation.stock.toString(),
+      price: variation.price?.toString() || ''
+    });
+    setVariationImagePreview(variation.image_url);
+    setEditingVariation(variation);
+    setShowAddVariationForm(true);
+  };
+
+  const handleDelete = async (productId: string) => {
+    if (usageStatus.isLimitReached.products && !usageStatus.isSubscriptionActive) {
+      setShowUpgradeModal(true);
+      return;
+    }
     
-    // Set existing product image if available
-    if (product.image_url) {
-      setProductImagePreview(product.image_url);
-    }
+    await deleteProduct(productId);
+    setShowDeleteConfirm(null);
   };
 
-  const handleProductImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleDeleteVariation = async (variationId: string) => {
+    await deleteProductVariation(variationId);
+    setShowDeleteVariationConfirm(null);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
-      setSelectedProductImage(file);
+      setImageFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
-        setProductImagePreview(e.target?.result as string);
+        setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleRemoveProductImage = () => {
-    setSelectedProductImage(null);
-    setProductImagePreview(null);
-  };
-
-  const handleVariationImageSelect = (index: number, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleVariationImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
+      setVariationImageFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
-        const preview = e.target?.result as string;
-        setVariationImages(prev => new Map(prev.set(index, { file, preview })));
-        // Clear the existing URL when a new file is selected
-        setVariationImageUrls(prev => {
-          const newMap = new Map(prev);
-          newMap.delete(index);
-          return newMap;
+        setVariationImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const productData = {
+      name: formData.name,
+      description: formData.description,
+      price: parseFloat(formData.price),
+      cost_price: parseFloat(formData.cost_price),
+      stock: parseInt(formData.stock),
+      min_stock: parseInt(formData.min_stock),
+      category: formData.category,
+      sku: formData.sku,
+      supplier: formData.supplier,
+      image_url: imagePreview
+    };
+
+    let productResult;
+    
+    if (editingProduct) {
+      productResult = await updateProduct(editingProduct.id, productData, imageFile || undefined);
+    } else {
+      productResult = await addProduct(productData, imageFile || undefined);
+    }
+    
+    // Se criou um novo produto e tem variações temporárias, adicionar as variações
+    if (!editingProduct && productResult?.data && tempVariations.length > 0) {
+      for (const variation of tempVariations) {
+        await addProductVariation({
+          product_id: productResult.data.id,
+          variation_name: variation.variation_name,
+          color: variation.color || null,
+          size: variation.size || null,
+          sku: variation.sku,
+          stock: variation.stock,
+          price: variation.price
         });
-      };
-      reader.readAsDataURL(file);
+      }
     }
+    
+    resetForm();
   };
 
-  const handleRemoveVariationImage = (index: number) => {
-    setVariationImages(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(index);
-      return newMap;
-    });
-    setVariationImageUrls(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(index);
-      return newMap;
-    });
+  const handleVariationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedProduct) return;
+
+    const variationData = {
+      product_id: selectedProduct.id,
+      variation_name: variationFormData.variation_name,
+      color: variationFormData.color || null,
+      size: variationFormData.size || null,
+      sku: variationFormData.sku,
+      stock: parseInt(variationFormData.stock),
+      price: variationFormData.price ? parseFloat(variationFormData.price) : null,
+      image_url: variationImagePreview
+    };
+
+    if (editingVariation) {
+      await updateProductVariation(editingVariation.id, variationData, variationImageFile || undefined);
+    } else {
+      await addProductVariation(variationData, variationImageFile || undefined);
+    }
+    
+    resetVariationForm();
   };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -318,49 +283,10 @@ export const Products: React.FC = () => {
     }).format(value);
   };
 
-  const handleAddVariation = () => {
-    setProductVariationsFormData([
-      ...productVariationsFormData,
-      {
-        variation_name: '',
-        color: '',
-        size: '',
-        sku: '',
-        stock: 0,
-        price: null,
-        image_url: null,
-      }
-    ]);
-  };
-
-  const handleRemoveVariation = (id: string) => {
-    const indexToRemove = parseInt(id);
-    setProductVariationsFormData(productVariationsFormData.filter((_, index) => index !== indexToRemove));
-    
-    // Also remove any associated images for this variation
-    setVariationImages(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(indexToRemove);
-      return newMap;
-    });
-    
-    setVariationImageUrls(prev => {
-      const newMap = new Map(prev);
-      newMap.delete(indexToRemove);
-      return newMap;
-    });
-  };
-
-  const handleVariationChange = (
-    index: number,
-    field: keyof Omit<ProductVariation, 'id' | 'user_id' | 'product_id' | 'created_at' | 'updated_at'>,
-    value: string | number | null
-  ) => {
-    setProductVariationsFormData(
-      productVariationsFormData.map((v, i) =>
-        i === index ? { ...v, [field]: value } : v
-      )
-    );
+  const getStockStatus = (stock: number, minStock: number) => {
+    if (stock === 0) return { label: 'Sem estoque', color: 'text-red-600 bg-red-50' };
+    if (stock <= minStock) return { label: 'Estoque baixo', color: 'text-amber-600 bg-amber-50' };
+    return { label: 'Em estoque', color: 'text-green-600 bg-green-50' };
   };
 
   if (loading) {
@@ -408,24 +334,6 @@ export const Products: React.FC = () => {
         </div>
       )}
 
-      {/* Notification */}
-      {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
-          notification.type === 'success' 
-            ? 'bg-green-100 border border-green-200 text-green-800' 
-            : 'bg-red-100 border border-red-200 text-red-800'
-        }`}>
-          <div className="flex items-center">
-            {notification.type === 'success' ? (
-              <CheckCircle className="w-5 h-5 mr-2" />
-            ) : (
-              <AlertCircle className="w-5 h-5 mr-2" />
-            )}
-            {notification.message}
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -461,114 +369,130 @@ export const Products: React.FC = () => {
       {/* Products Grid */}
       {filteredProducts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center overflow-hidden">
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="w-10 h-10 object-cover rounded-lg"
-                      />
-                    ) : (
-                      <Package className="w-5 h-5 text-blue-600" />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                    <p className="text-sm text-gray-500">SKU: {product.sku}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <button
-                    onClick={() => handleEdit(product)}
-                    disabled={false}
-                    className={`p-1 transition-colors ${
-                      usageStatus.isLimitReached.products && !usageStatus.isSubscriptionActive
-                        ? 'text-amber-500 hover:text-amber-600'
-                        : 'text-gray-400 hover:text-blue-600'
-                    }`}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={() => setShowDeleteConfirm(product.id)}
-                    disabled={false}
-                    className={`p-1 transition-colors ${
-                      usageStatus.isLimitReached.products && !usageStatus.isSubscriptionActive
-                        ? 'text-amber-500 hover:text-amber-600'
-                        : 'text-gray-400 hover:text-red-600'
-                    }`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Preço</span>
-                  <span className="font-semibold text-green-600">{formatCurrency(product.price)}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Estoque</span>
-                  <div className="flex items-center space-x-2">
-                    {product.stock <= product.min_stock && (
-                      <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    )}
-                    <span className={`font-medium ${product.stock <= product.min_stock ? 'text-amber-600' : 'text-gray-900'}`}>
-                      {product.stock} un.
-                    </span>
-                  </div>
+          {filteredProducts.map((product) => {
+            const variations = getVariationsForProduct(product.id);
+            const stockStatus = getStockStatus(product.stock, product.min_stock);
+            const canAddVariation = usageStatus.canAdd.variationsForProduct(product.id);
+            
+            return (
+              <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                {/* Product Image */}
+                <div className="h-48 bg-gray-100 overflow-hidden">
+                  {product.image_url ? (
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                      <Package className="w-16 h-16 text-gray-400" />
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Categoria</span>
-                  <span className="text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded">{product.category}</span>
-                </div>
-
-                {/* Variations Summary */}
-                {(() => {
-                  const variations = getVariationsForProduct(product.id);
-                  if (variations.length > 0) {
-                    return (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Variações</span>
-                        <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                          {variations.length} variação{variations.length > 1 ? 'ões' : ''}
-                        </span>
+                {/* Product Info */}
+                <div className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{product.name}</h3>
+                      <p className="text-sm text-gray-600 mb-2">{product.description}</p>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg font-bold text-green-600">{formatCurrency(product.price)}</span>
+                        <span className="text-sm text-gray-500">SKU: {product.sku}</span>
                       </div>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
+                    </div>
+                  </div>
 
-              <p className="text-sm text-gray-600 mt-3 line-clamp-2">{product.description}</p>
+                  {/* Stock Status */}
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${stockStatus.color}`}>
+                      {stockStatus.label}
+                    </span>
+                    <span className="text-sm text-gray-600">{product.stock} unidades</span>
+                  </div>
 
-              {/* View Variations Button */}
-              {(() => {
-                const variations = getVariationsForProduct(product.id);
-                if (variations.length > 0) {
-                  return (
-                    <div className="mt-4 pt-4 border-t border-gray-100">
+                  {/* Variations Info */}
+                  {variations.length > 0 && (
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-blue-900">
+                          {variations.length} variação(ões)
+                        </span>
+                        <button
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setShowVariationsModal(true);
+                          }}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                        >
+                          Ver todas
+                        </button>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {variations.slice(0, 3).map((variation) => (
+                          <span key={variation.id} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            {variation.variation_name}
+                          </span>
+                        ))}
+                        {variations.length > 3 && (
+                          <span className="text-xs text-blue-600">+{variations.length - 3} mais</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-between space-x-2">
+                    <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => setShowVariationsModal(product.id)}
-                        className="w-full flex items-center justify-center px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                        onClick={() => handleEdit(product)}
+                        disabled={false}
+                        className={`p-2 rounded-lg transition-colors ${
+                          usageStatus.isLimitReached.products && !usageStatus.isSubscriptionActive
+                            ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50'
+                            : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                        }`}
+                        title="Editar produto"
                       >
-                       
-                        Ver Variações ({variations.length})
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setShowDeleteConfirm(product.id)}
+                        disabled={false}
+                        className={`p-2 rounded-lg transition-colors ${
+                          usageStatus.isLimitReached.products && !usageStatus.isSubscriptionActive
+                            ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50'
+                            : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+                        }`}
+                        title="Remover produto"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                  );
-                }
-                return null;
-              })()}
-            </div>
-          ))}
+                    
+                    <button
+                      onClick={() => handleAddVariation(product)}
+                      disabled={!usageStatus.canAdd.variationsForProduct(product.id)}
+                      className={`flex items-center px-3 py-1 text-xs rounded-lg transition-colors ${
+                        usageStatus.canAdd.variationsForProduct(product.id)
+                          ? 'bg-blue-600 text-white hover:bg-blue-700'
+                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }`}
+                      title={
+                        !usageStatus.canAdd.variationsForProduct(product.id)
+                          ? `Limite de ${usageStatus.limits.variationsPerProduct} variações atingido`
+                          : 'Adicionar variação'
+                      }
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Variação
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-12">
@@ -600,17 +524,46 @@ export const Products: React.FC = () => {
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={resetForm}></div>
             
-            <div className="inline-block w-full max-w-md p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
+            <div className="inline-block w-full max-w-lg p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
                   {editingProduct ? 'Editar Produto' : 'Novo Produto'}
                 </h3>
                 <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
-                  <Plus className="w-5 h-5 transform rotate-45" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Image Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Imagem do Produto</label>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                      {imagePreview ? (
+                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Camera className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                        <Upload className="w-4 h-4 mr-2" />
+                        Escolher Imagem
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">PNG, JPG até 5MB</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
@@ -669,57 +622,7 @@ export const Products: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Product Image Upload - Full Width */}
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Imagem do Produto</label>
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                    {/* Image Preview */}
-                    <div className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden flex-shrink-0">
-                      {productImagePreview ? (
-                        <div className="relative w-full h-full">
-                          <img
-                            src={productImagePreview}
-                            alt="Preview"
-                            className="w-full h-full object-cover"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleRemoveProductImage}
-                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="text-center">
-                          <Package className="w-6 h-6 text-gray-400 mx-auto mb-1" />
-                          <span className="text-xs text-gray-500">Sem imagem</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    {/* Upload Button - Responsive */}
-                    <div className="flex-1 w-full sm:w-auto">
-                      <label className="cursor-pointer block">
-                        <div className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                          <Package className="w-4 h-4 mr-2 text-gray-500" />
-                          <span className="text-sm text-gray-700 font-medium">
-                            {productImagePreview ? 'Alterar Imagem' : 'Adicionar Imagem'}
-                          </span>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleProductImageSelect}
-                          className="hidden"
-                        />
-                      </label>
-                      <p className="text-xs text-gray-500 mt-2 text-center sm:text-left">PNG, JPG até 5MB</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Estoque</label>
                     <input
@@ -731,7 +634,7 @@ export const Products: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Estoque Mínimo</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Estoque Mín.</label>
                     <input
                       type="number"
                       value={formData.min_stock}
@@ -740,9 +643,6 @@ export const Products: React.FC = () => {
                       required
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
                     <input
@@ -753,157 +653,189 @@ export const Products: React.FC = () => {
                       required
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fornecedor</label>
-                    <input
-                      type="text"
-                      value={formData.supplier}
-                      onChange={(e) => setFormData({...formData, supplier: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
                 </div>
 
-                {/* Product Variations Section */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Variações (Opcional)</h4>
-                  <p className="text-xs text-gray-500 mb-4">Adicione diferentes cores, tamanhos ou outras variações para este produto.</p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fornecedor</label>
+                  <input
+                    type="text"
+                    value={formData.supplier}
+                    onChange={(e) => setFormData({...formData, supplier: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
 
-                  {productVariationsFormData.map((variation, index) => (
-                    <div key={index} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4 relative">
+                {/* Variações Section - Only for new products */}
+                {!editingProduct && (
+                  <div className="border-t border-gray-200 pt-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="block text-sm font-medium text-gray-700">Variações do Produto (Opcional)</label>
                       <button
                         type="button"
-                        onClick={() => handleRemoveVariation(index.toString())}
-                        className="absolute top-2 right-2 text-gray-400 hover:text-red-600"
-                        title="Remover variação"
+                        onClick={() => setShowVariationsInForm(!showVariationsInForm)}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
-                        <X className="w-4 h-4" />
+                        {showVariationsInForm ? 'Ocultar' : 'Adicionar Variações'}
                       </button>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Cor</label>
-                          <div className="relative">
-                            <Palette className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            <input
-                              type="text"
-                              value={variation.color || ''}
-                              onChange={(e) => handleVariationChange(index, 'color', e.target.value)}
-                              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                              placeholder="Ex: Azul, Vermelho"
-                            />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Tamanho</label>
-                          <div className="relative">
-                            <Ruler className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            <input
-                              type="text"
-                              value={variation.size || ''}
-                              onChange={(e) => handleVariationChange(index, 'size', e.target.value)}
-                              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                              placeholder="Ex: P, M, G, 38, 40"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Variation Image Upload */}
-                      <div className="mb-3">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Imagem da Variação</label>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                          {/* Image Preview */}
-                          <div className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 overflow-hidden flex-shrink-0">
-                            {(variationImages.get(index)?.preview || variationImageUrls.get(index)) ? (
-                              <div className="relative w-full h-full">
-                                <img
-                                  src={variationImages.get(index)?.preview || variationImageUrls.get(index)}
-                                  alt="Preview"
-                                  className="w-full h-full object-cover"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveVariationImage(index)}
-                                  className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600"
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="text-center">
-                                <Palette className="w-4 h-4 text-gray-400 mx-auto mb-1" />
-                                <span className="text-xs text-gray-500">Sem foto</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Upload Button */}
-                          <div className="flex-1 w-full sm:w-auto">
-                            <label className="cursor-pointer">
-                              <div className="w-full flex items-center justify-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                                <Palette className="w-3 h-3 mr-2 text-gray-500" />
-                                <span className="text-xs text-gray-700 font-medium">
-                                  {(variationImages.get(index) || variationImageUrls.get(index)) ? 'Alterar' : 'Adicionar Foto'}
-                                </span>
-                              </div>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleVariationImageSelect(index, e)}
-                                className="hidden"
-                              />
-                            </label>
-                            <p className="text-xs text-gray-400 mt-1 text-center sm:text-left">Opcional</p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">SKU da Variação</label>
-                          <input
-                            type="text"
-                            value={variation.sku}
-                            onChange={(e) => handleVariationChange(index, 'sku', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                            placeholder="SKU único"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Estoque</label>
-                          <input
-                            type="number"
-                            value={variation.stock}
-                            onChange={(e) => handleVariationChange(index, 'stock', parseInt(e.target.value) || 0)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">Preço (Opcional)</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={variation.price || ''}
-                            onChange={(e) => handleVariationChange(index, 'price', parseFloat(e.target.value) || null)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                            placeholder="Herdar do produto"
-                          />
-                        </div>
-                      </div>
                     </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={handleAddVariation}
-                    className="mt-4 w-full flex items-center justify-center px-4 py-2 border border-dashed border-gray-300 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Variação
-                  </button>
-                </div>
+                    
+                    {showVariationsInForm && (
+                      <div className="space-y-4">
+                        {/* Add Variation Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (tempVariations.length >= usageStatus.limits.variationsPerProduct) {
+                              setShowUpgradeModal(true);
+                              return;
+                            }
+                            const newVariation = {
+                              id: `temp-${Date.now()}`,
+                              variation_name: '',
+                              color: '',
+                              size: '',
+                              sku: '',
+                              stock: 0,
+                              price: null,
+                              image_url: null
+                            };
+                            setTempVariations([...tempVariations, newVariation]);
+                          }}
+                          disabled={tempVariations.length >= usageStatus.limits.variationsPerProduct}
+                          className={`w-full py-2 px-4 border-2 border-dashed rounded-lg transition-colors ${
+                            tempVariations.length < usageStatus.limits.variationsPerProduct
+                              ? 'border-blue-300 text-blue-600 hover:border-blue-400 hover:bg-blue-50'
+                              : 'border-gray-300 text-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          <Plus className="w-4 h-4 mr-2 inline" />
+                          Adicionar Variação
+                          {!usageStatus.isSubscriptionActive && (
+                            <span className="ml-2 text-xs">
+                              (Máximo {usageStatus.limits.variationsPerProduct})
+                            </span>
+                          )}
+                        </button>
+                        
+                        {/* Temporary Variations List */}
+                        {tempVariations.filter(variation => variation != null).map((variation, index) => (
+                          <div key={variation.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="grid grid-cols-2 gap-3 mb-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Nome da Variação</label>
+                                <input
+                                  type="text"
+                                  value={variation.variation_name}
+                                  onChange={(e) => {
+                                    const updated = [...tempVariations];
+                                    updated[index].variation_name = e.target.value;
+                                    setTempVariations(updated);
+                                  }}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Ex: Azul - M"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">SKU</label>
+                                <input
+                                  type="text"
+                                  value={variation.sku}
+                                  onChange={(e) => {
+                                    const updated = [...tempVariations];
+                                    updated[index].sku = e.target.value;
+                                    setTempVariations(updated);
+                                  }}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="SKU único"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-3 gap-3 mb-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Cor</label>
+                                <input
+                                  type="text"
+                                  value={variation.color}
+                                  onChange={(e) => {
+                                    const updated = [...tempVariations];
+                                    updated[index].color = e.target.value;
+                                    setTempVariations(updated);
+                                  }}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Ex: Azul"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Tamanho</label>
+                                <input
+                                  type="text"
+                                  value={variation.size}
+                                  onChange={(e) => {
+                                    const updated = [...tempVariations];
+                                    updated[index].size = e.target.value;
+                                    setTempVariations(updated);
+                                  }}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Ex: M, G"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Estoque</label>
+                                <input
+                                  type="number"
+                                  value={variation.stock}
+                                  onChange={(e) => {
+                                    const updated = [...tempVariations];
+                                    updated[index].stock = parseInt(e.target.value) || 0;
+                                    setTempVariations(updated);
+                                  }}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 mr-3">
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Preço (opcional)</label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={variation.price || ''}
+                                  onChange={(e) => {
+                                    const updated = [...tempVariations];
+                                    updated[index].price = e.target.value ? parseFloat(e.target.value) : null;
+                                    setTempVariations(updated);
+                                  }}
+                                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent"
+                                  placeholder="Usar preço do produto"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = tempVariations.filter((_, i) => i !== index);
+                                  setTempVariations(updated);
+                                }}
+                                className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
+                                title="Remover variação"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {tempVariations.length === 0 && (
+                          <div className="text-center py-4 text-gray-500">
+                            <p className="text-sm">Nenhuma variação adicionada</p>
+                            <p className="text-xs">Clique em "Adicionar Variação" para começar</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
@@ -926,7 +858,264 @@ export const Products: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Variations Modal */}
+      {showVariationsModal && selectedProduct && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowVariationsModal(false)}></div>
+            
+            <div className="inline-block w-full max-w-4xl p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Variações de {selectedProduct.name}</h3>
+                  <p className="text-sm text-gray-600">
+                    Gerencie as variações deste produto
+                    {!usageStatus.isSubscriptionActive && (
+                      <span className="text-amber-600 font-medium">
+                        {' '}(Limite: {usageStatus.limits.variationsPerProduct} variações por produto)
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleAddVariation(selectedProduct)}
+                    disabled={!usageStatus.canAdd.variationsForProduct(selectedProduct.id) && !usageStatus.isSubscriptionActive}
+                    className={`flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
+                      usageStatus.canAdd.variationsForProduct(selectedProduct.id) || usageStatus.isSubscriptionActive
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Nova Variação
+                  </button>
+                  <button onClick={() => setShowVariationsModal(false)} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Variations Limit Warning for Free Users */}
+              {!usageStatus.isSubscriptionActive && getVariationsForProduct(selectedProduct.id).length > 0 && (
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-center">
+                    <Crown className="w-5 h-5 text-amber-600 mr-2" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-amber-900">
+                        Plano Gratuito: Máximo {usageStatus.limits.variationsPerProduct} variações por produto
+                      </p>
+                    </div>
+                    {!usageStatus.canAdd.variationsForProduct(selectedProduct.id) && (
+                      <button
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="px-3 py-1 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition-colors"
+                      >
+                        Assinar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Variations List */}
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {getVariationsForProduct(selectedProduct.id).filter(variation => variation != null).map((variation) => (
+                  <div key={variation.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
+                        {variation.image_url ? (
+                          <img src={variation.image_url} alt={variation.variation_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-6 h-6 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900">{variation.variation_name}</h4>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          {variation.color && <p>Cor: {variation.color}</p>}
+                          {variation.size && <p>Tamanho: {variation.size}</p>}
+                          <p>SKU: {variation.sku}</p>
+                          <p>Estoque: {variation.stock} unidades</p>
+                          <p>Preço: {variation.price ? formatCurrency(variation.price) : 'Usar preço do produto'}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleEditVariation(variation)}
+                        className="p-2 rounded-lg transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+                        title="Editar variação"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setShowDeleteVariationConfirm(variation.id)}
+                        className="p-2 rounded-lg transition-colors text-gray-400 hover:text-red-600 hover:bg-red-50"
+                        title="Excluir variação"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                
+                {getVariationsForProduct(selectedProduct.id).length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                    <p>Nenhuma variação cadastrada</p>
+                    <p className="text-sm">Adicione variações como cores, tamanhos, etc.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Variation Modal */}
+      {showAddVariationForm && selectedProduct && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={resetVariationForm}></div>
+            
+            <div className="inline-block w-full max-w-lg p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {editingVariation ? 'Editar Variação' : 'Nova Variação'}
+                </h3>
+                <button onClick={resetVariationForm} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleVariationSubmit} className="space-y-4">
+                {/* Variation Image Upload */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Imagem da Variação</label>
+                  <div className="flex items-center space-x-4">
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                      {variationImagePreview ? (
+                        <img src={variationImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Camera className="w-8 h-8 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                        <Upload className="w-4 h-4 mr-2" />
+                        Escolher Imagem
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleVariationImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">PNG, JPG até 5MB</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Variação</label>
+                  <input
+                    type="text"
+                    value={variationFormData.variation_name}
+                    onChange={(e) => setVariationFormData({...variationFormData, variation_name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ex: Azul - Tamanho M"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cor (opcional)</label>
+                    <input
+                      type="text"
+                      value={variationFormData.color}
+                      onChange={(e) => setVariationFormData({...variationFormData, color: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ex: Azul"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tamanho (opcional)</label>
+                    <input
+                      type="text"
+                      value={variationFormData.size}
+                      onChange={(e) => setVariationFormData({...variationFormData, size: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ex: M, G, 42"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">SKU da Variação</label>
+                    <input
+                      type="text"
+                      value={variationFormData.sku}
+                      onChange={(e) => setVariationFormData({...variationFormData, sku: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Estoque</label>
+                    <input
+                      type="number"
+                      value={variationFormData.stock}
+                      onChange={(e) => setVariationFormData({...variationFormData, stock: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Preço (opcional)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={variationFormData.price}
+                    onChange={(e) => setVariationFormData({...variationFormData, price: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder={`Deixe vazio para usar ${formatCurrency(selectedProduct.price)}`}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Se não informado, será usado o preço do produto principal: {formatCurrency(selectedProduct.price)}
+                  </p>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={resetVariationForm}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    {editingVariation ? 'Atualizar' : 'Adicionar'} Variação
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Product Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
@@ -944,7 +1133,7 @@ export const Products: React.FC = () => {
               </div>
 
               <p className="text-gray-700 mb-6">
-                Tem certeza que deseja excluir este produto? Todas as informações serão perdidas permanentemente.
+                Tem certeza que deseja remover este produto? Todas as informações e variações serão perdidas permanentemente.
               </p>
 
               <div className="flex justify-end space-x-3">
@@ -958,7 +1147,7 @@ export const Products: React.FC = () => {
                   onClick={() => handleDelete(showDeleteConfirm)}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
-                  Excluir Produto
+                  Remover Produto
                 </button>
               </div>
             </div>
@@ -966,134 +1155,39 @@ export const Products: React.FC = () => {
         </div>
       )}
 
-      {/* Variations View Modal */}
-      {showVariationsModal && (
+      {/* Delete Variation Confirmation Modal */}
+      {showDeleteVariationConfirm && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowVariationsModal(null)}></div>
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={() => setShowDeleteVariationConfirm(null)}></div>
             
-            <div className="inline-block w-full max-w-4xl p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Variações do Produto
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {(() => {
-                      const product = products.find(p => p.id === showVariationsModal);
-                      return product ? product.name : 'Produto';
-                    })()}
-                  </p>
+            <div className="inline-block w-full max-w-md p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 w-10 h-10 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-5 h-5 text-red-600" />
                 </div>
-                <button 
-                  onClick={() => setShowVariationsModal(null)} 
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+                <div className="ml-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Confirmar Exclusão</h3>
+                  <p className="text-sm text-gray-600">Esta ação não pode ser desfeita.</p>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                {(() => {
-                  const variations = getVariationsForProduct(showVariationsModal);
-                  
-                  if (variations.length === 0) {
-                    return (
-                      <div className="text-center py-8">
-                        <Palette className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                        <p className="text-gray-500">Nenhuma variação encontrada para este produto</p>
-                      </div>
-                    );
-                  }
+              <p className="text-gray-700 mb-6">
+                Tem certeza que deseja remover esta variação? Todas as informações serão perdidas permanentemente.
+              </p>
 
-                  return (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {variations.map((variation) => (
-                        <div key={variation.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-                                {variation.image_url ? (
-                                  <img
-                                    src={variation.image_url}
-                                    alt={variation.variation_name}
-                                    className="w-12 h-12 object-cover rounded-lg"
-                                  />
-                                ) : (
-                                  <Palette className="w-6 h-6 text-gray-400" />
-                                )}
-                              </div>
-                              <div>
-                                <h4 className="font-medium text-gray-900">{variation.variation_name}</h4>
-                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                                  {variation.sku}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2">
-                            {variation.color && (
-                              <div className="flex items-center">
-                                <Palette className="w-4 h-4 text-gray-400 mr-2" />
-                                <span className="text-sm text-gray-600">Cor:</span>
-                                <span className="text-sm font-medium text-gray-900 ml-1">{variation.color}</span>
-                              </div>
-                            )}
-                            
-                            {variation.size && (
-                              <div className="flex items-center">
-                                <Ruler className="w-4 h-4 text-gray-400 mr-2" />
-                                <span className="text-sm text-gray-600">Tamanho:</span>
-                                <span className="text-sm font-medium text-gray-900 ml-1">{variation.size}</span>
-                              </div>
-                            )}
-                            
-                            <div className="flex items-center">
-                              <Package className="w-4 h-4 text-gray-400 mr-2" />
-                              <span className="text-sm text-gray-600">Estoque:</span>
-                              <span className={`text-sm font-medium ml-1 ${
-                                variation.stock <= 5 ? 'text-red-600' : 'text-gray-900'
-                              }`}>
-                                {variation.stock} unidades
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center">
-                              <DollarSign className="w-4 h-4 text-gray-400 mr-2" />
-                              <span className="text-sm text-gray-600">Preço:</span>
-                              <span className="text-sm font-medium text-green-600 ml-1">
-                                {variation.price ? formatCurrency(variation.price) : (
-                                  <span className="text-gray-500">
-                                    {(() => {
-                                      const product = products.find(p => p.id === showVariationsModal);
-                                      return product ? formatCurrency(product.price) + ' (herdado)' : 'N/A';
-                                    })()}
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          {variation.stock <= 5 && (
-                            <div className="mt-3 flex items-center text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                              <AlertTriangle className="w-3 h-3 mr-1" />
-                              Estoque baixo
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </div>
-
-              <div className="flex justify-end pt-6 border-t border-gray-200 mt-6">
+              <div className="flex justify-end space-x-3">
                 <button
-                  onClick={() => setShowVariationsModal(null)}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                  onClick={() => setShowDeleteVariationConfirm(null)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  Fechar
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => handleDeleteVariation(showDeleteVariationConfirm)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Remover Variação
                 </button>
               </div>
             </div>
@@ -1105,8 +1199,8 @@ export const Products: React.FC = () => {
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
-        title="Você atingiu o limite gratuito de 5 registros nesta seção"
-        message="Faça upgrade para o plano pago para continuar adicionando."
+        title={usageStatus.isLimitReached.products ? "Você atingiu o limite gratuito de 5 registros nesta seção" : "Limite de variações atingido"}
+        message={usageStatus.isLimitReached.products ? "Faça upgrade para o plano pago para continuar adicionando." : "No plano gratuito você pode adicionar até 3 variações por produto. Assine para ter variações ilimitadas."}
       />
     </div>
   );
