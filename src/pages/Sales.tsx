@@ -792,17 +792,17 @@ export const Sales: React.FC = () => {
                                 const variations = getVariationsForProduct(mainProductId);
                                 const variation = variations.find(v => v.id === variationId);
                                 totalStock = variation ? variation.stock : 0;
-                                availableStock = totalStock - item.quantity;
+                                availableStock = totalStock;
                               } else if (item.product_id) {
                                 // It's a regular product
                                 const product = products.find(p => p.id === item.product_id);
                                 totalStock = product ? product.stock : 0;
-                                availableStock = totalStock - item.quantity;
+                                availableStock = totalStock;
                               }
                               
                           
                             })()}
-                          </div>
+                                  Disponível: {Math.max(0, availableStock - item.quantity)} de {totalStock} unidades
                           <div className="flex items-center space-x-2">
                             <button
                               type="button"
@@ -811,7 +811,8 @@ export const Sales: React.FC = () => {
                                   updateItemQuantity(item.product_id, item.quantity - 1);
                                 }
                               }}
-                              className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs"
+                              disabled={item.quantity <= 1}
+                              className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                             >
                               -
                             </button>
