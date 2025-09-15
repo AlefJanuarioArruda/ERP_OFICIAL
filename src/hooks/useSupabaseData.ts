@@ -435,149 +435,136 @@ export const useSupabaseData = () => {
   }
 
   // Sale operations
-  const addSale = async (saleData: {
-    customer_id: string | null
-    customer_name: string
-    items: Array<{
-      product_id: string | null
-      product_name: string
-      quantity: number
-      unit_price: number
-      total: number
-    }>
+const addSale = async (saleData: {
+  customer_id: string | null
+  customer_name: string
+  items: Array<{
+    product_id: string | null
+    product_name: string
+    quantity: number
+    unit_price: number
     total: number
-    subtotal: number
-    discount: number
-    tax: number
-    payment_method: 'pix' | 'boleto' | 'card' | 'cash'
-    payment_status: 'pending' | 'paid' | 'overdue'
-    due_date?: string
-  }) => {
-    if (!user) return
+  }>
+  total: number
+  subtotal: number
+  discount: number
+  tax: number
+  payment_method: 'pix' | 'boleto' | 'card' | 'cash'
+  payment_status: 'pending' | 'paid' | 'overdue'
+  due_date?: string
+}) => {
+  if (!user) return
 
-    // Helper function to validate UUID format
-    const isValidUUID = (uuid: string): boolean => {
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      return uuidRegex.test(uuid);
-    }
-
-    // Generate invoice number
-    const invoiceNumber = `INV-${user.id.slice(0, 8)}-${String(sales.length + 1).padStart(3, '0')}`
-
-    // Insert sale
-    const { data: saleRecord, error: saleError } = await supabase
-      .from('sales')
-      .insert({
-        user_id: user.id,
-        customer_id: saleData.customer_id,
-        customer_name: saleData.customer_name,
-        total: saleData.total,
-        subtotal: saleData.subtotal,
-        discount: saleData.discount,
-        tax: saleData.tax,
-        status: 'completed',
-        payment_method: saleData.payment_method,
-        payment_status: saleData.payment_status,
-        invoice_number: invoiceNumber,
-        due_date: saleData.due_date
-      })
-      .select()
-      .single()
-
-    if (saleError || !saleRecord) {
-      return { data: null, error: saleError }
-    }
-
-    // Insert sale items
-    const saleItemsToInsert = saleData.items.map(item => ({
-      user_id: user.id,
-      sale_id: saleRecord.id,
-      product_id: (() => {
-        if (!item.product_id) return null;
-        
-        // Extract main product ID if it's a variation (contains hyphen)
-        const extractedId = item.product_id.includes('-') ? item.product_id.split('-')[0] : item.product_id;
-        
-        // Validate UUID format
-        return isValidUUID(extractedId) ? extractedId : null;
-      })(),
-      product_name: item.product_name,
-      quantity: item.quantity,
-      unit_price: item.unit_price,
-      total: item.total
-    }))
-
-    const { data: itemsData, error: itemsError } = await supabase
-      .from('sale_items')
-      .insert(saleItemsToInsert)
-      .select()
-
-    if (!itemsError) {
-      setSaleItems(prev => [...(itemsData || []), ...prev])
-    }
-
-// Atualiza o estoque de forma segura
-for (const item of saleData.items) {
-  if (!item.product_id) continue;
-
-  
-  // Produto é variação?
-  if (item.product_id.includes('-')) {
-    const [productId, variationId] = item.product_id.split('-');
-    const variation = productVariations.find(v => v.id === variationId);
-    if (variation) {
-      const newVariationStock = Math.max(variation.stock - item.quantity, 0);
-      await updateProductVariation(variationId, { stock: newVariationStock });
-      // Recalcula o estoque total do produto principal
-      await updateProductStockFromVariations(productId);
-    }
-  } else {
-    // Produto normal
-    const product = products.find(p => p.id === item.product_id);
-    if (product) {
-      const newProductStock = Math.max(product.stock - item.quantity, 0);
-      await updateProduct(item.product_id, { stock: newProductStock });
-    }
+  const isValidUUID = (uuid: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
   }
-}
 
-    // Update customer total purchases (only if customer is selected)
-    if (saleData.customer_id) {
-      const customer = customers.find(c => c.id === saleData.customer_id)
-      if (customer) {
-        await supabase
-          .from('customers')
-          .update({
-            total_purchases: customer.total_purchases + saleData.total,
-            last_purchase: new Date().toISOString()
-          })
-          .eq('id', saleData.customer_id)
-          .eq('user_id', user.id)
+  // Gerar número de nota fiscal
+  const invoiceNumber = `INV-${user.id.slice(0, 8)}-${String(sales.length + 1).padStart(3, '0')}`
+
+  // 1️⃣ Criar venda
+  const { data: saleRecord, error: saleError } = await supabase
+    .from('sales')
+    .insert({
+      user_id: user.id,
+      customer_id: saleData.customer_id,
+      customer_name: saleData.customer_name,
+      total: saleData.total,
+      subtotal: saleData.subtotal,
+      discount: saleData.discount,
+      tax: saleData.tax,
+      status: 'completed',
+      payment_method: saleData.payment_method,
+      payment_status: saleData.payment_status,
+      invoice_number: invoiceNumber,
+      due_date: saleData.due_date
+    })
+    .select()
+    .single()
+
+  if (saleError || !saleRecord) return { data: null, error: saleError }
+
+  // 2️⃣ Inserir itens da venda
+  const saleItemsToInsert = saleData.items.map(item => ({
+    user_id: user.id,
+    sale_id: saleRecord.id,
+    product_id: item.product_id && isValidUUID(item.product_id.includes('-') ? item.product_id.split('-')[0] : item.product_id)
+      ? item.product_id.includes('-') ? item.product_id.split('-')[0] : item.product_id
+      : null,
+    product_name: item.product_name,
+    quantity: item.quantity,
+    unit_price: item.unit_price,
+    total: item.total
+  }))
+
+  const { data: itemsData, error: itemsError } = await supabase
+    .from('sale_items')
+    .insert(saleItemsToInsert)
+    .select()
+
+  if (!itemsError) setSaleItems(prev => [...(itemsData || []), ...prev])
+
+  // 3️⃣ Atualizar estoque de produtos e variações
+  for (const item of saleData.items) {
+    if (!item.product_id) continue
+
+    if (item.product_id.includes('-')) {
+      // Produto com variação
+      const [productId, variationId] = item.product_id.split('-')
+      const variation = productVariations.find(v => v.id === variationId)
+      if (variation) {
+        const newVariationStock = Math.max(variation.stock - item.quantity, 0)
+        await updateProductVariation(variationId, { stock: newVariationStock })
+        await updateProductStockFromVariations(productId)
+      }
+    } else {
+      // Produto simples
+      const product = products.find(p => p.id === item.product_id)
+      if (product) {
+        const newProductStock = Math.max(product.stock - item.quantity, 0)
+        await updateProduct(item.product_id, { stock: newProductStock })
       }
     }
-
-    // Create financial record
-    await addFinancialRecord({
-      type: 'income',
-      category: 'Vendas',
-      amount: saleData.total,
-      description: `Venda - ${saleData.customer_name}`,
-      status: saleData.payment_status,
-      due_date: saleData.due_date || new Date().toISOString(),
-      paid_date: saleData.payment_status === 'paid' ? new Date().toISOString() : null,
-      customer_id: saleData.customer_id,
-      sale_id: saleRecord.id
-    })
-
-    setSales(prev => [saleRecord, ...prev])
-    
-    // Generate AI insights
-    await generateSaleInsight(saleRecord, saleData.items)
-
-    // Force refresh all data to ensure stock updates are reflected
-    await fetchUserData()
-    return { data: saleRecord, error: null }
   }
+
+  // 4️⃣ Atualizar total de compras do cliente
+  if (saleData.customer_id) {
+    const customer = customers.find(c => c.id === saleData.customer_id)
+    if (customer) {
+      await supabase
+        .from('customers')
+        .update({
+          total_purchases: customer.total_purchases + saleData.total,
+          last_purchase: new Date().toISOString()
+        })
+        .eq('id', saleData.customer_id)
+        .eq('user_id', user.id)
+    }
+  }
+
+  // 5️⃣ Criar registro financeiro
+  await addFinancialRecord({
+    type: 'income',
+    category: 'Vendas',
+    amount: saleData.total,
+    description: `Venda - ${saleData.customer_name}`,
+    status: saleData.payment_status,
+    due_date: saleData.due_date || new Date().toISOString(),
+    paid_date: saleData.payment_status === 'paid' ? new Date().toISOString() : null,
+    customer_id: saleData.customer_id,
+    sale_id: saleRecord.id
+  })
+
+  // 6️⃣ Gerar insights de IA
+  await generateSaleInsight(saleRecord, saleData.items)
+
+  // 7️⃣ Atualizar dados do estado
+  await fetchUserData()
+
+  return { data: saleRecord, error: null }
+}
+
 
   // Financial operations
   const addFinancialRecord = async (recordData: Omit<FinancialRecord, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
