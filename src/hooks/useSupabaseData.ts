@@ -364,12 +364,12 @@ export const useSupabaseData = () => {
   };
 
   // Update product stock based on variations
-  const updateProductStockFromVariations = async (productId: string) => {
-    if (!user) return;
-    const variations = getVariationsForProduct(productId);
-    const totalStock = variations.reduce((sum, v) => sum + v.stock, 0);
-    await updateProduct(productId, { stock: totalStock });
-  };
+ const updateProductStockFromVariations = async (productId: string) => {
+  if (!user) return;
+  const variations = getVariationsForProduct(productId);
+  const totalStock = variations.reduce((sum, v) => sum + (v.stock || 0), 0);
+  await updateProduct(productId, { stock: totalStock });
+};
 
   // Update product price based on variations (e.g., min price)
   const updateProductPriceFromVariations = async (productId: string) => {
@@ -516,31 +516,29 @@ export const useSupabaseData = () => {
       setSaleItems(prev => [...(itemsData || []), ...prev])
     }
 
-    // Update product stock and variation stock
-    for (const item of saleData.items) {
-      if (item.product_id) {
-        // Check if it's a variation (contains hyphen)
-        if (item.product_id.includes('-')) {
-          const [productId, variationId] = item.product_id.split('-');
-          const variation = productVariations.find(v => v.id === variationId);
-          if (variation) {
-            await updateProductVariation(variationId, {
-              stock: variation.stock - item.quantity
-            });
-            // Also update main product stock
-            await updateProductStockFromVariations(productId);
-          }
-        } else {
-          // Regular product
-          const product = products.find(p => p.id === item.product_id);
-          if (product) {
-            await updateProduct(item.product_id, {
-              stock: product.stock - item.quantity
-            });
-          }
-        }
-      }
+// Atualiza o estoque de forma segura
+for (const item of saleData.items) {
+  if (!item.product_id) continue;
+
+  // Produto é variação?
+  if (item.product_id.includes('-')) {
+    const [productId, variationId] = item.product_id.split('-');
+    const variation = productVariations.find(v => v.id === variationId);
+    if (variation) {
+      const newVariationStock = Math.max(variation.stock - item.quantity, 0);
+      await updateProductVariation(variationId, { stock: newVariationStock });
+      // Recalcula o estoque total do produto principal
+      await updateProductStockFromVariations(productId);
     }
+  } else {
+    // Produto normal
+    const product = products.find(p => p.id === item.product_id);
+    if (product) {
+      const newProductStock = Math.max(product.stock - item.quantity, 0);
+      await updateProduct(item.product_id, { stock: newProductStock });
+    }
+  }
+}
 
     // Update customer total purchases (only if customer is selected)
     if (saleData.customer_id) {
