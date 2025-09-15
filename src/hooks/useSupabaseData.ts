@@ -520,6 +520,7 @@ export const useSupabaseData = () => {
 for (const item of saleData.items) {
   if (!item.product_id) continue;
 
+  
   // Produto é variação?
   if (item.product_id.includes('-')) {
     const [productId, variationId] = item.product_id.split('-');
