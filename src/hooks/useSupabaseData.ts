@@ -575,6 +575,8 @@ export const useSupabaseData = () => {
     // Generate AI insights
     await generateSaleInsight(saleRecord, saleData.items)
 
+    // Force refresh all data to ensure stock updates are reflected
+    await fetchUserData()
     return { data: saleRecord, error: null }
   }
 
