@@ -800,11 +800,7 @@ export const Sales: React.FC = () => {
                                 availableStock = totalStock - item.quantity;
                               }
                               
-                              return (
-                                <p className="text-xs text-gray-500">
-                                  Disponível: {Math.max(0, availableStock)} de {totalStock} unidades
-                                </p>
-                              );
+                          
                             })()}
                           </div>
                           <div className="flex items-center space-x-2">
