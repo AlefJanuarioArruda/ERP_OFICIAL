@@ -194,6 +194,12 @@ export const useSupabaseData = () => {
   const updateProduct = async (id: string, updates: Partial<Product>, imageFile?: File) => {
     if (!user) return
 
+    console.log('🔄 Iniciando atualização de produto:', {
+      product_id: id,
+      user_id: user.id,
+      updates: updates
+    })
+
     let imageUrl = updates.image_url
     
     // Handle image upload if new file provided
@@ -212,27 +218,46 @@ export const useSupabaseData = () => {
       imageUrl = uploadResult.url
     }
 
-    const { data, error } = await supabase
-      .from('products')
-      .update({
-        ...updates,
-        image_url: imageUrl
-      })
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select()
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .update({
+          ...updates,
+          image_url: imageUrl
+        })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single()
 
-    if (!error && data) {
+      if (error) {
+        console.error('❌ Erro do Supabase ao atualizar produto:', error)
+        return { data: null, error: error.message || 'Erro ao atualizar produto' }
+      }
+
+      if (!data) {
+        console.error('❌ Nenhum dado retornado após atualização do produto')
+        return { data: null, error: 'Nenhum produto foi atualizado' }
+      }
+
+      console.log('✅ Produto atualizado com sucesso:', {
+        product_id: data.id,
+        name: data.name,
+        new_stock: data.stock
+      })
+
       setProducts(prev => prev.map(p => p.id === id ? data : p))
       
       // Check if stock was updated and resolve insights if needed
       if (updates.stock !== undefined) {
         await checkAndResolveStockInsights(id, updates.stock);
       }
-    }
 
-    return { data, error }
+      return { data, error: null }
+    } catch (error) {
+      console.error('❌ Erro inesperado ao atualizar produto:', error)
+      return { data: null, error: 'Erro inesperado ao atualizar produto' }
+    }
   }
 
   const deleteProduct = async (id: string) => {
@@ -300,6 +325,12 @@ export const useSupabaseData = () => {
   const updateProductVariation = async (id: string, updates: Partial<ProductVariation>, imageFile?: File) => {
     if (!user) return
 
+    console.log('🔄 Iniciando atualização de variação de produto:', {
+      variation_id: id,
+      user_id: user.id,
+      updates: updates
+    })
+
     let imageUrl = updates.image_url
     
     // Handle image upload if new file provided
@@ -318,22 +349,40 @@ export const useSupabaseData = () => {
       imageUrl = uploadResult.url
     }
 
-    const { data, error } = await supabase
-      .from('product_variations')
-      .update({
-        ...updates,
-        image_url: imageUrl
+    try {
+      const { data, error } = await supabase
+        .from('product_variations')
+        .update({
+          ...updates,
+          image_url: imageUrl
+        })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('❌ Erro do Supabase ao atualizar variação:', error)
+        return { data: null, error: error.message || 'Erro ao atualizar variação' }
+      }
+
+      if (!data) {
+        console.error('❌ Nenhum dado retornado após atualização da variação')
+        return { data: null, error: 'Nenhuma variação foi atualizada' }
+      }
+
+      console.log('✅ Variação atualizada com sucesso:', {
+        variation_id: data.id,
+        name: data.variation_name,
+        new_stock: data.stock
       })
-      .eq('id', id)
-      .eq('user_id', user.id)
-      .select()
-      .single()
 
-    if (!error && data) {
       setProductVariations(prev => prev.map(v => v.id === id ? data : v))
+      return { data, error: null }
+    } catch (error) {
+      console.error('❌ Erro inesperado ao atualizar variação:', error)
+      return { data: null, error: 'Erro inesperado ao atualizar variação' }
     }
-
-    return { data, error }
   }
 
   const deleteProductVariation = async (id: string) => {
@@ -453,8 +502,40 @@ export const useSupabaseData = () => {
     payment_method: 'pix' | 'boleto' | 'card' | 'cash'
     payment_status: 'pending' | 'paid' | 'overdue'
     due_date?: string
+    total_cost?: number
   }) => {
     if (!user) return
+
+    console.log('🚀 Iniciando processo de venda:', {
+      customer: saleData.customer_name,
+      items_count: saleData.items.length,
+      total: saleData.total,
+      total_cost: saleData.total_cost
+    })
+
+    // Validação de estoque ANTES de criar a venda
+    console.log('📦 Validando estoque antes da venda...')
+    for (const item of saleData.items) {
+      if (!item.product_id) continue
+      
+      const product = products.find(p => p.id === item.product_id)
+      if (!product) {
+        console.error(`❌ Produto não encontrado: ${item.product_id}`)
+        return { data: null, error: `Produto ${item.product_name} não encontrado` }
+      }
+      
+      if (product.stock < item.quantity) {
+        console.error(`❌ Estoque insuficiente para ${product.name}:`, {
+          disponivel: product.stock,
+          solicitado: item.quantity
+        })
+        return { 
+          data: null, 
+          error: `Estoque insuficiente para ${product.name}. Disponível: ${product.stock}, Solicitado: ${item.quantity}` 
+        }
+      }
+    }
+    console.log('✅ Validação de estoque concluída - todos os produtos têm estoque suficiente')
 
     // Helper function to validate UUID format
     const isValidUUID = (uuid: string): boolean => {
@@ -464,8 +545,10 @@ export const useSupabaseData = () => {
 
     // Generate invoice number
     const invoiceNumber = `INV-${user.id.slice(0, 8)}-${String(sales.length + 1).padStart(3, '0')}`
+    console.log('📄 Número da fatura gerado:', invoiceNumber)
 
     // Insert sale
+    console.log('💾 Inserindo venda no banco de dados...')
     const { data: saleRecord, error: saleError } = await supabase
       .from('sales')
       .insert({
@@ -486,10 +569,13 @@ export const useSupabaseData = () => {
       .single()
 
     if (saleError || !saleRecord) {
+      console.error('❌ Erro ao inserir venda:', saleError)
       return { data: null, error: saleError }
     }
+    console.log('✅ Venda inserida com sucesso:', saleRecord.id)
 
     // Insert sale items
+    console.log('📝 Inserindo itens da venda...')
     const saleItemsToInsert = saleData.items.map(item => ({
       user_id: user.id,
       sale_id: saleRecord.id,
@@ -515,38 +601,83 @@ export const useSupabaseData = () => {
 
     if (!itemsError) {
       setSaleItems(prev => [...(itemsData || []), ...prev])
+      console.log('✅ Itens da venda inseridos com sucesso')
+    } else {
+      console.error('❌ Erro ao inserir itens da venda:', itemsError)
     }
 
-// Atualiza o estoque de forma segura
-for (const item of saleData.items) {
-  if (!item.product_id) continue;
+    // Atualizar estoque dos produtos vendidos
+    console.log('📦 Iniciando atualização de estoque para', saleData.items.length, 'itens...')
+    
+    for (const item of saleData.items) {
+      if (!item.product_id) {
+        console.warn('⚠️ Item sem product_id:', item.product_name)
+        continue
+      }
 
-  
-  // Produto é variação?
-  if (item.product_id.includes('-')) {
-    const [productId, variationId] = item.product_id.split('-');
-    const variation = productVariations.find(v => v.id === variationId);
-    if (variation) {
-      const newVariationStock = Math.max(variation.stock - item.quantity, 0);
-      await updateProductVariation(variationId, { stock: newVariationStock });
-      // Recalcula o estoque total do produto principal
-      await updateProductStockFromVariations(productId);
+      console.log(`📦 Processando item: ${item.product_name} (ID: ${item.product_id})`)
+      
+      const product = products.find(p => p.id === item.product_id)
+      if (!product) {
+        console.error(`❌ Produto não encontrado para atualização de estoque: ${item.product_id}`)
+        continue
+      }
+
+      const newStock = Math.max(product.stock - item.quantity, 0)
+      console.log(`📦 Atualizando estoque de ${product.name}:`, {
+        estoque_anterior: product.stock,
+        quantidade_vendida: item.quantity,
+        novo_estoque: newStock
+      })
+
+      try {
+        const updateResult = await updateProduct(item.product_id, { stock: newStock })
+        if (updateResult?.error) {
+          console.error(`❌ Erro ao atualizar estoque do produto ${product.name}:`, updateResult.error)
+        } else {
+          console.log(`✅ Estoque atualizado com sucesso para ${product.name}`)
+        }
+      } catch (error) {
+        console.error(`❌ Erro inesperado ao atualizar estoque do produto ${product.name}:`, error)
+      }
     }
-  } else {
-    // Produto normal
-    const product = products.find(p => p.id === item.product_id);
-    if (product) {
-      const newProductStock = Math.max(product.stock - item.quantity, 0);
-      await updateProduct(item.product_id, { stock: newProductStock });
+    
+    console.log('✅ Atualização de estoque concluída')
+
+    // Criar registro de despesa baseado no custo dos produtos vendidos
+    if (saleData.total_cost && saleData.total_cost > 0) {
+      console.log('💰 Criando registro de despesa para custo dos produtos vendidos:', saleData.total_cost)
+      
+      const expenseData = {
+        type: 'expense' as const,
+        category: 'Custo dos Produtos Vendidos',
+        amount: saleData.total_cost,
+        description: `Custo dos produtos vendidos - ${saleData.customer_name} (${invoiceNumber})`,
+        status: 'paid' as const,
+        due_date: new Date().toISOString(),
+        paid_date: new Date().toISOString(),
+        customer_id: saleData.customer_id,
+        sale_id: saleRecord.id
+      }
+      
+      try {
+        const expenseResult = await addFinancialRecord(expenseData)
+        if (expenseResult?.error) {
+          console.error('❌ Erro ao criar registro de despesa:', expenseResult.error)
+        } else {
+          console.log('✅ Registro de despesa criado com sucesso')
+        }
+      } catch (error) {
+        console.error('❌ Erro inesperado ao criar registro de despesa:', error)
+      }
     }
-  }
-}
 
     // Update customer total purchases (only if customer is selected)
     if (saleData.customer_id) {
+      console.log('👤 Atualizando total de compras do cliente...')
       const customer = customers.find(c => c.id === saleData.customer_id)
       if (customer) {
-        await supabase
+        const customerUpdateResult = await supabase
           .from('customers')
           .update({
             total_purchases: customer.total_purchases + saleData.total,
@@ -554,10 +685,17 @@ for (const item of saleData.items) {
           })
           .eq('id', saleData.customer_id)
           .eq('user_id', user.id)
+        
+        if (customerUpdateResult.error) {
+          console.error('❌ Erro ao atualizar dados do cliente:', customerUpdateResult.error)
+        } else {
+          console.log('✅ Dados do cliente atualizados com sucesso')
+        }
       }
     }
 
     // Create financial record
+    console.log('💰 Criando registro financeiro de receita...')
     await addFinancialRecord({
       type: 'income',
       category: 'Vendas',
@@ -573,10 +711,14 @@ for (const item of saleData.items) {
     setSales(prev => [saleRecord, ...prev])
     
     // Generate AI insights
+    console.log('🤖 Gerando insights de IA...')
     await generateSaleInsight(saleRecord, saleData.items)
 
-    // Force refresh all data to ensure stock updates are reflected
+    // Forçar atualização de todos os dados para garantir que as mudanças sejam refletidas
+    console.log('🔄 Atualizando todos os dados do usuário...')
     await fetchUserData()
+    console.log('✅ Processo de venda concluído com sucesso!')
+    
     return { data: saleRecord, error: null }
   }
 
