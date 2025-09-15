@@ -44,7 +44,7 @@ export const Sales: React.FC = () => {
     customer.email.toLowerCase().includes(customerSearchTerm.toLowerCase())
   );
 
- // Função para adicionar produto simples à venda
+ // Adicionar produto simples
 const addItemToSale = (productId: string) => {
   const product = products.find(p => p.id === productId);
   if (!product) return;
@@ -52,7 +52,7 @@ const addItemToSale = (productId: string) => {
   const existingItem = selectedItems.find(item => item.product_id === productId);
 
   if (existingItem) {
-    // 🚨 Bloqueia quando atingir estoque máximo
+    // 🚨 Bloqueia acima do estoque
     if (existingItem.quantity >= product.stock) {
       alert("Estoque máximo atingido!");
       return;
@@ -80,7 +80,7 @@ const addItemToSale = (productId: string) => {
   }
 };
 
-// Função para adicionar variação à venda
+// Adicionar variação
 const addVariationToSale = (variation: any) => {
   const product = products.find(p => p.id === variation.product_id);
   if (!product) return;
@@ -118,23 +118,25 @@ const addVariationToSale = (variation: any) => {
 
 // Atualizar quantidade manualmente (input)
 const updateItemQuantity = (productId: string, quantity: number) => {
-  if (quantity < 1) return;
+  if (!quantity || quantity < 1) quantity = 1;
 
   setSelectedItems(selectedItems.map(item => {
     if (item.product_id === productId) {
-      // Detecta se é variação ou produto
+      // Detecta se é variação ou produto simples
       const [baseId, variationId] = productId.split("-");
       let stock = 0;
 
       if (variationId) {
-        const variation = products.find(p => p.id === baseId)?.variations?.find((v: any) => v.id === variationId);
+        const variation = products
+          .find(p => p.id === baseId)
+          ?.variations?.find((v: any) => v.id === variationId);
         stock = variation?.stock || 0;
       } else {
         const product = products.find(p => p.id === productId);
         stock = product?.stock || 0;
       }
 
-      // 🚨 Impede valor maior que o estoque
+      // 🚨 Não deixa ultrapassar o estoque
       if (quantity > stock) {
         alert("Quantidade não pode ultrapassar o estoque!");
         return { ...item, quantity: stock, total: stock * item.unit_price };
@@ -145,6 +147,7 @@ const updateItemQuantity = (productId: string, quantity: number) => {
     return item;
   }));
 };
+
   const calculateTotal = () => {
     const subtotal = selectedItems.reduce((sum, item) => sum + item.total, 0);
     let discount = 0;
