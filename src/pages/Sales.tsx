@@ -246,29 +246,6 @@ const updateItemQuantity = (productId: string, quantity: number) => {
     
     if (selectedItems.length === 0) return;
 
-    // Validate stock availability before processing sale
-    for (const item of selectedItems) {
-      if (item.product_id) {
-        let availableStock = 0;
-        
-        if (item.product_id.includes('-')) {
-          // It's a variation
-          const [mainProductId, variationId] = item.product_id.split('-');
-          const variations = getVariationsForProduct(mainProductId);
-          const variation = variations.find(v => v.id === variationId);
-          availableStock = variation ? variation.stock : 0;
-        } else {
-          // It's a regular product
-          const product = products.find(p => p.id === item.product_id);
-          availableStock = product ? product.stock : 0;
-        }
-        
-        if (item.quantity > availableStock) {
-          alert(`Estoque insuficiente para ${item.product_name}. Disponível: ${availableStock}, Solicitado: ${item.quantity}`);
-          return;
-        }
-      }
-    }
     let customerData = {
       customer_id: null as string | null,
       customer_name: 'Venda Direta'
@@ -300,12 +277,7 @@ const updateItemQuantity = (productId: string, quantity: number) => {
       due_date: new Date().toISOString()
     };
 
-    const result = await addSale(saleData);
-    
-    if (result && result.error) {
-      alert(`Erro ao finalizar venda: ${result.error}`);
-      return;
-    }
+    await addSale(saleData);
     
     resetForm();
   };
@@ -578,14 +550,10 @@ const updateItemQuantity = (productId: string, quantity: number) => {
                                 <button
                                   key={customer.id}
                                   type="button"
+                                  onClick={() => handleCustomerSelect(customer.id, customer.name)}
                                   className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center"
-                                  className={`px-3 py-1 text-sm rounded transition-colors ${
-                                    product.stock === 0
-                                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                                  }`}
                                 >
-                                  {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
+                                  <User className="w-4 h-4 mr-3 text-gray-400" />
                                   <div>
                                     <div className="font-medium text-gray-900">{customer.name}</div>
                                     <div className="text-sm text-gray-500">{customer.email} • {customer.document}</div>
@@ -782,14 +750,10 @@ const updateItemQuantity = (productId: string, quantity: number) => {
                                     <button
                                       type="button"
                                       onClick={() => addVariationToSale(variation)}
+                                      className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
                                       disabled={variation.stock === 0}
-                                      className={`px-2 py-1 text-xs rounded transition-colors ${
-                                        variation.stock === 0
-                                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                                      }`}
                                     >
-                                      {variation.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
+                                      Adicionar
                                     </button>
                                   </div>
                                 ))}
