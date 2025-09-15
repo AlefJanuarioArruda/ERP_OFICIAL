@@ -504,13 +504,11 @@ export const Sales: React.FC = () => {
                             onClick={handleDirectSale}
                             className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center"
                           >
-                            <>
-                              return product.stock <= 0;
-                              <div>
-                                <div className="font-medium text-gray-900">Venda Direta (sem cliente)</div>
-                                <div className="text-sm text-gray-500">Venda anônima sem vínculo com cliente</div>
-                              </div>
-                            </>
+                            <ShoppingCart className="w-4 h-4 mr-3 text-gray-400" />
+                            <div>
+                              <div className="font-medium text-gray-900">Venda Direta (sem cliente)</div>
+                              <div className="text-sm text-gray-500">Venda anônima sem vínculo com cliente</div>
+                            </div>
                           </button>
                           
                           {/* Customer List */}
@@ -812,7 +810,8 @@ export const Sales: React.FC = () => {
                               type="button"
                               onClick={() => {
                                 if (item.product_id) {
-                              if (product.stock <= 0) return 'Sem Estoque';
+                                  updateItemQuantity(item.product_id, item.quantity - 1);
+                                }
                               }}
                               disabled={item.quantity <= 1}
                               className="w-6 h-6 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
