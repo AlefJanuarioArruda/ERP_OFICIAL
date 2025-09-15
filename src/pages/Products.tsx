@@ -593,29 +593,7 @@ export const Products: React.FC = () => {
                 </div>
               )}
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12">
-          <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum produto encontrado</h3>
-          <p className="text-gray-600 mb-6">
-            {searchTerm ? 'Tente ajustar sua busca' : 'Comece adicionando seu primeiro produto'}
-          </p>
-          {!searchTerm && (
-            <button
-              onClick={handleAddProduct}
-              disabled={!usageStatus.canAdd.products}
-              className={`inline-flex items-center px-4 py-2 rounded-lg transition-colors ${
-                usageStatus.canAdd.products
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Produto
-            </button>
-          )}
+          </div>
         </div>
       )}
 
