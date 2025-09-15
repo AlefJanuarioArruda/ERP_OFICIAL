@@ -103,6 +103,7 @@ export const Sales: React.FC = () => {
       setSelectedItems([...selectedItems, newItem]);
     }
   };
+  
   const removeItemFromSale = (productId: string) => {
     setSelectedItems(selectedItems.filter(item => item.product_id !== productId));
   };
@@ -197,7 +198,6 @@ export const Sales: React.FC = () => {
     // Note: deleteSale function needs to be implemented in useSupabaseData
     // For now, we'll show a message that this feature is coming soon
     alert('Funcionalidade de exclusão de vendas em desenvolvimento');
-    setShowDeleteConfirm(null);
   };
 
   const handleCustomerSelect = (customerId: string, customerName: string) => {
@@ -642,6 +642,7 @@ export const Sales: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                
                 {/* Product Selection */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Produtos</label>
@@ -800,9 +801,13 @@ export const Sales: React.FC = () => {
                                 availableStock = totalStock;
                               }
                               
-                          
-                            })()}
+                              return (
+                                <p className="text-xs text-gray-500">
                                   Disponível: {Math.max(0, availableStock - item.quantity)} de {totalStock} unidades
+                                </p>
+                              );
+                            })()}
+                          </div>
                           <div className="flex items-center space-x-2">
                             <button
                               type="button"
