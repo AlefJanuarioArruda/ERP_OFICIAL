@@ -134,18 +134,9 @@ export const useUsageLimits = (): UsageStatus => {
       }
     };
 
-    // Usuários gratuitos NÃO podem editar/excluir quando atingem o limite ESPECÍFICO de cada seção
-    const canEdit = {
-      products: !isLimitReached.products,
-      customers: !isLimitReached.customers,
-      sales: !isLimitReached.sales
-    };
-    
-    const canDelete = {
-      products: !isLimitReached.products,
-      customers: !isLimitReached.customers,
-      sales: !isLimitReached.sales
-    };
+    // Usuários gratuitos PODEM editar e excluir sempre (incluindo variações)
+    const canEdit = true;
+    const canDelete = true;
 
     const showLimitMessage = {
       products: isLimitReached.products,
