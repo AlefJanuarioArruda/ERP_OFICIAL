@@ -3,16 +3,6 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
 import type { Product, Customer, Sale, SaleItem, FinancialRecord, AIInsight, ProductVariation } from '../lib/supabase'
 
-// Define a local type for sale items that includes cost_price for internal calculations
-interface SaleItemForProcessing {
-  product_id: string; // Can be composite for variations (e.g., "parentID-variationID")
-  product_name: string;
-  quantity: number;
-  unit_price: number;
-  total: number;
-  cost_price: number; // Added for internal calculation
-}
-
 export const useSupabaseData = () => {
   const { user } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
@@ -496,9 +486,15 @@ export const useSupabaseData = () => {
   
   // Sale operations
   const addSale = async (saleData: {
-    customer_id: string | null;
-    customer_name: string;
-    items: Array<SaleItemForProcessing>; // Use the new type here
+    customer_id: string | null
+    customer_name: string
+    items: Array<{
+      product_id: string | null
+      product_name: string
+      quantity: number
+      unit_price: number
+      total: number
+    }>
     total: number
     subtotal: number
     discount: number
@@ -510,9 +506,6 @@ export const useSupabaseData = () => {
   }) => {
     if (!user) return
 
-    // Refresh all user data to ensure we have the latest products and variations
-    await fetchUserData()
-
     console.log('🚀 Iniciando processo de venda:', {
       customer: saleData.customer_name,
       items_count: saleData.items.length,
@@ -520,52 +513,35 @@ export const useSupabaseData = () => {
       total_cost: saleData.total_cost
     })
 
-    // Validação de estoque ANTES de criar a venda (produtos e variações)
+    // Validação de estoque ANTES de criar a venda
     console.log('📦 Validando estoque antes da venda...')
     for (const item of saleData.items) {
       if (!item.product_id) continue
-
-      // Check if it's a variation (format: productId-variationId)
-      if (item.product_id.includes('-')) {
-        const [productId, variationId] = item.product_id.split('-')
-        const variation = productVariations.find(v => v.id === variationId && v.product_id === productId)
-        
-        if (!variation) {
-          console.error(`❌ Variação não encontrada: ${item.product_id}`)
-          return { data: null, error: `Variação ${item.product_name} não encontrada` }
-        }
-        
-        if (variation.stock < item.quantity) {
-          console.error(`❌ Estoque insuficiente para variação ${variation.variation_name}:`, {
-            disponivel: variation.stock, solicitado: item.quantity
-          });
-
-          return { 
-            data: null, 
-            error: `Estoque insuficiente para ${variation.variation_name}. Disponível: ${variation.stock}, Solicitado: ${item.quantity}` 
-          }
-        }
-      } else {
-        // Main product
-        const product = products.find(p => p.id === item.product_id)
-        if (!product) {
-          console.error(`❌ Produto não encontrado: ${item.product_id}`)
-          return { data: null, error: `Produto ${item.product_name} não encontrado` }
-        }
-        
-        if (product.stock < item.quantity) {
-          console.error(`❌ Estoque insuficiente para ${product.name}:`, {
-            disponivel: product.stock, solicitado: item.quantity
-          });
-
-          return { 
-            data: null, 
-            error: `Estoque insuficiente para ${product.name}. Disponível: ${product.stock}, Solicitado: ${item.quantity}` 
-          }
+      
+      const product = products.find(p => p.id === item.product_id)
+      if (!product) {
+        console.error(`❌ Produto não encontrado: ${item.product_id}`)
+        return { data: null, error: `Produto ${item.product_name} não encontrado` }
+      }
+      
+      if (product.stock < item.quantity) {
+        console.error(`❌ Estoque insuficiente para ${product.name}:`, {
+          disponivel: product.stock,
+          solicitado: item.quantity
+        })
+        return { 
+          data: null, 
+          error: `Estoque insuficiente para ${product.name}. Disponível: ${product.stock}, Solicitado: ${item.quantity}` 
         }
       }
     }
-    console.log('✅ Validação de estoque concluída - todos os produtos/variações têm estoque suficiente')
+    console.log('✅ Validação de estoque concluída - todos os produtos têm estoque suficiente')
+
+    // Helper function to validate UUID format
+    const isValidUUID = (uuid: string): boolean => {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(uuid);
+    }
 
     // Generate invoice number
     const invoiceNumber = `INV-${user.id.slice(0, 8)}-${String(sales.length + 1).padStart(3, '0')}`
@@ -603,7 +579,15 @@ export const useSupabaseData = () => {
     const saleItemsToInsert = saleData.items.map(item => ({
       user_id: user.id,
       sale_id: saleRecord.id,
-      product_id: item.product_id?.includes('-') ? item.product_id.split('-')[0] : item.product_id,
+      product_id: (() => {
+        if (!item.product_id) return null;
+        
+        // Extract main product ID if it's a variation (contains hyphen)
+        const extractedId = item.product_id.includes('-') ? item.product_id.split('-')[0] : item.product_id;
+        
+        // Validate UUID format
+        return isValidUUID(extractedId) ? extractedId : null;
+      })(),
       product_name: item.product_name,
       quantity: item.quantity,
       unit_price: item.unit_price,
@@ -622,7 +606,7 @@ export const useSupabaseData = () => {
       console.error('❌ Erro ao inserir itens da venda:', itemsError)
     }
 
-    // Atualizar estoque dos produtos/variações vendidos
+    // Atualizar estoque dos produtos vendidos
     console.log('📦 Iniciando atualização de estoque para', saleData.items.length, 'itens...')
     
     for (const item of saleData.items) {
@@ -631,61 +615,30 @@ export const useSupabaseData = () => {
         continue
       }
 
-      // Check if it's a variation (format: productId-variationId)
-      if (item.product_id.includes('-')) {
-        const [productId, variationId] = item.product_id.split('-')
-        console.log(`📦 Processando variação: ${item.product_name} (Product: ${productId}, Variation: ${variationId})`)
-        
-        const variation = productVariations.find(v => v.id === variationId && v.product_id === productId)
-        if (!variation) {
-          console.error(`❌ Variação não encontrada para atualização de estoque: ${item.product_id}`)
-          continue
-        }
+      console.log(`📦 Processando item: ${item.product_name} (ID: ${item.product_id})`)
+      
+      const product = products.find(p => p.id === item.product_id)
+      if (!product) {
+        console.error(`❌ Produto não encontrado para atualização de estoque: ${item.product_id}`)
+        continue
+      }
 
-        const newVariationStock = Math.max(variation.stock - item.quantity, 0)
-        console.log(`📦 Atualizando estoque da variação ${variation.variation_name}:`, {
-          estoque_anterior: variation.stock,
-          quantidade_vendida: item.quantity,
-          novo_estoque: newVariationStock
-        })
+      const newStock = Math.max(product.stock - item.quantity, 0)
+      console.log(`📦 Atualizando estoque de ${product.name}:`, {
+        estoque_anterior: product.stock,
+        quantidade_vendida: item.quantity,
+        novo_estoque: newStock
+      })
 
-        try {
-          const updateResult = await updateProductVariation(variationId, { stock: newVariationStock })
-          if (updateResult?.error) {
-            console.error(`❌ Erro ao atualizar estoque da variação ${variation.variation_name}:`, updateResult.error)
-          } else {
-            console.log(`✅ Estoque da variação atualizado com sucesso para ${variation.variation_name}`)
-          }
-        } catch (error) {
-          console.error(`❌ Erro inesperado ao atualizar estoque da variação ${variation.variation_name}:`, error)
+      try {
+        const updateResult = await updateProduct(item.product_id, { stock: newStock })
+        if (updateResult?.error) {
+          console.error(`❌ Erro ao atualizar estoque do produto ${product.name}:`, updateResult.error)
+        } else {
+          console.log(`✅ Estoque atualizado com sucesso para ${product.name}`)
         }
-      } else {
-        // Main product
-        console.log(`📦 Processando produto principal: ${item.product_name} (ID: ${item.product_id})`)
-        
-        const product = products.find(p => p.id === item.product_id)
-        if (!product) {
-          console.error(`❌ Produto não encontrado para atualização de estoque: ${item.product_id}`)
-          continue
-        }
-
-        const newStock = Math.max(product.stock - item.quantity, 0)
-        console.log(`📦 Atualizando estoque de ${product.name}:`, {
-          estoque_anterior: product.stock,
-          quantidade_vendida: item.quantity,
-          novo_estoque: newStock
-        })
-
-        try {
-          const updateResult = await updateProduct(item.product_id, { stock: newStock })
-          if (updateResult?.error) {
-            console.error(`❌ Erro ao atualizar estoque do produto ${product.name}:`, updateResult.error)
-          } else {
-            console.log(`✅ Estoque atualizado com sucesso para ${product.name}`)
-          }
-        } catch (error) {
-          console.error(`❌ Erro inesperado ao atualizar estoque do produto ${product.name}:`, error)
-        }
+      } catch (error) {
+        console.error(`❌ Erro inesperado ao atualizar estoque do produto ${product.name}:`, error)
       }
     }
     
