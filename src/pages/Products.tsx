@@ -17,7 +17,8 @@ export const Products: React.FC = () => {
     updateProductVariation,
     deleteProductVariation,
     uploadProductImage,
-    loading 
+    loading,
+    dataFetchError
   } = useSupabaseData();
   
   const usageStatus = useUsageLimits();
