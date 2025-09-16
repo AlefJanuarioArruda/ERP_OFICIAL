@@ -1,4 +1,4 @@
-Tenho esse codigo: import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Plus, Search, ShoppingCart, FileText, CreditCard, Clock, CheckCircle, XCircle, User, Crown, X, Package, AlertTriangle, Minus, Grid, Palette, Ruler } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useUsageLimits } from '../hooks/useUsageLimits';
@@ -1197,16 +1197,3 @@ export const Sales: React.FC = () => {
     </div>
   );
 };
-
-
-
-Esse errors aqui: chunk-6VWAHX6D.js?v=b9d1f023:3750 Uncaught TypeError: Cannot read properties of undefined (reading 'find')
-    at addItemToSale (Sales.tsx:97:43)
-    at onClick (Sales.tsx:1037:55)
-addItemToSale	@	Sales.tsx:97
-onClick	@	Sales.tsx:1037
-Sales.tsx:97 Uncaught TypeError: Cannot read properties of undefined (reading 'find')
-    at addItemToSale (Sales.tsx:97:43)
-    at onClick (Sales.tsx:1037:55)
-addItemToSale	@	Sales.tsx:97
-onClick	@	Sales.tsx:1037
