@@ -13,15 +13,18 @@ export const useSupabaseData = () => {
   const [productVariations, setProductVariations] = useState<ProductVariation[]>([])
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([])
   const [loading, setLoading] = useState(true)
+  const [dataFetchError, setDataFetchError] = useState<string | null>(null)
 
   // Fetch all user data
   const fetchUserData = async () => {
     if (!user) {
       setLoading(false)
+      setDataFetchError(null)
       return
     }
 
     setLoading(true)
+    setDataFetchError(null)
     
     try {
       // Fetch products
@@ -82,6 +85,7 @@ export const useSupabaseData = () => {
       setAiInsights(insightsData || [])
     } catch (error) {
       console.error('Error fetching user data:', error)
+      setDataFetchError('Erro ao carregar dados. Tente novamente.')
     } finally {
       setLoading(false)
     }
@@ -1140,6 +1144,7 @@ export const useSupabaseData = () => {
     financialRecords,
     aiInsights,
     loading,
+    dataFetchError,
     
     // Operations
     addProduct,
