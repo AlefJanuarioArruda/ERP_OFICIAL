@@ -41,6 +41,8 @@ export const Sales: React.FC = () => {
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
 
+  // ROLAGEM
+  const variationRefs = React.useRef<Map<string, HTMLDivElement | null>>(new Map());
   // Utility function to get stock status
   const getStockStatus = (stock: number, minStock: number = 5) => {
     if (stock === 0) {
@@ -84,14 +86,32 @@ export const Sales: React.FC = () => {
     product.category.toLowerCase().includes(productSearchTerm.toLowerCase())
   );
 
-  const toggleProductExpansion = (productId: string) => {
+ const toggleProductExpansion = (productId: string) => {
     const newExpanded = new Set(expandedProducts);
-    if (newExpanded.has(productId)) {
+    const isCurrentlyExpanded = newExpanded.has(productId);
+
+    if (isCurrentlyExpanded) {
       newExpanded.delete(productId);
     } else {
       newExpanded.add(productId);
     }
+
     setExpandedProducts(newExpanded);
+
+    // Se o produto FOI ADICIONADO (ou seja, não estava expandido antes)
+    if (!isCurrentlyExpanded) {
+      // Usamos setTimeout para dar tempo ao React de renderizar o elemento
+      // antes de tentarmos rolar para ele.
+      setTimeout(() => {
+        const variationElement = variationRefs.current.get(productId);
+        if (variationElement) {
+          variationElement.scrollIntoView({
+            behavior: 'smooth', // Rolagem suave
+            block: 'nearest',   // Rola o mínimo necessário para o elemento aparecer
+          });
+        }
+      }, 100); // Um pequeno delay de 100ms é seguro
+    }
   };
 
   const showNotification = (type: 'success' | 'error', message: string) => {
@@ -907,7 +927,10 @@ export const Sales: React.FC = () => {
 
                               {/* Variations */}
                               {variations.length > 0 && isExpanded && (
-                                <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-t-2 border-purple-200 p-4">
+                                <div 
+                                  //rolagem
+                                  ref={(el) => variationRefs.current.set(product.id, el)}
+                                  className="bg-gradient-to-br from-purple-50 to-purple-100 border-t-2 border-purple-200 p-4">
                                   <h6 className="text-sm font-medium text-purple-900 mb-3 flex items-center">
                                     <Grid className="w-4 h-4 mr-2" />
                                     Variações Disponíveis ({variations.length})
