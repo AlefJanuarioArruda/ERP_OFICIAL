@@ -16,6 +16,7 @@ export const Sales: React.FC = () => {
   const [currentSaleItems, setCurrentSaleItems] = useState<SaleItem[]>([]);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<Array<{
     product_id: string | null
     variation_id?: string | null
