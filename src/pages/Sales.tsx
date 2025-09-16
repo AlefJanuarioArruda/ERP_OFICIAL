@@ -817,7 +817,8 @@ export const Sales: React.FC = () => {
                   </div>
 
                   {/* Middle Column - Products Selection */}
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border-2 border-green-200 shadow-sm">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl border-2 border-green-200 shadow-sm w-full max-w-5xl mx-auto">
+
                     <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
                       <Package className="w-5 h-5 mr-2" />
                       Produtos Disponíveis
