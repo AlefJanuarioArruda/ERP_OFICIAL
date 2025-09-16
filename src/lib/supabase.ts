@@ -120,18 +120,3 @@ export interface ProductVariation {
   created_at: string
   updated_at: string
 }
-
-export interface ProductVariation {
-  id: string
-  user_id: string
-  product_id: string
-  variation_name: string
-  color: string | null
-  size: string | null
-  sku: string
-  stock: number
-  price: number | null
-  image_url: string | null
-  created_at: string
-  updated_at: string
-}

@@ -845,33 +845,58 @@ export const useSupabaseData = () => {
 
     // Check for low stock and generate insights
     for (const item of items) {
-      if (item.product_id) {
-        // Extract main product ID if it's a variation
-        const mainProductId = item.product_id.includes('-') ? item.product_id.split('-')[0] : item.product_id;
-        const product = products.find(p => p.id === mainProductId);
-        
-        if (product) {
-          // Calculate new stock after sale
-          let newStock = product.stock - item.quantity;
+      if (!item.product_id) continue;
+      
+      if (item.variation_id) {
+        // Check variation stock
+        const variation = productVariations.find(v => v.id === item.variation_id);
+        if (variation) {
+          const newStock = variation.stock - item.quantity;
           
-          // If it's a variation, get the variation's stock instead
-          if (item.product_id.includes('-')) {
-            const variationId = item.product_id.split('-')[1];
-            const variation = productVariations.find(v => v.id === variationId);
-            if (variation) {
-              newStock = variation.stock - item.quantity;
-            }
-          }
-          
-          if (newStock <= product.min_stock) {
-            // Check if we already have a low stock insight for this product
+          if (newStock <= 1) { // Low stock threshold for variations
             const existingInsight = aiInsights.find(insight => 
               insight.category === 'inventory' && 
-              insight.data?.product_id === mainProductId &&
+              insight.data?.variation_id === item.variation_id &&
               !insight.is_read
             );
             
-            // Only create new insight if one doesn't exist
+            if (!existingInsight) {
+              const lowStockInsight = {
+                user_id: user.id,
+                type: 'alert' as const,
+                title: 'Estoque Baixo de Variação',
+                description: `A variação "${variation.variation_name}" do produto "${item.product_name}" ficou com estoque baixo após a venda.`,
+                priority: 'high' as const,
+                category: 'inventory' as const,
+                data: { product_id: item.product_id, variation_id: item.variation_id, current_stock: newStock },
+                is_read: false
+              };
+
+              const { data: lowStockData } = await supabase
+                .from('ai_insights')
+                .insert(lowStockInsight)
+                .select()
+                .single();
+
+              if (lowStockData) {
+                setAiInsights(prev => [lowStockData, ...prev]);
+              }
+            }
+          }
+        }
+      } else {
+        // Check main product stock
+        const product = products.find(p => p.id === item.product_id);
+        if (product) {
+          const newStock = product.stock - item.quantity;
+          
+          if (newStock <= product.min_stock) {
+            const existingInsight = aiInsights.find(insight => 
+              insight.category === 'inventory' && 
+              insight.data?.product_id === item.product_id &&
+              !insight.is_read
+            );
+            
             if (!existingInsight) {
               const lowStockInsight = {
                 user_id: user.id,
@@ -880,7 +905,7 @@ export const useSupabaseData = () => {
                 description: `O produto "${item.product_name}" ficou com estoque baixo após a venda. Considere reabastecer.`,
                 priority: 'high' as const,
                 category: 'inventory' as const,
-                data: { product_id: mainProductId, current_stock: newStock },
+                data: { product_id: item.product_id, current_stock: newStock },
                 is_read: false
               };
 
