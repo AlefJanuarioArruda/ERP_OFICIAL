@@ -88,129 +88,140 @@ export const Sales: React.FC = () => {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  const addItemToSale = (productId: string, variationId?: string) => {
-    let itemData;
-    let itemKey;
+const addItemToSale = (productId: string, variationId?: string) => {
+  let itemData;
+  let itemKey;
 
-    if (variationId) {
-      // Adding a product variation
-      const variation = productVariations.find(v => v.id === variationId);
-      const product = products.find(p => p.id === productId);
-      
-      if (!variation || !product) {
-        console.log('Erro: Variação ou produto não encontrado', { productId, variationId, variationFound: !!variation, productFound: !!product });
-        showNotification('error', 'Variação não encontrada');
-        return;
-      }
-
-      if (variation.stock <= 0) {
-        console.log('Erro: Estoque insuficiente para variação', { variationId, stock: variation.stock });
-        showNotification('error', `${variation.variation_name} está sem estoque`);
-        return;
-      }
-
-      itemKey = `${productId}-${variationId}`;
-      itemData = {
-        product_id: productId,
-        variation_id: variationId,
-        product_name: product.name,
-        variation_name: variation.variation_name,
-        quantity: 1,
-        unit_price: variation.price || product.price,
-        cost_price: product.cost_price,
-        total: variation.price || product.price,
-        available_stock: variation.stock,
-        color: variation.color,
-        size: variation.size
-      };
-
-      console.log('Preparando itemData para variação:', itemData);
-
-      const existingItem = selectedItems.find(item => 
-        variationId ? 
-          (item.product_id === productId && item.variation_id === variationId) :
-          (item.product_id === productId && !item.variation_id)
-      );
-      
-      if (existingItem) {
-        console.log('Item existente encontrado, atualizando quantidade de', existingItem.quantity, 'para', existingItem.quantity + 1);
-        if (existingItem.quantity >= itemData.available_stock) {
-          showNotification('error', `Estoque máximo para ${itemData.variation_name || itemData.product_name} atingido (${itemData.available_stock} unidades)`);
-          return;
-        }
-        
-        setSelectedItems(selectedItems.map(item =>
-          (variationId ? 
-            (item.product_id === productId && item.variation_id === variationId) :
-            (item.product_id === productId && !item.variation_id)
-          ) ? { 
-            ...item, 
-            quantity: item.quantity + 1, 
-            total: (item.quantity + 1) * item.unit_price 
-          } : item
-        ));
-      } else {
-        console.log('Novo item de variação, adicionando. Comprimento atual do selectedItems:', selectedItems.length);
-        setSelectedItems([...selectedItems, itemData]);
-      }
-    } else {
-      // Adding a main product
-      const product = products.find(p => p.id === productId);
-      if (!product) {
-        console.log('Erro: Produto principal não encontrado', { productId });
-        showNotification('error', 'Produto não encontrado');
-        return;
-      }
-
-      if (product.stock <= 0) {
-        console.log('Erro: Estoque insuficiente para produto principal', { productId, stock: product.stock });
-        showNotification('error', `${product.name} está sem estoque`);
-        return;
-      }
-
-      itemKey = productId;
-      itemData = {
-        product_id: productId,
-        product_name: product.name,
-        quantity: 1,
-        unit_price: product.price,
-        cost_price: product.cost_price,
-        total: product.price,
-        available_stock: product.stock
-      };
-
-      console.log('Preparando itemData para produto principal:', itemData);
-
-      const existingItem = selectedItems.find(item => 
-        variationId ? 
-          (item.product_id === productId && item.variation_id === variationId) :
-          (item.product_id === productId && !item.variation_id)
-      );
-      
-      if (existingItem) {
-        console.log('Item existente encontrado, atualizando quantidade de', existingItem.quantity, 'para', existingItem.quantity + 1);
-        if (existingItem.quantity >= itemData.available_stock) {
-          showNotification('error', `Estoque máximo para ${itemData.variation_name || itemData.product_name} atingido (${itemData.available_stock} unidades)`);
-          return;
-        }
-        
-        setSelectedItems(selectedItems.map(item =>
-          (variationId ? 
-            (item.product_id === productId && item.variation_id === variationId) :
-            (item.product_id === productId && !item.variation_id)
-          ) ? { 
-            ...item, 
-            quantity: item.quantity + 1, 
-            total: (item.quantity + 1) * item.unit_price 
-          } : item
-        ));
-      } else {
-        console.log('Novo item de produto principal, adicionando. Comprimento atual do selectedItems:', selectedItems.length);
-        setSelectedItems([...selectedItems, itemData]);
-      }
+  if (variationId) {
+    // Adding a product variation
+    if (!productVariations || !products) {
+      console.error('Erro: productVariations ou products não estão definidos', { productVariations, products });
+      showNotification('error', 'Dados de produtos ou variações não disponíveis');
+      return;
     }
-  };
 
+    const variation = productVariations.find(v => v.id === variationId);
+    const product = products.find(p => p.id === productId);
+
+    if (!variation || !product) {
+      console.error('Erro: Variação ou produto não encontrado', { productId, variationId, variationFound: !!variation, productFound: !!product });
+      showNotification('error', 'Variação ou produto não encontrado');
+      return;
+    }
+
+    if (variation.stock <= 0) {
+      console.error('Erro: Estoque insuficiente para variação', { variationId, stock: variation.stock });
+      showNotification('error', `${variation.variation_name} está sem estoque`);
+      return;
+    }
+
+    itemKey = `${productId}-${variationId}`;
+    itemData = {
+      product_id: productId,
+      variation_id: variationId,
+      product_name: product.name,
+      variation_name: variation.variation_name,
+      quantity: 1,
+      unit_price: variation.price || product.price,
+      cost_price: product.cost_price,
+      total: variation.price || product.price,
+      available_stock: variation.stock,
+      color: variation.color,
+      size: variation.size
+    };
+
+    console.log('Preparando itemData para variação:', itemData);
+
+    const existingItem = selectedItems.find(item => 
+      variationId ? 
+        (item.product_id === productId && item.variation_id === variationId) :
+        (item.product_id === productId && !item.variation_id)
+    );
+
+    if (existingItem) {
+      console.log('Item existente encontrado, atualizando quantidade de', existingItem.quantity, 'para', existingItem.quantity + 1);
+      if (existingItem.quantity >= itemData.available_stock) {
+        showNotification('error', `Estoque máximo para ${itemData.variation_name || itemData.product_name} atingido (${itemData.available_stock} unidades)`);
+        return;
+      }
+      
+      setSelectedItems(selectedItems.map(item =>
+        (variationId ? 
+          (item.product_id === productId && item.variation_id === variationId) :
+          (item.product_id === productId && !item.variation_id)
+        ) ? { 
+          ...item, 
+          quantity: item.quantity + 1, 
+          total: (item.quantity + 1) * item.unit_price 
+        } : item
+      ));
+    } else {
+      console.log('Novo item de variação, adicionando. Comprimento atual do selectedItems:', selectedItems.length);
+      setSelectedItems([...selectedItems, itemData]);
+    }
+  } else {
+    // Adding a main product
+    if (!products) {
+      console.error('Erro: products não está definido', { products });
+      showNotification('error', 'Dados de produtos não disponíveis');
+      return;
+    }
+
+    const product = products.find(p => p.id === productId);
+    if (!product) {
+      console.error('Erro: Produto principal não encontrado', { productId });
+      showNotification('error', 'Produto não encontrado');
+      return;
+    }
+
+    if (product.stock <= 0) {
+      console.error('Erro: Estoque insuficiente para produto principal', { productId, stock: product.stock });
+      showNotification('error', `${product.name} está sem estoque`);
+      return;
+    }
+
+    itemKey = productId;
+    itemData = {
+      product_id: productId,
+      product_name: product.name,
+      quantity: 1,
+      unit_price: product.price,
+      cost_price: product.cost_price,
+      total: product.price,
+      available_stock: product.stock
+    };
+
+    console.log('Preparando itemData para produto principal:', itemData);
+
+    const existingItem = selectedItems.find(item => 
+      variationId ? 
+        (item.product_id === productId && item.variation_id === variationId) :
+        (item.product_id === productId && !item.variation_id)
+    );
+
+    if (existingItem) {
+      console.log('Item existente encontrado, atualizando quantidade de', existingItem.quantity, 'para', existingItem.quantity + 1);
+      if (existingItem.quantity >= itemData.available_stock) {
+        showNotification('error', `Estoque máximo para ${itemData.variation_name || itemData.product_name} atingido (${itemData.available_stock} unidades)`);
+        return;
+      }
+      
+      setSelectedItems(selectedItems.map(item =>
+        (variationId ? 
+          (item.product_id === productId && item.variation_id === variationId) :
+          (item.product_id === productId && !item.variation_id)
+        ) ? { 
+          ...item, 
+          quantity: item.quantity + 1, 
+          total: (item.quantity + 1) * item.unit_price 
+        } : item
+      ));
+    } else {
+      console.log('Novo item de produto principal, adicionando. Comprimento atual do selectedItems:', selectedItems.length);
+      setSelectedItems([...selectedItems, itemData]);
+    }
+  }
+};
   const removeItemFromSale = (productId: string, variationId?: string) => {
     console.log('Removendo item da venda:', { productId, variationId });
     setSelectedItems(selectedItems.filter(item => 
