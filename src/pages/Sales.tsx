@@ -848,7 +848,7 @@ export const Sales: React.FC = () => {
                       <div key={product.id} className="bg-white rounded-xl border-2 border-green-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
                         {/* Main Product */}
                         <div className="p-4">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3">
                             <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4">
                               <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200">
                                 {product.image_url ? (
