@@ -624,7 +624,7 @@ export const Sales: React.FC = () => {
                           placeholder="Buscar cliente ou selecionar venda direta"
                         />
                         
-                              onClick={() => addToCart(product.id)}
+                        {showCustomerDropdown && (
                           <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                             {/* Direct Sale Option */}
                             <button
@@ -944,7 +944,7 @@ export const Sales: React.FC = () => {
                                           <div className="flex items-center space-x-2">
                                             {(() => {
                                               const existingItem = selectedItems.find(item => 
-                                                item.product_id === productId && item.variation_id === variation.id
+                                                item.product_id === product.id && item.variation_id === variation.id
                                               );
                                               
                                               if (existingItem) {
@@ -952,7 +952,7 @@ export const Sales: React.FC = () => {
                                                   <div className="flex items-center space-x-2">
                                                     <button
                                                       type="button"
-                                                      onClick={() => updateItemQuantity(productId, existingItem.quantity - 1, variation.id)}
+                                                      onClick={() => updateItemQuantity(product.id, existingItem.quantity - 1, variation.id)}
                                                       className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs font-medium"
                                                     >
                                                       <Minus className="w-3 h-3" />
@@ -960,7 +960,7 @@ export const Sales: React.FC = () => {
                                                     <span className="w-6 text-center text-xs font-medium">{existingItem.quantity}</span>
                                                     <button
                                                       type="button"
-                                                      onClick={() => updateItemQuantity(productId, existingItem.quantity + 1, variation.id)}
+                                                      onClick={() => updateItemQuantity(product.id, existingItem.quantity + 1, variation.id)}
                                                       disabled={existingItem.quantity >= variation.stock}
                                                       className="w-6 h-6 rounded-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 flex items-center justify-center text-white text-xs font-medium"
                                                     >
@@ -968,7 +968,7 @@ export const Sales: React.FC = () => {
                                                     </button>
                                                     <button
                                                       type="button"
-                                                      onClick={() => removeItemFromSale(productId, variation.id)}
+                                                      onClick={() => removeItemFromSale(product.id, variation.id)}
                                                       className="ml-1 text-red-600 hover:text-red-800"
                                                     >
                                                       <X className="w-3 h-3" />
@@ -979,7 +979,7 @@ export const Sales: React.FC = () => {
                                                 return (
                                                   <button
                                                     type="button"
-                                                    onClick={() => addItemToSale(productId, variation.id)}
+                                                    onClick={() => addItemToSale(product.id, variation.id)}
                                                     disabled={variation.stock === 0}
                                                     className={`px-2 py-1 text-xs rounded transition-colors ${
                                                       variation.stock === 0
