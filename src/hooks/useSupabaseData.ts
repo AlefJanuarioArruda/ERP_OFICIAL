@@ -3,6 +3,16 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
 import type { Product, Customer, Sale, SaleItem, FinancialRecord, AIInsight, ProductVariation } from '../lib/supabase'
 
+// Define a local type for sale items that includes cost_price for internal calculations
+interface SaleItemForProcessing {
+  product_id: string; // Can be composite for variations (e.g., "parentID-variationID")
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+  cost_price: number; // Added for internal calculation
+}
+
 export const useSupabaseData = () => {
   const { user } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
@@ -486,15 +496,9 @@ export const useSupabaseData = () => {
   
   // Sale operations
   const addSale = async (saleData: {
-    customer_id: string | null
-    customer_name: string
-    items: Array<{
-      product_id: string | null
-      product_name: string
-      quantity: number
-      unit_price: number
-      total: number
-    }>
+    customer_id: string | null;
+    customer_name: string;
+    items: Array<SaleItemForProcessing>; // Use the new type here
     total: number
     subtotal: number
     discount: number
@@ -505,6 +509,9 @@ export const useSupabaseData = () => {
     total_cost?: number
   }) => {
     if (!user) return
+
+    // Refresh all user data to ensure we have the latest products and variations
+    await fetchUserData()
 
     console.log('🚀 Iniciando processo de venda:', {
       customer: saleData.customer_name,
@@ -517,7 +524,7 @@ export const useSupabaseData = () => {
     console.log('📦 Validando estoque antes da venda...')
     for (const item of saleData.items) {
       if (!item.product_id) continue
-      
+
       // Check if it's a variation (format: productId-variationId)
       if (item.product_id.includes('-')) {
         const [productId, variationId] = item.product_id.split('-')
@@ -530,9 +537,9 @@ export const useSupabaseData = () => {
         
         if (variation.stock < item.quantity) {
           console.error(`❌ Estoque insuficiente para variação ${variation.variation_name}:`, {
-            disponivel: variation.stock,
-            solicitado: item.quantity
-          })
+            disponivel: variation.stock, solicitado: item.quantity
+          });
+
           return { 
             data: null, 
             error: `Estoque insuficiente para ${variation.variation_name}. Disponível: ${variation.stock}, Solicitado: ${item.quantity}` 
@@ -548,9 +555,9 @@ export const useSupabaseData = () => {
         
         if (product.stock < item.quantity) {
           console.error(`❌ Estoque insuficiente para ${product.name}:`, {
-            disponivel: product.stock,
-            solicitado: item.quantity
-          })
+            disponivel: product.stock, solicitado: item.quantity
+          });
+
           return { 
             data: null, 
             error: `Estoque insuficiente para ${product.name}. Disponível: ${product.stock}, Solicitado: ${item.quantity}` 
@@ -559,12 +566,6 @@ export const useSupabaseData = () => {
       }
     }
     console.log('✅ Validação de estoque concluída - todos os produtos/variações têm estoque suficiente')
-
-    // Helper function to validate UUID format
-    const isValidUUID = (uuid: string): boolean => {
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-      return uuidRegex.test(uuid);
-    }
 
     // Generate invoice number
     const invoiceNumber = `INV-${user.id.slice(0, 8)}-${String(sales.length + 1).padStart(3, '0')}`
