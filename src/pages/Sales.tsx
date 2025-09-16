@@ -1141,6 +1141,12 @@ export const Sales: React.FC = () => {
                             <span className="text-amber-900">Total:</span>
                             <span className="text-green-600">{formatCurrency(calculateTotal())}</span>
                           </div>
+                                <div className="flex justify-between items-center text-sm mt-2">
+        <span className="text-gray-600">Custo dos Produtos:</span>
+        <span className="font-medium text-red-600">
+          {formatCurrency(calculateTotalCost())}
+        </span>
+      </div>
                           <div className="flex justify-between items-center text-sm mt-2">
                             <span className="text-gray-600">Lucro Estimado:</span>
                             <span className={`font-medium ${
