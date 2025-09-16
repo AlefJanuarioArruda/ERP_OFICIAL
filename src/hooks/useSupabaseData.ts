@@ -603,19 +603,13 @@ export const useSupabaseData = () => {
       user_id: user.id,
       sale_id: saleRecord.id,
       product_id: (() => {
-        // Para variações, usar o product_id da variação
-        if (item.variation_id) {
-          const variation = productVariations.find(v => v.id === item.variation_id)
-          return variation?.product_id || null
-        }
-        
-        if (!item.product_id) return null
+        if (!item.product_id) return null;
         
         // Extract main product ID if it's a variation (contains hyphen)
-        const extractedId = item.product_id.includes('-') ? item.product_id.split('-')[0] : item.product_id
+        const extractedId = item.product_id.includes('-') ? item.product_id.split('-')[0] : item.product_id;
         
         // Validate UUID format
-        return isValidUUID(extractedId) ? extractedId : null
+        return isValidUUID(extractedId) ? extractedId : null;
       })(),
       product_name: item.product_name,
       quantity: item.quantity,
@@ -639,12 +633,43 @@ export const useSupabaseData = () => {
     console.log('📦 Iniciando atualização de estoque para', saleData.items.length, 'itens...')
     
     for (const item of saleData.items) {
+      // Se é uma variação, atualizar estoque da variação
+      if (item.variation_id) {
+        console.log(`📦 Processando variação: ${item.product_name} (Variation ID: ${item.variation_id})`)
+        
+        const variation = productVariations.find(v => v.id === item.variation_id)
+        if (!variation) {
+          console.error(`❌ Variação não encontrada para atualização de estoque: ${item.variation_id}`)
+          continue
+        }
+
+        const newVariationStock = Math.max(variation.stock - item.quantity, 0)
+        console.log(`📦 Atualizando estoque da variação ${variation.variation_name}:`, {
+          estoque_anterior: variation.stock,
+          quantidade_vendida: item.quantity,
+          novo_estoque: newVariationStock
+        })
+
+        try {
+          const updateResult = await updateProductVariation(item.variation_id, { stock: newVariationStock })
+          if (updateResult?.error) {
+            console.error(`❌ Erro ao atualizar estoque da variação ${variation.variation_name}:`, updateResult.error)
+          } else {
+            console.log(`✅ Estoque da variação atualizado com sucesso para ${variation.variation_name}`)
+          }
+        } catch (error) {
+          console.error(`❌ Erro inesperado ao atualizar estoque da variação ${variation.variation_name}:`, error)
+        }
+        continue
+      }
+      
+      // Se é um produto principal, atualizar estoque do produto
       if (!item.product_id) {
         console.warn('⚠️ Item sem product_id:', item.product_name)
         continue
       }
 
-      console.log(`📦 Processando item: ${item.product_name} (ID: ${item.product_id})`)
+      console.log(`📦 Processando produto principal: ${item.product_name} (ID: ${item.product_id})`)
       
       const product = products.find(p => p.id === item.product_id)
       if (!product) {
