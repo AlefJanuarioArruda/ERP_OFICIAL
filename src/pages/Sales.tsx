@@ -13,7 +13,7 @@ export const Sales: React.FC = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState('');
   const [showLimitBanner, setShowLimitBanner] = useState(false);
-  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+  const [currentSaleItems, setCurrentSaleItems] = useState<SaleItem[]>([]);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [selectedItems, setSelectedItems] = useState<Array<{
