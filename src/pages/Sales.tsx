@@ -1126,30 +1126,21 @@ export const Sales: React.FC = () => {
                             <span className="text-amber-900">Total:</span>
                             <span className="text-green-600">{formatCurrency(calculateTotal())}</span>
                           </div>
-                                <div className="flex justify-between items-center text-sm mt-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 max-h-96 overflow-y-auto">
-        <span className="font-medium text-red-600">
-          {formatCurrency(calculateTotalCost())}
-        </span>
-                  className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer hover:border-blue-300"
+                          <div className="flex justify-between items-center text-sm mt-2">
+                            <span className="text-gray-600">Custo Total:</span>
+                            <span className="font-medium text-red-600">
+                              {formatCurrency(calculateTotalCost())}
+                            </span>
+                          </div>
                           <div className="flex justify-between items-center text-sm mt-2">
                             <span className="text-gray-600">Lucro Estimado:</span>
-                  <div className="flex flex-col space-y-3">
+                            <span className={`font-medium ${
                               (calculateTotal() - calculateTotalCost()) > 0 ? 'text-green-600' : 'text-red-600'
                             }`}>
                               {formatCurrency(calculateTotal() - calculateTotalCost())}
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-900 text-sm truncate mb-1" title={product.name}>{product.name}</p>
-                      <p className="text-sm font-semibold text-green-600 mb-1">R$ {product.price.toFixed(2)}</p>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500">Est: {product.stock}</p>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          product.stock > product.min_stock 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {product.stock > product.min_stock ? 'OK' : 'Baixo'}
-                        </span>
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
