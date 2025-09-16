@@ -517,6 +517,28 @@ export const useSupabaseData = () => {
     // Validação de estoque ANTES de criar a venda
     console.log('📦 Validando estoque antes da venda...')
     for (const item of saleData.items) {
+      // Se é uma variação, validar estoque da variação
+      if (item.variation_id) {
+        const variation = productVariations.find(v => v.id === item.variation_id)
+        if (!variation) {
+          console.error(`❌ Variação não encontrada: ${item.variation_id}`)
+          return { data: null, error: `Variação ${item.product_name} não encontrada` }
+        }
+        
+        if (variation.stock < item.quantity) {
+          console.error(`❌ Estoque insuficiente para variação ${variation.variation_name}:`, {
+            disponivel: variation.stock,
+            solicitado: item.quantity
+          })
+          return { 
+            data: null, 
+            error: `Estoque insuficiente para ${variation.variation_name}. Disponível: ${variation.stock}, Solicitado: ${item.quantity}` 
+          }
+        }
+        continue
+      }
+      
+      // Se é um produto principal, validar estoque do produto
       if (!item.product_id) continue
       
       const product = products.find(p => p.id === item.product_id)
@@ -581,13 +603,19 @@ export const useSupabaseData = () => {
       user_id: user.id,
       sale_id: saleRecord.id,
       product_id: (() => {
-        if (!item.product_id) return null;
+        // Para variações, usar o product_id da variação
+        if (item.variation_id) {
+          const variation = productVariations.find(v => v.id === item.variation_id)
+          return variation?.product_id || null
+        }
+        
+        if (!item.product_id) return null
         
         // Extract main product ID if it's a variation (contains hyphen)
-        const extractedId = item.product_id.includes('-') ? item.product_id.split('-')[0] : item.product_id;
+        const extractedId = item.product_id.includes('-') ? item.product_id.split('-')[0] : item.product_id
         
         // Validate UUID format
-        return isValidUUID(extractedId) ? extractedId : null;
+        return isValidUUID(extractedId) ? extractedId : null
       })(),
       product_name: item.product_name,
       quantity: item.quantity,
