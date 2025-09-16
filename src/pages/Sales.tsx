@@ -13,10 +13,9 @@ export const Sales: React.FC = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState('');
   const [showLimitBanner, setShowLimitBanner] = useState(false);
-  const [currentSaleItems, setCurrentSaleItems] = useState<SaleItem[]>([]);
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState<Array<{
     product_id: string | null
     variation_id?: string | null
@@ -35,16 +34,6 @@ export const Sales: React.FC = () => {
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
-
-  // Effect para debug: monitorar mudanças em selectedItems
-  React.useEffect(() => {
-    console.log('selectedItems atualizado:', selectedItems.length, selectedItems.map(item => ({
-      product: item.product_name,
-      variation: item.variation_name,
-      quantity: item.quantity,
-      total: item.total
-    })));
-  }, [selectedItems]);
 
   // Utility function to get stock status
   const getStockStatus = (stock: number, minStock: number = 5) => {
@@ -98,13 +87,11 @@ export const Sales: React.FC = () => {
       const product = products.find(p => p.id === productId);
       
       if (!variation || !product) {
-        console.log('Erro: Variação ou produto não encontrado', { productId, variationId, variationFound: !!variation, productFound: !!product });
         showNotification('error', 'Variação não encontrada');
         return;
       }
 
       if (variation.stock <= 0) {
-        console.log('Erro: Estoque insuficiente para variação', { variationId, stock: variation.stock });
         showNotification('error', `${variation.variation_name} está sem estoque`);
         return;
       }
@@ -123,47 +110,15 @@ export const Sales: React.FC = () => {
         color: variation.color,
         size: variation.size
       };
-
-      console.log('Preparando itemData para variação:', itemData);
-
-      const existingItem = selectedItems.find(item => 
-        variationId ? 
-          (item.product_id === productId && item.variation_id === variationId) :
-          (item.product_id === productId && !item.variation_id)
-      );
-      
-      if (existingItem) {
-        console.log('Item existente encontrado, atualizando quantidade de', existingItem.quantity, 'para', existingItem.quantity + 1);
-        if (existingItem.quantity >= itemData.available_stock) {
-          showNotification('error', `Estoque máximo para ${itemData.variation_name || itemData.product_name} atingido (${itemData.available_stock} unidades)`);
-          return;
-        }
-        
-        setSelectedItems(selectedItems.map(item =>
-          (variationId ? 
-            (item.product_id === productId && item.variation_id === variationId) :
-            (item.product_id === productId && !item.variation_id)
-          ) ? { 
-            ...item, 
-            quantity: item.quantity + 1, 
-            total: (item.quantity + 1) * item.unit_price 
-          } : item
-        ));
-      } else {
-        console.log('Novo item de variação, adicionando. Comprimento atual do selectedItems:', selectedItems.length);
-        setSelectedItems([...selectedItems, itemData]);
-      }
     } else {
       // Adding a main product
       const product = products.find(p => p.id === productId);
       if (!product) {
-        console.log('Erro: Produto principal não encontrado', { productId });
         showNotification('error', 'Produto não encontrado');
         return;
       }
 
       if (product.stock <= 0) {
-        console.log('Erro: Estoque insuficiente para produto principal', { productId, stock: product.stock });
         showNotification('error', `${product.name} está sem estoque`);
         return;
       }
@@ -178,41 +133,36 @@ export const Sales: React.FC = () => {
         total: product.price,
         available_stock: product.stock
       };
+    }
 
-      console.log('Preparando itemData para produto principal:', itemData);
-
-      const existingItem = selectedItems.find(item => 
-        variationId ? 
+    const existingItem = selectedItems.find(item => 
+      variationId ? 
+        (item.product_id === productId && item.variation_id === variationId) :
+        (item.product_id === productId && !item.variation_id)
+    );
+    
+    if (existingItem) {
+      if (existingItem.quantity >= itemData.available_stock) {
+        showNotification('error', `Estoque máximo para ${itemData.variation_name || itemData.product_name} atingido (${itemData.available_stock} unidades)`);
+        return;
+      }
+      
+      setSelectedItems(selectedItems.map(item =>
+        (variationId ? 
           (item.product_id === productId && item.variation_id === variationId) :
           (item.product_id === productId && !item.variation_id)
-      );
-      
-      if (existingItem) {
-        console.log('Item existente encontrado, atualizando quantidade de', existingItem.quantity, 'para', existingItem.quantity + 1);
-        if (existingItem.quantity >= itemData.available_stock) {
-          showNotification('error', `Estoque máximo para ${itemData.variation_name || itemData.product_name} atingido (${itemData.available_stock} unidades)`);
-          return;
-        }
-        
-        setSelectedItems(selectedItems.map(item =>
-          (variationId ? 
-            (item.product_id === productId && item.variation_id === variationId) :
-            (item.product_id === productId && !item.variation_id)
-          ) ? { 
-            ...item, 
-            quantity: item.quantity + 1, 
-            total: (item.quantity + 1) * item.unit_price 
-          } : item
-        ));
-      } else {
-        console.log('Novo item de produto principal, adicionando. Comprimento atual do selectedItems:', selectedItems.length);
-        setSelectedItems([...selectedItems, itemData]);
-      }
+        ) ? { 
+          ...item, 
+          quantity: item.quantity + 1, 
+          total: (item.quantity + 1) * item.unit_price 
+        } : item
+      ));
+    } else {
+      setSelectedItems([...selectedItems, itemData]);
     }
   };
 
   const removeItemFromSale = (productId: string, variationId?: string) => {
-    console.log('Removendo item da venda:', { productId, variationId });
     setSelectedItems(selectedItems.filter(item => 
       variationId ? 
         !(item.product_id === productId && item.variation_id === variationId) :
@@ -221,7 +171,6 @@ export const Sales: React.FC = () => {
   };
 
   const updateItemQuantity = (productId: string, quantity: number, variationId?: string) => {
-    console.log('Atualizando quantidade:', { productId, quantity, variationId });
     if (quantity <= 0) {
       removeItemFromSale(productId, variationId);
       return;
@@ -239,13 +188,11 @@ export const Sales: React.FC = () => {
         }
         
         const newQuantity = Math.min(quantity, item.available_stock);
-        const newItem = { 
+        return { 
           ...item, 
           quantity: newQuantity, 
           total: newQuantity * item.unit_price 
         };
-        console.log('Novo item atualizado:', newItem);
-        return newItem;
       }
       return item;
     }));
@@ -997,7 +944,7 @@ export const Sales: React.FC = () => {
                                           <div className="flex items-center space-x-2">
                                             {(() => {
                                               const existingItem = selectedItems.find(item => 
-                                                item.product_id === product.id && item.variation_id === variation.id
+                                                item.product_id === productId && item.variation_id === variation.id
                                               );
                                               
                                               if (existingItem) {
@@ -1005,7 +952,7 @@ export const Sales: React.FC = () => {
                                                   <div className="flex items-center space-x-2">
                                                     <button
                                                       type="button"
-                                                      onClick={() => updateItemQuantity(product.id, existingItem.quantity - 1, variation.id)}
+                                                      onClick={() => updateItemQuantity(productId, existingItem.quantity - 1, variation.id)}
                                                       className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs font-medium"
                                                     >
                                                       <Minus className="w-3 h-3" />
@@ -1013,7 +960,7 @@ export const Sales: React.FC = () => {
                                                     <span className="w-6 text-center text-xs font-medium">{existingItem.quantity}</span>
                                                     <button
                                                       type="button"
-                                                      onClick={() => updateItemQuantity(product.id, existingItem.quantity + 1, variation.id)}
+                                                      onClick={() => updateItemQuantity(productId, existingItem.quantity + 1, variation.id)}
                                                       disabled={existingItem.quantity >= variation.stock}
                                                       className="w-6 h-6 rounded-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 flex items-center justify-center text-white text-xs font-medium"
                                                     >
@@ -1021,7 +968,7 @@ export const Sales: React.FC = () => {
                                                     </button>
                                                     <button
                                                       type="button"
-                                                      onClick={() => removeItemFromSale(product.id, variation.id)}
+                                                      onClick={() => removeItemFromSale(productId, variation.id)}
                                                       className="ml-1 text-red-600 hover:text-red-800"
                                                     >
                                                       <X className="w-3 h-3" />
@@ -1032,10 +979,7 @@ export const Sales: React.FC = () => {
                                                 return (
                                                   <button
                                                     type="button"
-                                                    onClick={() => {
-                                                      console.log('Botão clicado: Adicionar variação', product.id, variation.id);
-                                                      addItemToSale(product.id, variation.id);
-                                                    }}
+                                                    onClick={() => addItemToSale(productId, variation.id)}
                                                     disabled={variation.stock === 0}
                                                     className={`px-2 py-1 text-xs rounded transition-colors ${
                                                       variation.stock === 0
