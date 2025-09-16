@@ -84,8 +84,8 @@ export const Sales: React.FC = () => {
 
     if (variationId) {
       // Adding a product variation
-      const variation = productVariations?.find(v => v.id === variationId);
-const product = products?.find(p => p.id === productId);
+      const variation = productVariations.find(v => v.id === variationId);
+const product = products.find(p => p.id === productId);
       
       if (!variation || !product) {
         showNotification('error', 'Variação não encontrada');
