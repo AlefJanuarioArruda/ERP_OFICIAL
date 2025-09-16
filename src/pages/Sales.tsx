@@ -920,7 +920,7 @@ export const Sales: React.FC = () => {
                                     <Grid className="w-4 h-4 mr-2" />
                                     Variações Disponíveis ({variations.length})
                                   </h6>
-                                  <div className="grid grid-cols-1 gap-3">
+                                   const availableStock = variationStock - cartQuantity;
                                     {variations.map((variation) => {
                                       const variationStockStatus = getStockStatus(variation.stock, 1);
                                       return (
@@ -971,21 +971,21 @@ export const Sales: React.FC = () => {
                                                   {formatCurrency(variation.price || product.price)}
                                                 </p>
                                                 <p className="text-xs text-gray-500">Estoque: {variation.stock}</p>
-                                              </div>
-                                            </div>
+                                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStockBadgeColor(variationStock)}`}>
+                                             {variationStock} em estoque
                                             
                                             {/* Add Variation Button */}
                                             <button
                                               type="button"
                                               onClick={() => addItemToSale(product.id, variation.id)}
-                                              disabled={variation.stock === 0}
+                                             disabled={!usageStatus.canAdd.sales || variationStock <= 0 || isInCart}
                                               className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                                                variation.stock === 0
+                                               !usageStatus.canAdd.sales || variationStock <= 0 || isInCart
                                                   ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                                   : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm hover:shadow-md transform hover:scale-105'
                                               }`}
                                             >
-                                              {variation.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
+                                             {variationStock <= 0 ? 'Sem Estoque' : isInCart ? 'No Carrinho' : 'Adicionar'}
                                             </button>
                                           </div>
                                         </div>
