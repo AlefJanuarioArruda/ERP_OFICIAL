@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, Search, ShoppingCart, FileText, CreditCard, Clock, CheckCircle, XCircle, User, Crown, X, Package, AlertTriangle, Minus, Grid, Palette, Ruler } from 'lucide-react';
+import { Plus, Search, ShoppingCart, FileText, CreditCard, Clock, CheckCircle, XCircle, User, Crown, X, Package, AlertTriangle, Minus } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UpgradeModal } from '../components/UpgradeModal';
 import { UsageLimitBanner } from '../components/UsageLimitBanner';
 
 export const Sales: React.FC = () => {
-  const { sales, customers, products, productVariations, getVariationsForProduct, addSale, loading } = useSupabaseData();
+  const { sales, customers, products, addSale, loading } = useSupabaseData();
   const usageStatus = useUsageLimits();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -18,22 +18,17 @@ export const Sales: React.FC = () => {
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [selectedItems, setSelectedItems] = useState<Array<{
     product_id: string | null
-    variation_id?: string | null
     product_name: string
-    variation_name?: string
     quantity: number
     unit_price: number
     cost_price: number
     total: number
     available_stock: number
-    color?: string
-    size?: string
   }>>([]);
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'boleto' | 'card' | 'cash'>('pix');
   const [discountPercentage, setDiscountPercentage] = useState<number>(0);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
-  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
 
   // Utility function to get stock status
   const getStockStatus = (stock: number, minStock: number = 5) => {
@@ -77,55 +72,38 @@ export const Sales: React.FC = () => {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  const addItemToSale = (productId: string, variationId?: string) => {
-    let itemData;
-    let itemKey;
+  const addItemToSale = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) {
+      showNotification('error', 'Produto não encontrado');
+      return;
+    }
 
-    if (variationId) {
-      // Adding a product variation
-      const variation = productVariations.find(v => v.id === variationId);
-      const product = products.find(p => p.id === productId);
+    if (product.stock <= 0) {
+      showNotification('error', `${product.name} está sem estoque`);
+      return;
+    }
+
+    const existingItem = selectedItems.find(item => item.product_id === productId);
+    
+    if (existingItem) {
+      if (existingItem.quantity >= product.stock) {
+        showNotification('error', `Estoque máximo para ${product.name} atingido (${product.stock} unidades)`);
+        return;
+      }
       
-      if (!variation || !product) {
-        showNotification('error', 'Variação não encontrada');
-        return;
-      }
-
-      if (variation.stock <= 0) {
-        showNotification('error', `${variation.variation_name} está sem estoque`);
-        return;
-      }
-
-      itemKey = `${productId}-${variationId}`;
-      itemData = {
-        product_id: productId,
-        variation_id: variationId,
-        product_name: product.name,
-        variation_name: variation.variation_name,
-        quantity: 1,
-        unit_price: variation.price || product.price,
-        cost_price: product.cost_price,
-        total: variation.price || product.price,
-        available_stock: variation.stock,
-        color: variation.color,
-        size: variation.size
-      };
+      setSelectedItems(selectedItems.map(item =>
+        item.product_id === productId
+          ? { 
+              ...item, 
+              quantity: item.quantity + 1, 
+              total: (item.quantity + 1) * item.unit_price 
+            }
+          : item
+      ));
     } else {
-      // Adding a main product
-      const product = products.find(p => p.id === productId);
-      if (!product) {
-        showNotification('error', 'Produto não encontrado');
-        return;
-      }
-
-      if (product.stock <= 0) {
-        showNotification('error', `${product.name} está sem estoque`);
-        return;
-      }
-
-      itemKey = productId;
-      itemData = {
-        product_id: productId,
+      const newItem = {
+        product_id: product.id,
         product_name: product.name,
         quantity: 1,
         unit_price: product.price,
@@ -133,61 +111,31 @@ export const Sales: React.FC = () => {
         total: product.price,
         available_stock: product.stock
       };
-    }
-
-    const existingItem = selectedItems.find(item => 
-      variationId ? 
-        (item.product_id === productId && item.variation_id === variationId) :
-        (item.product_id === productId && !item.variation_id)
-    );
-    
-    if (existingItem) {
-      if (existingItem.quantity >= itemData.available_stock) {
-        showNotification('error', `Estoque máximo para ${itemData.variation_name || itemData.product_name} atingido (${itemData.available_stock} unidades)`);
-        return;
-      }
-      
-      setSelectedItems(selectedItems.map(item =>
-        (variationId ? 
-          (item.product_id === productId && item.variation_id === variationId) :
-          (item.product_id === productId && !item.variation_id)
-        ) ? { 
-          ...item, 
-          quantity: item.quantity + 1, 
-          total: (item.quantity + 1) * item.unit_price 
-        } : item
-      ));
-    } else {
-      setSelectedItems([...selectedItems, itemData]);
+      setSelectedItems([...selectedItems, newItem]);
     }
   };
 
-  const removeItemFromSale = (productId: string, variationId?: string) => {
-    setSelectedItems(selectedItems.filter(item => 
-      variationId ? 
-        !(item.product_id === productId && item.variation_id === variationId) :
-        !(item.product_id === productId && !item.variation_id)
-    ));
+  const removeItemFromSale = (productId: string) => {
+    setSelectedItems(selectedItems.filter(item => item.product_id !== productId));
   };
 
-  const updateItemQuantity = (productId: string, quantity: number, variationId?: string) => {
+  const updateItemQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeItemFromSale(productId, variationId);
+      removeItemFromSale(productId);
       return;
     }
 
     setSelectedItems(selectedItems.map(item => {
-      const isTargetItem = variationId ? 
-        (item.product_id === productId && item.variation_id === variationId) :
-        (item.product_id === productId && !item.variation_id);
+      if (item.product_id === productId) {
+        const product = products.find(p => p.id === productId);
+        const maxQuantity = product ? product.stock : item.available_stock;
         
-      if (isTargetItem) {
-        if (quantity > item.available_stock) {
-          showNotification('error', `Estoque máximo para ${item.variation_name || item.product_name}: ${item.available_stock} unidades`);
+        if (quantity > maxQuantity) {
+          showNotification('error', `Estoque máximo para ${item.product_name}: ${maxQuantity} unidades`);
           return item;
         }
         
-        const newQuantity = Math.min(quantity, item.available_stock);
+        const newQuantity = Math.min(quantity, maxQuantity);
         return { 
           ...item, 
           quantity: newQuantity, 
@@ -196,16 +144,6 @@ export const Sales: React.FC = () => {
       }
       return item;
     }));
-  };
-
-  const toggleProductExpansion = (productId: string) => {
-    const newExpanded = new Set(expandedProducts);
-    if (newExpanded.has(productId)) {
-      newExpanded.delete(productId);
-    } else {
-      newExpanded.add(productId);
-    }
-    setExpandedProducts(newExpanded);
   };
 
   const calculateSubtotal = () => {
@@ -243,7 +181,6 @@ export const Sales: React.FC = () => {
     setShowAddForm(false);
     setShowCustomerDropdown(false);
     setShowUpgradeModal(false);
-    setExpandedProducts(new Set());
   };
 
   const handleAddSale = () => {
@@ -268,30 +205,15 @@ export const Sales: React.FC = () => {
 
   const validateSaleItems = () => {
     for (const item of selectedItems) {
-      if (item.variation_id) {
-        // Validate variation stock
-        const variation = productVariations.find(v => v.id === item.variation_id);
-        if (!variation) {
-          showNotification('error', `Variação ${item.variation_name} não encontrada`);
-          return false;
-        }
-        
-        if (variation.stock < item.quantity) {
-          showNotification('error', `Estoque insuficiente para ${item.variation_name}. Disponível: ${variation.stock}, Solicitado: ${item.quantity}`);
-          return false;
-        }
-      } else {
-        // Validate main product stock
-        const product = products.find(p => p.id === item.product_id);
-        if (!product) {
-          showNotification('error', `Produto ${item.product_name} não encontrado`);
-          return false;
-        }
-        
-        if (product.stock < item.quantity) {
-          showNotification('error', `Estoque insuficiente para ${product.name}. Disponível: ${product.stock}, Solicitado: ${item.quantity}`);
-          return false;
-        }
+      const product = products.find(p => p.id === item.product_id);
+      if (!product) {
+        showNotification('error', `Produto ${item.product_name} não encontrado`);
+        return false;
+      }
+      
+      if (product.stock < item.quantity) {
+        showNotification('error', `Estoque insuficiente para ${product.name}. Disponível: ${product.stock}, Solicitado: ${item.quantity}`);
+        return false;
       }
     }
     return true;
@@ -333,8 +255,8 @@ export const Sales: React.FC = () => {
     const saleData = {
       ...customerData,
       items: selectedItems.map(item => ({
-        product_id: item.variation_id ? `${item.product_id}-${item.variation_id}` : item.product_id,
-        product_name: item.variation_name ? `${item.product_name} - ${item.variation_name}` : item.product_name,
+        product_id: item.product_id,
+        product_name: item.product_name,
         quantity: item.quantity,
         unit_price: item.unit_price,
         total: item.total
@@ -346,7 +268,7 @@ export const Sales: React.FC = () => {
       payment_method: paymentMethod,
       payment_status: 'paid' as const,
       due_date: new Date().toISOString(),
-      total_cost: totalCost
+      total_cost: totalCost // Adicionar custo total para controle de despesas
     };
 
     console.log('Iniciando venda com dados:', saleData);
@@ -458,7 +380,7 @@ export const Sales: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Minhas Vendas</h1>
-          <p className="text-gray-600">Gerencie suas vendas com produtos e variações</p>
+          <p className="text-gray-600">Gerencie suas vendas e controle de estoque automaticamente</p>
         </div>
         <button
           onClick={handleAddSale}
@@ -593,7 +515,7 @@ export const Sales: React.FC = () => {
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={resetForm}></div>
             
-            <div className="inline-block w-full max-w-6xl p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
+            <div className="inline-block w-full max-w-5xl p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Nova Venda</h3>
                 <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
@@ -758,247 +680,94 @@ export const Sales: React.FC = () => {
 
                   {/* Right Column - Products */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Selecionar Produtos e Variações</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Selecionar Produtos</label>
                     {products.length > 0 ? (
-                      <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
+                      <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg">
                         {products.map((product) => {
-                          const variations = getVariationsForProduct(product.id);
-                          const isExpanded = expandedProducts.has(product.id);
+                          const isSelected = selectedItems.some(item => item.product_id === product.id);
+                          const selectedItem = selectedItems.find(item => item.product_id === product.id);
                           const stockStatus = getStockStatus(product.stock, product.min_stock);
                           
                           return (
-                            <div key={product.id} className="border-b border-gray-100 last:border-b-0">
-                              {/* Main Product */}
-                              <div className={`p-4 ${product.stock === 0 ? 'bg-red-50' : 'hover:bg-gray-50'}`}>
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-3 flex-1">
-                                    {/* Product Image */}
-                                    <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                                      {product.image_url ? (
-                                        <img
-                                          src={product.image_url}
-                                          alt={product.name}
-                                          className="w-full h-full object-cover"
-                                        />
-                                      ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                                          <Package className="w-6 h-6 text-gray-400" />
-                                        </div>
-                                      )}
-                                    </div>
-                                    
-                                    {/* Product Info */}
-                                    <div className="flex-1">
-                                      <div className="flex items-center space-x-2 mb-1">
-                                        <p className="font-medium text-gray-900">{product.name}</p>
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${stockStatus.color}`}>
-                                          {stockStatus.label}
-                                        </span>
-                                        {variations.length > 0 && (
-                                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                            {variations.length} variação(ões)
-                                          </span>
-                                        )}
+                            <div key={product.id} className={`p-4 border-b border-gray-100 last:border-b-0 ${
+                              product.stock === 0 ? 'bg-red-50' : 'hover:bg-gray-50'
+                            }`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-3 flex-1">
+                                  {/* Product Image */}
+                                  <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                                    {product.image_url ? (
+                                      <img
+                                        src={product.image_url}
+                                        alt={product.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                        <Package className="w-6 h-6 text-gray-400" />
                                       </div>
-                                      <p className="text-sm text-gray-600">{formatCurrency(product.price)}</p>
-                                      <p className="text-xs text-gray-500">
-                                        Estoque: {product.stock} • Custo: {formatCurrency(product.cost_price)}
-                                      </p>
-                                    </div>
+                                    )}
                                   </div>
                                   
-                                  {/* Product Actions */}
-                                  <div className="flex items-center space-x-2">
-                                    {/* Expand/Collapse Variations */}
-                                    {variations.length > 0 && (
+                                  {/* Product Info */}
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <p className="font-medium text-gray-900">{product.name}</p>
+                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${stockStatus.color}`}>
+                                        {stockStatus.label}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600">{formatCurrency(product.price)}</p>
+                                    <p className="text-xs text-gray-500">
+                                      Estoque: {product.stock} • Custo: {formatCurrency(product.cost_price)}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                {/* Quantity Controls or Add Button */}
+                                <div className="flex items-center space-x-2">
+                                  {isSelected && selectedItem ? (
+                                    <div className="flex items-center space-x-2">
                                       <button
                                         type="button"
-                                        onClick={() => toggleProductExpansion(product.id)}
-                                        className="px-3 py-1 text-xs text-purple-600 bg-purple-50 rounded hover:bg-purple-100 transition-colors"
+                                        onClick={() => updateItemQuantity(product.id, selectedItem.quantity - 1)}
+                                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-sm font-medium"
                                       >
-                                        <Grid className="w-4 h-4 mr-1 inline" />
-                                        {isExpanded ? 'Ocultar' : 'Ver'} Variações
+                                        <Minus className="w-4 h-4" />
                                       </button>
-                                    )}
-                                    
-                                    {/* Add Main Product */}
-                                    {(() => {
-                                      const existingItem = selectedItems.find(item => 
-                                        item.product_id === product.id && !item.variation_id
-                                      );
-                                      
-                                      if (existingItem) {
-                                        return (
-                                          <div className="flex items-center space-x-2">
-                                            <button
-                                              type="button"
-                                              onClick={() => updateItemQuantity(product.id, existingItem.quantity - 1)}
-                                              className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-sm font-medium"
-                                            >
-                                              <Minus className="w-4 h-4" />
-                                            </button>
-                                            <span className="w-8 text-center text-sm font-medium">{existingItem.quantity}</span>
-                                            <button
-                                              type="button"
-                                              onClick={() => updateItemQuantity(product.id, existingItem.quantity + 1)}
-                                              disabled={existingItem.quantity >= product.stock}
-                                              className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 flex items-center justify-center text-white text-sm font-medium"
-                                            >
-                                              +
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() => removeItemFromSale(product.id)}
-                                              className="ml-2 text-red-600 hover:text-red-800"
-                                            >
-                                              <X className="w-4 h-4" />
-                                            </button>
-                                          </div>
-                                        );
-                                      } else {
-                                        return (
-                                          <button
-                                            type="button"
-                                            onClick={() => addItemToSale(product.id)}
-                                            disabled={product.stock === 0}
-                                            className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-                                              product.stock === 0
-                                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                : 'bg-blue-600 text-white hover:bg-blue-700'
-                                            }`}
-                                          >
-                                            {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
-                                          </button>
-                                        );
-                                      }
-                                    })()}
-                                  </div>
+                                      <span className="w-8 text-center text-sm font-medium">{selectedItem.quantity}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => updateItemQuantity(product.id, selectedItem.quantity + 1)}
+                                        disabled={selectedItem.quantity >= product.stock}
+                                        className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 flex items-center justify-center text-white text-sm font-medium"
+                                      >
+                                        +
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => removeItemFromSale(product.id)}
+                                        className="ml-2 text-red-600 hover:text-red-800"
+                                      >
+                                        <X className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => addItemToSale(product.id)}
+                                      disabled={product.stock === 0}
+                                      className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                                        product.stock === 0
+                                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                                      }`}
+                                    >
+                                      {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
+                                    </button>
+                                  )}
                                 </div>
                               </div>
-
-                              {/* Product Variations */}
-                              {isExpanded && variations.length > 0 && (
-                                <div className="bg-purple-50 border-t border-purple-200">
-                                  <div className="px-4 py-2 bg-purple-100">
-                                    <h5 className="text-sm font-medium text-purple-900 flex items-center">
-                                      <Grid className="w-4 h-4 mr-2" />
-                                      Variações Disponíveis
-                                    </h5>
-                                  </div>
-                                  
-                                  {variations.map((variation) => {
-                                    const variationStockStatus = getStockStatus(variation.stock, product.min_stock);
-                                    const variationPrice = variation.price || product.price;
-                                    
-                                    return (
-                                      <div key={variation.id} className="p-4 border-b border-purple-200 last:border-b-0 hover:bg-purple-100">
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center space-x-3 flex-1">
-                                            {/* Variation Image */}
-                                            <div className="w-10 h-10 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                                              {variation.image_url ? (
-                                                <img
-                                                  src={variation.image_url}
-                                                  alt={variation.variation_name}
-                                                  className="w-full h-full object-cover"
-                                                />
-                                              ) : (
-                                                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                                                  <Package className="w-5 h-5 text-gray-400" />
-                                                </div>
-                                              )}
-                                            </div>
-                                            
-                                            {/* Variation Info */}
-                                            <div className="flex-1">
-                                              <div className="flex items-center space-x-2 mb-1">
-                                                <p className="font-medium text-gray-900">{variation.variation_name}</p>
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${variationStockStatus.color}`}>
-                                                  {variationStockStatus.label}
-                                                </span>
-                                              </div>
-                                              
-                                              <div className="flex items-center space-x-3 text-xs text-gray-600">
-                                                {variation.color && (
-                                                  <div className="flex items-center">
-                                                    <Palette className="w-3 h-3 mr-1" />
-                                                    {variation.color}
-                                                  </div>
-                                                )}
-                                                {variation.size && (
-                                                  <div className="flex items-center">
-                                                    <Ruler className="w-3 h-3 mr-1" />
-                                                    {variation.size}
-                                                  </div>
-                                                )}
-                                              </div>
-                                              
-                                              <p className="text-sm text-gray-600">{formatCurrency(variationPrice)}</p>
-                                              <p className="text-xs text-gray-500">
-                                                Estoque: {variation.stock} • SKU: {variation.sku}
-                                              </p>
-                                            </div>
-                                          </div>
-                                          
-                                          {/* Variation Actions */}
-                                          <div className="flex items-center space-x-2">
-                                            {(() => {
-                                              const existingItem = selectedItems.find(item => 
-                                                item.product_id === productId && item.variation_id === variation.id
-                                              );
-                                              
-                                              if (existingItem) {
-                                                return (
-                                                  <div className="flex items-center space-x-2">
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => updateItemQuantity(productId, existingItem.quantity - 1, variation.id)}
-                                                      className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs font-medium"
-                                                    >
-                                                      <Minus className="w-3 h-3" />
-                                                    </button>
-                                                    <span className="w-6 text-center text-xs font-medium">{existingItem.quantity}</span>
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => updateItemQuantity(productId, existingItem.quantity + 1, variation.id)}
-                                                      disabled={existingItem.quantity >= variation.stock}
-                                                      className="w-6 h-6 rounded-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 flex items-center justify-center text-white text-xs font-medium"
-                                                    >
-                                                      +
-                                                    </button>
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => removeItemFromSale(productId, variation.id)}
-                                                      className="ml-1 text-red-600 hover:text-red-800"
-                                                    >
-                                                      <X className="w-3 h-3" />
-                                                    </button>
-                                                  </div>
-                                                );
-                                              } else {
-                                                return (
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => addItemToSale(productId, variation.id)}
-                                                    disabled={variation.stock === 0}
-                                                    className={`px-2 py-1 text-xs rounded transition-colors ${
-                                                      variation.stock === 0
-                                                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                        : 'bg-purple-600 text-white hover:bg-purple-700'
-                                                    }`}
-                                                  >
-                                                    {variation.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
-                                                  </button>
-                                                );
-                                              }
-                                            })()}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
                             </div>
                           );
                         })}
@@ -1033,30 +802,13 @@ export const Sales: React.FC = () => {
                     
                     {/* Selected Items List */}
                     <div className="space-y-3 mb-4">
-                      {selectedItems.map((item, index) => (
-                        <div key={`${item.product_id}-${item.variation_id || 'main'}`} className="flex items-center justify-between p-3 bg-white rounded-lg">
+                      {selectedItems.map((item) => (
+                        <div key={item.product_id} className="flex items-center justify-between p-3 bg-white rounded-lg">
                           <div className="flex-1">
-                            <p className="font-medium text-gray-900">
-                              {item.product_name}
-                              {item.variation_name && (
-                                <span className="text-purple-600 ml-2">- {item.variation_name}</span>
-                              )}
+                            <p className="font-medium text-gray-900">{item.product_name}</p>
+                            <p className="text-sm text-gray-600">
+                              {item.quantity} × {formatCurrency(item.unit_price)}
                             </p>
-                            <div className="flex items-center space-x-3 text-xs text-gray-600">
-                              <span>{item.quantity} × {formatCurrency(item.unit_price)}</span>
-                              {item.color && (
-                                <div className="flex items-center">
-                                  <Palette className="w-3 h-3 mr-1" />
-                                  {item.color}
-                                </div>
-                              )}
-                              {item.size && (
-                                <div className="flex items-center">
-                                  <Ruler className="w-3 h-3 mr-1" />
-                                  {item.size}
-                                </div>
-                              )}
-                            </div>
                           </div>
                           <div className="text-right">
                             <p className="font-medium text-green-600">{formatCurrency(item.total)}</p>
