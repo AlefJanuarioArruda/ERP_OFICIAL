@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, Search, ShoppingCart, FileText, CreditCard, Clock, CheckCircle, XCircle, User, Crown, X, Package, AlertTriangle, Minus, Trash2, Grid, Palette, Ruler } from 'lucide-react';
+import { Plus, Search, ShoppingCart, FileText, CreditCard, Clock, CheckCircle, XCircle, User, Crown, X, Package, AlertTriangle, Minus, Trash2, Grid, Palette, Ruler, ChevronDown, ChevronUp, Eye, Camera } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UpgradeModal } from '../components/UpgradeModal';
 import { UsageLimitBanner } from '../components/UsageLimitBanner';
 
 export const Sales: React.FC = () => {
-  const { sales, customers, products, addSale, loading } = useSupabaseData();
+  const { sales, customers, products, productVariations, getVariationsForProduct, addSale, loading } = useSupabaseData();
   const usageStatus = useUsageLimits();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -19,16 +19,24 @@ export const Sales: React.FC = () => {
   const [expandedProducts, setExpandedProducts] = useState(new Set());
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [selectedItems, setSelectedItems] = useState<Array<{
+    id: string // Unique identifier for the cart item
     product_id: string | null
+    variation_id?: string | null
     product_name: string
+    variation_name?: string
     quantity: number
     unit_price: number
     cost_price: number
     total: number
     available_stock: number
     is_variation?: boolean
+    color?: string
+    size?: string
+    image_url?: string
   }>>([]);
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'boleto' | 'card' | 'cash'>('pix');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid' | 'overdue'>('paid');
+  const [dueDate, setDueDate] = useState('');
   const [discountPercentage, setDiscountPercentage] = useState<number>(0);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
@@ -38,17 +46,17 @@ export const Sales: React.FC = () => {
     if (stock === 0) {
       return {
         label: 'Sem Estoque',
-        color: 'bg-red-100 text-red-800'
+        color: 'bg-red-100 text-red-800 border-red-200'
       };
     } else if (stock <= minStock) {
       return {
         label: 'Estoque Baixo',
-        color: 'bg-yellow-100 text-yellow-800'
+        color: 'bg-yellow-100 text-yellow-800 border-yellow-200'
       };
     } else {
       return {
         label: 'Em Estoque',
-        color: 'bg-green-100 text-green-800'
+        color: 'bg-green-100 text-green-800 border-green-200'
       };
     }
   };
@@ -72,13 +80,9 @@ export const Sales: React.FC = () => {
 
   const filteredProductsForSale = products.filter(product =>
     product.name.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(productSearchTerm.toLowerCase())
+    product.sku.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+    product.category.toLowerCase().includes(productSearchTerm.toLowerCase())
   );
-
-  const getVariationsForProduct = (productId: string) => {
-    // This would be implemented based on your variations data structure
-    return [];
-  };
 
   const toggleProductExpansion = (productId: string) => {
     const newExpanded = new Set(expandedProducts);
@@ -95,74 +99,139 @@ export const Sales: React.FC = () => {
     setTimeout(() => setNotification(null), 4000);
   };
 
-  const addItemToSale = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (!product) {
-      showNotification('error', 'Produto não encontrado');
-      return;
-    }
-
-    if (product.stock <= 0) {
-      showNotification('error', `${product.name} está sem estoque`);
-      return;
-    }
-
-    const existingItem = selectedItems.find(item => item.product_id === productId);
-    
-    if (existingItem) {
-      if (existingItem.quantity >= product.stock) {
-        showNotification('error', `Estoque máximo para ${product.name} atingido (${product.stock} unidades)`);
+  const addItemToSale = (productId: string, variationId?: string) => {
+    try {
+      const product = products.find(p => p.id === productId);
+      if (!product) {
+        showNotification('error', 'Produto não encontrado');
         return;
       }
-      
-      setSelectedItems(selectedItems.map(item =>
-        item.product_id === productId
-          ? { 
-              ...item, 
-              quantity: item.quantity + 1, 
-              total: (item.quantity + 1) * item.unit_price 
-            }
-          : item
-      ));
-    } else {
-      const newItem = {
-        product_id: product.id,
-        product_name: product.name,
-        quantity: 1,
-        unit_price: product.price,
-        cost_price: product.cost_price,
-        total: product.price,
-        available_stock: product.stock
-      };
-      setSelectedItems([...selectedItems, newItem]);
+
+      let itemData;
+      let uniqueId;
+
+      if (variationId) {
+        // Adding a variation
+        const variation = getVariationsForProduct(productId).find(v => v.id === variationId);
+        if (!variation) {
+          showNotification('error', 'Variação não encontrada');
+          return;
+        }
+
+        if (variation.stock <= 0) {
+          showNotification('error', `Variação ${variation.variation_name} está sem estoque`);
+          return;
+        }
+
+        uniqueId = `${productId}-${variationId}`;
+        const existingItem = selectedItems.find(item => item.id === uniqueId);
+        
+        if (existingItem) {
+          if (existingItem.quantity >= variation.stock) {
+            showNotification('error', `Estoque máximo para ${variation.variation_name} atingido (${variation.stock} unidades)`);
+            return;
+          }
+          
+          setSelectedItems(selectedItems.map(item =>
+            item.id === uniqueId
+              ? { 
+                  ...item, 
+                  quantity: item.quantity + 1, 
+                  total: (item.quantity + 1) * item.unit_price 
+                }
+              : item
+          ));
+          return;
+        }
+
+        itemData = {
+          id: uniqueId,
+          product_id: productId,
+          variation_id: variationId,
+          product_name: product.name,
+          variation_name: variation.variation_name,
+          quantity: 1,
+          unit_price: variation.price || product.price,
+          cost_price: product.cost_price,
+          total: variation.price || product.price,
+          available_stock: variation.stock,
+          is_variation: true,
+          color: variation.color,
+          size: variation.size,
+          image_url: variation.image_url || product.image_url
+        };
+      } else {
+        // Adding main product
+        if (product.stock <= 0) {
+          showNotification('error', `${product.name} está sem estoque`);
+          return;
+        }
+
+        uniqueId = productId;
+        const existingItem = selectedItems.find(item => item.id === uniqueId);
+        
+        if (existingItem) {
+          if (existingItem.quantity >= product.stock) {
+            showNotification('error', `Estoque máximo para ${product.name} atingido (${product.stock} unidades)`);
+            return;
+          }
+          
+          setSelectedItems(selectedItems.map(item =>
+            item.id === uniqueId
+              ? { 
+                  ...item, 
+                  quantity: item.quantity + 1, 
+                  total: (item.quantity + 1) * item.unit_price 
+                }
+              : item
+          ));
+          return;
+        }
+
+        itemData = {
+          id: uniqueId,
+          product_id: productId,
+          variation_id: null,
+          product_name: product.name,
+          quantity: 1,
+          unit_price: product.price,
+          cost_price: product.cost_price,
+          total: product.price,
+          available_stock: product.stock,
+          is_variation: false,
+          image_url: product.image_url
+        };
+      }
+
+      setSelectedItems([...selectedItems, itemData]);
+      showNotification('success', `${itemData.variation_name || itemData.product_name} adicionado ao carrinho`);
+    } catch (error) {
+      console.error('Erro ao adicionar item:', error);
+      showNotification('error', 'Erro ao adicionar item ao carrinho');
     }
   };
 
-  const removeItemFromSale = (productId: string) => {
-    setSelectedItems(selectedItems.filter(item => item.product_id !== productId));
+  const removeItemFromSale = (itemId: string) => {
+    setSelectedItems(selectedItems.filter(item => item.id !== itemId));
   };
 
-  const updateItemQuantity = (productId: string, quantity: number) => {
+  const updateItemQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeItemFromSale(productId);
+      removeItemFromSale(itemId);
       return;
     }
 
     setSelectedItems(selectedItems.map(item => {
-      if (item.product_id === productId) {
-        const product = products.find(p => p.id === productId);
-        const maxQuantity = product ? product.stock : item.available_stock;
-        
-        if (quantity > maxQuantity) {
-          showNotification('error', `Estoque máximo para ${item.product_name}: ${maxQuantity} unidades`);
+      if (item.id === itemId) {
+        if (quantity > item.available_stock) {
+          showNotification('error', `Estoque máximo para ${item.variation_name || item.product_name}: ${item.available_stock} unidades`);
           return item;
         }
         
-        const newQuantity = Math.min(quantity, maxQuantity);
         return { 
           ...item, 
-          quantity: newQuantity, 
-          total: newQuantity * item.unit_price 
+          quantity: quantity, 
+          total: quantity * item.unit_price 
         };
       }
       return item;
@@ -198,12 +267,15 @@ export const Sales: React.FC = () => {
     setCustomerSearchTerm('');
     setSelectedItems([]);
     setPaymentMethod('pix');
+    setPaymentStatus('paid');
+    setDueDate('');
     setDiscountPercentage(0);
     setDiscountAmount(0);
     setDiscountType('percentage');
     setShowAddForm(false);
     setShowCustomerDropdown(false);
     setShowUpgradeModal(false);
+    setExpandedProducts(new Set());
   };
 
   const handleAddSale = () => {
@@ -228,15 +300,28 @@ export const Sales: React.FC = () => {
 
   const validateSaleItems = () => {
     for (const item of selectedItems) {
-      const product = products.find(p => p.id === item.product_id);
-      if (!product) {
-        showNotification('error', `Produto ${item.product_name} não encontrado`);
-        return false;
-      }
-      
-      if (product.stock < item.quantity) {
-        showNotification('error', `Estoque insuficiente para ${product.name}. Disponível: ${product.stock}, Solicitado: ${item.quantity}`);
-        return false;
+      if (item.is_variation && item.variation_id) {
+        const variation = getVariationsForProduct(item.product_id!).find(v => v.id === item.variation_id);
+        if (!variation) {
+          showNotification('error', `Variação ${item.variation_name} não encontrada`);
+          return false;
+        }
+        
+        if (variation.stock < item.quantity) {
+          showNotification('error', `Estoque insuficiente para ${item.variation_name}. Disponível: ${variation.stock}, Solicitado: ${item.quantity}`);
+          return false;
+        }
+      } else {
+        const product = products.find(p => p.id === item.product_id);
+        if (!product) {
+          showNotification('error', `Produto ${item.product_name} não encontrado`);
+          return false;
+        }
+        
+        if (product.stock < item.quantity) {
+          showNotification('error', `Estoque insuficiente para ${product.name}. Disponível: ${product.stock}, Solicitado: ${item.quantity}`);
+          return false;
+        }
       }
     }
     return true;
@@ -279,7 +364,8 @@ export const Sales: React.FC = () => {
       ...customerData,
       items: selectedItems.map(item => ({
         product_id: item.product_id,
-        product_name: item.product_name,
+        variation_id: item.variation_id || null,
+        product_name: item.variation_name ? `${item.product_name} - ${item.variation_name}` : item.product_name,
         quantity: item.quantity,
         unit_price: item.unit_price,
         total: item.total
@@ -289,9 +375,9 @@ export const Sales: React.FC = () => {
       discount,
       tax: 0,
       payment_method: paymentMethod,
-      payment_status: 'paid' as const,
-      due_date: new Date().toISOString(),
-      total_cost: totalCost // Adicionar custo total para controle de despesas
+      payment_status: paymentStatus,
+      due_date: dueDate || new Date().toISOString(),
+      total_cost: totalCost
     };
 
     console.log('Iniciando venda com dados:', saleData);
@@ -408,13 +494,13 @@ export const Sales: React.FC = () => {
         <button
           onClick={handleAddSale}
           disabled={!usageStatus.canAdd.sales}
-          className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
+          className={`flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
             usageStatus.canAdd.sales
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
+              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-5 h-5 mr-2" />
           Nova Venda
         </button>
       </div>
@@ -427,7 +513,7 @@ export const Sales: React.FC = () => {
           placeholder="Buscar vendas..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
         />
       </div>
 
@@ -519,13 +605,13 @@ export const Sales: React.FC = () => {
             <button
               onClick={handleAddSale}
               disabled={!usageStatus.canAdd.sales}
-              className={`inline-flex items-center px-4 py-2 rounded-lg transition-colors ${
+              className={`inline-flex items-center px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 ${
                 usageStatus.canAdd.sales
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-5 h-5 mr-2" />
               Nova Venda
             </button>
           )}
@@ -538,10 +624,18 @@ export const Sales: React.FC = () => {
           <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={resetForm}></div>
             
-            <div className="inline-block w-full max-w-5xl p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
+            <div className="inline-block w-full max-w-7xl p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-2xl">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold text-gray-900">Nova Venda</h3>
-                <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-4">
+                    <ShoppingCart className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-900">Nova Venda</h3>
+                    <p className="text-gray-600">Adicione produtos e variações ao carrinho</p>
+                  </div>
+                </div>
+                <button onClick={resetForm} className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-lg transition-colors">
                   <X className="w-6 h-6" />
                 </button>
               </div>
@@ -549,13 +643,13 @@ export const Sales: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Left Column - Customer Selection */}
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border-2 border-blue-200 shadow-sm">
                     <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
                       <User className="w-5 h-5 mr-2" />
                       Cliente
                     </h4>
                     
-                    <div className="relative">
+                    <div className="relative mb-6">
                       <input
                         type="text"
                         value={customerSearchTerm}
@@ -567,17 +661,17 @@ export const Sales: React.FC = () => {
                           }
                         }}
                         onFocus={() => setShowCustomerDropdown(true)}
-                        className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                        className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
                         placeholder="Buscar cliente ou venda direta"
                       />
                       
                       {showCustomerDropdown && (
-                        <div className="absolute z-20 w-full mt-1 bg-white border border-blue-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        <div className="absolute z-20 w-full mt-2 bg-white border-2 border-blue-300 rounded-xl shadow-xl max-h-60 overflow-y-auto">
                           {/* Direct Sale Option */}
                           <button
                             type="button"
                             onClick={handleDirectSale}
-                            className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-blue-100 flex items-center"
+                            className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-blue-100 flex items-center transition-colors"
                           >
                             <ShoppingCart className="w-4 h-4 mr-3 text-blue-600" />
                             <div>
@@ -597,7 +691,7 @@ export const Sales: React.FC = () => {
                                   key={customer.id}
                                   type="button"
                                   onClick={() => handleCustomerSelect(customer.id, customer.name)}
-                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center"
+                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center transition-colors"
                                 >
                                   <User className="w-4 h-4 mr-3 text-gray-400" />
                                   <div>
@@ -612,23 +706,51 @@ export const Sales: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Payment Method */}
-                    <div className="mt-6">
-                      <label className="block text-sm font-medium text-blue-900 mb-2">Forma de Pagamento</label>
-                      <select
-                        value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value as any)}
-                        className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                      >
-                        <option value="pix">PIX</option>
-                        <option value="card">Cartão</option>
-                        <option value="boleto">Boleto</option>
-                        <option value="cash">Dinheiro</option>
-                      </select>
+                    {/* Payment Details */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-blue-900 mb-2">Forma de Pagamento</label>
+                        <select
+                          value={paymentMethod}
+                          onChange={(e) => setPaymentMethod(e.target.value as any)}
+                          className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                        >
+                          <option value="pix">PIX</option>
+                          <option value="card">Cartão</option>
+                          <option value="boleto">Boleto</option>
+                          <option value="cash">Dinheiro</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-blue-900 mb-2">Status do Pagamento</label>
+                        <select
+                          value={paymentStatus}
+                          onChange={(e) => setPaymentStatus(e.target.value as any)}
+                          className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                        >
+                          <option value="paid">Pago</option>
+                          <option value="pending">Pendente</option>
+                          <option value="overdue">Vencido</option>
+                        </select>
+                      </div>
+
+                      {paymentStatus !== 'paid' && (
+                        <div>
+                          <label className="block text-sm font-medium text-blue-900 mb-2">Data de Vencimento</label>
+                          <input
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                            className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                            required={paymentStatus !== 'paid'}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* Discount Section */}
-                    <div className="mt-6 bg-white rounded-lg p-4 border border-blue-200">
+                    <div className="mt-6 bg-white rounded-xl p-4 border-2 border-blue-200 shadow-sm">
                       <h5 className="text-sm font-medium text-blue-900 mb-3">Desconto (Opcional)</h5>
                       
                       <div className="grid grid-cols-2 gap-3">
@@ -695,10 +817,10 @@ export const Sales: React.FC = () => {
                   </div>
 
                   {/* Middle Column - Products Selection */}
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border-2 border-green-200 shadow-sm">
                     <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
                       <Package className="w-5 h-5 mr-2" />
-                      Produtos
+                      Produtos Disponíveis
                     </h4>
                     
                     {/* Product Search */}
@@ -708,7 +830,7 @@ export const Sales: React.FC = () => {
                         type="text"
                         value={productSearchTerm}
                         onChange={(e) => setProductSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                        className="w-full pl-10 pr-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
                         placeholder="Buscar produtos..."
                       />
                     </div>
@@ -722,12 +844,12 @@ export const Sales: React.FC = () => {
                           const isExpanded = expandedProducts.has(product.id);
                           
                           return (
-                            <div key={product.id} className="bg-white rounded-lg border border-green-200 overflow-hidden">
+                            <div key={product.id} className="bg-white rounded-xl border-2 border-green-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
                               {/* Main Product */}
                               <div className="p-4">
-                                <div className="flex items-center space-x-3">
+                                <div className="flex items-center space-x-4">
                                   {/* Product Image */}
-                                  <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                  <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200">
                                     {product.image_url ? (
                                       <img
                                         src={product.image_url}
@@ -743,16 +865,18 @@ export const Sales: React.FC = () => {
                                   
                                   {/* Product Info */}
                                   <div className="flex-1">
-                                    <div className="flex items-center space-x-2 mb-1">
-                                      <h5 className="font-semibold text-gray-900">{product.name}</h5>
-                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${stockStatus.color}`}>
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <h5 className="font-semibold text-gray-900 text-lg">{product.name}</h5>
+                                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${stockStatus.color}`}>
                                         {stockStatus.label}
                                       </span>
                                     </div>
-                                    <p className="text-sm text-green-600 font-medium">{formatCurrency(product.price)}</p>
-                                    <p className="text-xs text-gray-500">
-                                      SKU: {product.sku} • Estoque: {product.stock}
-                                    </p>
+                                    <p className="text-lg font-bold text-green-600 mb-1">{formatCurrency(product.price)}</p>
+                                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                      <span>SKU: {product.sku}</span>
+                                      <span>Estoque: {product.stock}</span>
+                                      <span>Categoria: {product.category}</span>
+                                    </div>
                                   </div>
                                   
                                   {/* Actions */}
@@ -761,20 +885,26 @@ export const Sales: React.FC = () => {
                                       <button
                                         type="button"
                                         onClick={() => toggleProductExpansion(product.id)}
-                                        className="p-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors"
-                                        title={`${variations.length} variações`}
+                                        className="flex items-center px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors border border-purple-300"
+                                        title={`${variations.length} variações disponíveis`}
                                       >
-                                        <Grid className="w-4 h-4" />
+                                        <Grid className="w-4 h-4 mr-1" />
+                                        {variations.length}
+                                        {isExpanded ? (
+                                          <ChevronUp className="w-4 h-4 ml-1" />
+                                        ) : (
+                                          <ChevronDown className="w-4 h-4 ml-1" />
+                                        )}
                                       </button>
                                     )}
                                     <button
                                       type="button"
                                       onClick={() => addItemToSale(product.id)}
                                       disabled={product.stock === 0}
-                                      className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                                      className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                                         product.stock === 0
                                           ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                          : 'bg-green-600 text-white hover:bg-green-700'
+                                          : 'bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md transform hover:scale-105'
                                       }`}
                                     >
                                       {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
@@ -785,17 +915,19 @@ export const Sales: React.FC = () => {
 
                               {/* Variations */}
                               {variations.length > 0 && isExpanded && (
-                                <div className="bg-purple-50 border-t border-purple-200 p-4">
+                                <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-t-2 border-purple-200 p-4">
                                   <h6 className="text-sm font-medium text-purple-900 mb-3 flex items-center">
                                     <Grid className="w-4 h-4 mr-2" />
-                                    Variações Disponíveis
+                                    Variações Disponíveis ({variations.length})
                                   </h6>
-                                  <div className="grid grid-cols-1 gap-2">
-                                    {variations.map((variation) => (
-                                      <div key={variation.id} className="bg-white rounded-lg p-3 border border-purple-200">
-                                        <div className="flex items-center justify-between">
+                                  <div className="grid grid-cols-1 gap-3">
+                                    {variations.map((variation) => {
+                                      const variationStockStatus = getStockStatus(variation.stock, 1);
+                                      return (
+                                        <div key={variation.id} className="bg-white rounded-lg p-3 border-2 border-purple-200 hover:border-purple-300 transition-colors">
                                           <div className="flex items-center space-x-3">
-                                            <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden">
+                                            {/* Variation Image */}
+                                            <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
                                               {variation.image_url ? (
                                                 <img
                                                   src={variation.image_url}
@@ -808,43 +940,57 @@ export const Sales: React.FC = () => {
                                                 </div>
                                               )}
                                             </div>
-                                            <div>
-                                              <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
-                                              <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                            
+                                            {/* Variation Info */}
+                                            <div className="flex-1">
+                                              <div className="flex items-center space-x-2 mb-1">
+                                                <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${variationStockStatus.color}`}>
+                                                  {variationStockStatus.label}
+                                                </span>
+                                              </div>
+                                              <div className="flex items-center space-x-3 text-xs text-gray-500 mb-1">
                                                 {variation.color && (
-                                                  <span className="flex items-center">
+                                                  <span className="flex items-center bg-gray-100 px-2 py-1 rounded">
                                                     <Palette className="w-3 h-3 mr-1" />
                                                     {variation.color}
                                                   </span>
                                                 )}
                                                 {variation.size && (
-                                                  <span className="flex items-center">
+                                                  <span className="flex items-center bg-gray-100 px-2 py-1 rounded">
                                                     <Ruler className="w-3 h-3 mr-1" />
                                                     {variation.size}
                                                   </span>
                                                 )}
+                                                <span className="bg-gray-100 px-2 py-1 rounded">
+                                                  SKU: {variation.sku}
+                                                </span>
                                               </div>
-                                              <p className="text-sm text-purple-600 font-medium">
-                                                {variation.price ? formatCurrency(variation.price) : formatCurrency(product.price)}
-                                              </p>
-                                              <p className="text-xs text-gray-500">Estoque: {variation.stock}</p>
+                                              <div className="flex items-center justify-between">
+                                                <p className="text-sm font-bold text-purple-600">
+                                                  {formatCurrency(variation.price || product.price)}
+                                                </p>
+                                                <p className="text-xs text-gray-500">Estoque: {variation.stock}</p>
+                                              </div>
                                             </div>
+                                            
+                                            {/* Add Variation Button */}
+                                            <button
+                                              type="button"
+                                              onClick={() => addItemToSale(product.id, variation.id)}
+                                              disabled={variation.stock === 0}
+                                              className={`px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                                variation.stock === 0
+                                                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                  : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm hover:shadow-md transform hover:scale-105'
+                                              }`}
+                                            >
+                                              {variation.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
+                                            </button>
                                           </div>
-                                          <button
-                                            type="button"
-                                            onClick={() => addItemToSale(`${product.id}-${variation.id}`)}
-                                            disabled={variation.stock === 0}
-                                            className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-                                              variation.stock === 0
-                                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                : 'bg-purple-600 text-white hover:bg-purple-700'
-                                            }`}
-                                          >
-                                            {variation.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
-                                          </button>
                                         </div>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               )}
@@ -853,83 +999,127 @@ export const Sales: React.FC = () => {
                         })}
                       </div>
                     ) : (
-                      <div className="text-center py-8 bg-white rounded-lg border border-green-200">
+                      <div className="text-center py-8 bg-white rounded-xl border-2 border-green-200">
                         <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                         <p className="text-gray-600">Nenhum produto encontrado</p>
+                        <p className="text-sm text-gray-500">Tente ajustar sua busca</p>
                       </div>
                     )}
                   </div>
 
                   {/* Right Column - Shopping Cart */}
-                  <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-xl border border-amber-200">
+                  <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-xl border-2 border-amber-200 shadow-sm">
                     <h4 className="text-lg font-semibold text-amber-900 mb-4 flex items-center">
                       <ShoppingCart className="w-5 h-5 mr-2" />
-                      Carrinho ({selectedItems.length})
+                      Carrinho de Compras ({selectedItems.length})
                     </h4>
                     
                     {selectedItems.length > 0 ? (
-                      <div className="space-y-3 mb-6">
-                        {selectedItems.map((item, index) => (
-                          <div key={item.product_id} className="bg-white rounded-lg p-4 border border-amber-200">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex-1">
-                                <p className="font-medium text-gray-900 text-sm">{item.product_name}</p>
-                                {item.is_variation && (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-1">
-                                    <Grid className="w-3 h-3 mr-1" />
-                                    Variação
-                                  </span>
+                      <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
+                        {selectedItems.map((item) => (
+                          <div key={item.id} className="bg-white rounded-xl p-4 border-2 border-amber-200 shadow-sm">
+                            <div className="flex items-center space-x-3 mb-3">
+                              {/* Item Image */}
+                              <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                                {item.image_url ? (
+                                  <img
+                                    src={item.image_url}
+                                    alt={item.variation_name || item.product_name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                    {item.is_variation ? (
+                                      <Grid className="w-4 h-4 text-gray-400" />
+                                    ) : (
+                                      <Package className="w-4 h-4 text-gray-400" />
+                                    )}
+                                  </div>
                                 )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                  {formatCurrency(item.unit_price)} × {item.quantity}
+                              </div>
+                              
+                              {/* Item Info */}
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <p className="font-medium text-gray-900 text-sm">{item.product_name}</p>
+                                  {item.is_variation && (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                                      <Grid className="w-3 h-3 mr-1" />
+                                      {item.variation_name}
+                                    </span>
+                                  )}
+                                </div>
+                                {item.is_variation && (
+                                  <div className="flex items-center space-x-2 text-xs text-gray-500 mb-1">
+                                    {item.color && (
+                                      <span className="flex items-center bg-gray-100 px-2 py-1 rounded">
+                                        <Palette className="w-3 h-3 mr-1" />
+                                        {item.color}
+                                      </span>
+                                    )}
+                                    {item.size && (
+                                      <span className="flex items-center bg-gray-100 px-2 py-1 rounded">
+                                        <Ruler className="w-3 h-3 mr-1" />
+                                        {item.size}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                <p className="text-xs text-gray-500">
+                                  {formatCurrency(item.unit_price)} × {item.quantity} = {formatCurrency(item.total)}
                                 </p>
                               </div>
-                              <div className="text-right">
-                                <p className="font-bold text-green-600">{formatCurrency(item.total)}</p>
-                              </div>
+                              
+                              {/* Remove Button */}
+                              <button
+                                type="button"
+                                onClick={() => removeItemFromSale(item.id)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Remover item"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                             
+                            {/* Quantity Controls */}
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-2">
                                 <button
                                   type="button"
-                                  onClick={() => updateItemQuantity(item.product_id!, item.quantity - 1)}
-                                  className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                                  onClick={() => updateItemQuantity(item.id, item.quantity - 1)}
+                                  className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
                                 >
                                   <Minus className="w-4 h-4" />
                                 </button>
-                                <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                                <span className="w-12 text-center text-sm font-medium bg-gray-100 py-1 rounded">{item.quantity}</span>
                                 <button
                                   type="button"
-                                  onClick={() => updateItemQuantity(item.product_id!, item.quantity + 1)}
+                                  onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
                                   disabled={item.quantity >= item.available_stock}
-                                  className="w-8 h-8 rounded-full bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 flex items-center justify-center text-white"
+                                  className="w-8 h-8 rounded-full bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 flex items-center justify-center text-white transition-colors"
                                 >
                                   <Plus className="w-4 h-4" />
                                 </button>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => removeItemFromSale(item.product_id!)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <div className="text-right">
+                                <p className="font-bold text-green-600 text-lg">{formatCurrency(item.total)}</p>
+                                <p className="text-xs text-gray-500">Disponível: {item.available_stock}</p>
+                              </div>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 bg-white rounded-lg border border-amber-200 mb-6">
+                      <div className="text-center py-8 bg-white rounded-xl border-2 border-amber-200 mb-6">
                         <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                        <p className="text-gray-600">Carrinho vazio</p>
+                        <p className="text-gray-600 font-medium">Carrinho vazio</p>
                         <p className="text-sm text-gray-500">Adicione produtos para começar</p>
                       </div>
                     )}
                     
                     {/* Totals */}
-                    <div className="bg-white rounded-lg p-4 border border-amber-200">
-                      <div className="space-y-2">
+                    <div className="bg-white rounded-xl p-4 border-2 border-amber-200 shadow-sm">
+                      <div className="space-y-3">
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Subtotal:</span>
                           <span className="text-sm font-medium text-gray-900">{formatCurrency(calculateSubtotal())}</span>
@@ -946,12 +1136,12 @@ export const Sales: React.FC = () => {
                           </div>
                         )}
                         
-                        <div className="border-t border-amber-300 pt-2">
-                          <div className="flex justify-between items-center text-lg font-bold">
+                        <div className="border-t-2 border-amber-300 pt-3">
+                          <div className="flex justify-between items-center text-xl font-bold">
                             <span className="text-amber-900">Total:</span>
                             <span className="text-green-600">{formatCurrency(calculateTotal())}</span>
                           </div>
-                          <div className="flex justify-between items-center text-sm mt-1">
+                          <div className="flex justify-between items-center text-sm mt-2">
                             <span className="text-gray-600">Lucro Estimado:</span>
                             <span className={`font-medium ${
                               (calculateTotal() - calculateTotalCost()) > 0 ? 'text-green-600' : 'text-red-600'
@@ -965,18 +1155,19 @@ export const Sales: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-4 pt-6 border-t-2 border-gray-200">
                   <button
                     type="button"
                     onClick={resetForm}
-                    className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                    className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={selectedItems.length === 0}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-lg hover:from-blue-700 hover:to-green-700 transition-all duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+                    className="px-8 py-3 bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-xl hover:from-blue-700 hover:to-green-700 transition-all duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
                   >
                     Finalizar Venda ({formatCurrency(calculateTotal())})
                   </button>
