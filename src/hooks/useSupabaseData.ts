@@ -309,13 +309,10 @@ export const useSupabaseData = () => {
       imageUrl = uploadResult.url
     }
 
-    // Temporarily remove cost_price until schema cache is refreshed
-    const { cost_price, ...dataWithoutCostPrice } = variationData
-
     const { data, error } = await supabase
       .from('product_variations')
       .insert({
-        ...dataWithoutCostPrice,
+        ...variationData,
         image_url: imageUrl,
         user_id: user.id
       })
@@ -356,14 +353,11 @@ export const useSupabaseData = () => {
       imageUrl = uploadResult.url
     }
 
-    // Temporarily remove cost_price until schema cache is refreshed
-    const { cost_price, ...updatesWithoutCostPrice } = updates
-
     try {
       const { data, error } = await supabase
         .from('product_variations')
         .update({
-          ...updatesWithoutCostPrice,
+          ...updates,
           image_url: imageUrl
         })
         .eq('id', id)

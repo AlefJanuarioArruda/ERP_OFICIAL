@@ -57,6 +57,7 @@ export const Products: React.FC = () => {
     stock: '',
     price: '',
     cost_price: ''
+    cost_price: ''
   });
 
   // Effect to show limit banner when limit is reached
@@ -100,7 +101,8 @@ export const Products: React.FC = () => {
       size: '',
       sku: '',
       stock: '',
-      price: ''
+      price: '',
+      cost_price: ''
     });
   };
 
@@ -840,14 +842,15 @@ export const Products: React.FC = () => {
                 </div>
 
                 {/* Profit Margin Preview */}
-                {variationFormData.price && showVariationForm && (
+                {variationFormData.price && parseFloat(variationFormData.price) > 0 && showVariationForm && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-blue-900">Margem de Lucro da Variação:</span>
                       <span className="text-lg font-bold text-blue-600">
                         {(() => {
-                          const productCost = products.find(p => p.id === showVariationForm)?.cost_price || 0;
-                          return (((parseFloat(variationFormData.price) - productCost) / parseFloat(variationFormData.price)) * 100).toFixed(1);
+                          const effectiveCostPrice = variationFormData.cost_price ? parseFloat(variationFormData.cost_price) : (products.find(p => p.id === showVariationForm)?.cost_price || 0);
+                          const sellingPrice = parseFloat(variationFormData.price);
+                          return (((sellingPrice - effectiveCostPrice) / sellingPrice) * 100).toFixed(1);
                         })()}%
                       </span>
                     </div>
@@ -855,8 +858,9 @@ export const Products: React.FC = () => {
                       <span className="text-sm text-blue-700">Lucro por unidade:</span>
                       <span className="text-sm font-medium text-blue-700">
                         {(() => {
-                          const productCost = products.find(p => p.id === showVariationForm)?.cost_price || 0;
-                          return formatCurrency(parseFloat(variationFormData.price) - productCost);
+                          const effectiveCostPrice = variationFormData.cost_price ? parseFloat(variationFormData.cost_price) : (products.find(p => p.id === showVariationForm)?.cost_price || 0);
+                          const sellingPrice = parseFloat(variationFormData.price);
+                          return formatCurrency(sellingPrice - effectiveCostPrice);
                         })()}
                       </span>
                     </div>
@@ -925,6 +929,24 @@ export const Products: React.FC = () => {
                 <button onClick={resetVariationForm} className="text-gray-400 hover:text-gray-600">
                   <X className="w-5 h-5" />
                 </button>
+              </div>
+
+              {/* Cost Price Specific for Variation */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Custo Específico (opcional)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={variationFormData.cost_price}
+                  onChange={(e) => setVariationFormData({...variationFormData, cost_price: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Deixe vazio para usar o custo do produto principal"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Se não informado, será usado o custo do produto principal: {
+                    showVariationForm ? formatCurrency(products.find(p => p.id === showVariationForm)?.cost_price || 0) : ''
+                  }
+                </p>
               </div>
 
               <form onSubmit={handleVariationSubmit} className="space-y-6">
