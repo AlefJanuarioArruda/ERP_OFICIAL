@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Plus, Search, ShoppingCart, DollarSign, Calendar, Edit, Trash2, CheckCircle, AlertCircle, X, Package, Users, Grid,
   ArrowRight, User, Tag, Percent, Receipt, Clock, CreditCard, Banknote, Barcode,
@@ -679,8 +679,16 @@ export const Sales: React.FC = () => {
                               {/* Main Product */}
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center flex-1">
-                                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                    <Package className="w-6 h-6 text-blue-600" />
+                                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
+                                    {product.image_url ? (
+                                      <img
+                                        src={product.image_url}
+                                        alt={product.name}
+                                        className="w-12 h-12 object-cover rounded-lg"
+                                      />
+                                    ) : (
+                                      <Package className="w-6 h-6 text-blue-600" />
+                                    )}
                                   </div>
                                   <div className="flex-1">
                                     <h5 className="font-medium text-gray-900">{product.name}</h5>
@@ -733,8 +741,16 @@ export const Sales: React.FC = () => {
                                     {variations.map((variation) => (
                                       <div key={variation.id} className="flex items-center justify-between p-2 bg-purple-50 rounded-lg border border-purple-200">
                                         <div className="flex items-center flex-1">
-                                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
-                                            <Grid className="w-4 h-4 text-purple-600" />
+                                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
+                                            {variation.image_url ? (
+                                              <img
+                                                src={variation.image_url}
+                                                alt={variation.variation_name}
+                                                className="w-8 h-8 object-cover rounded-lg"
+                                              />
+                                            ) : (
+                                              <Grid className="w-4 h-4 text-purple-600" />
+                                            )}
                                           </div>
                                           <div className="flex-1">
                                             <p className="font-medium text-gray-900 text-sm">{variation.variation_name}</p>
@@ -1018,7 +1034,6 @@ export const Sales: React.FC = () => {
         </div>
       )}
 
-      
       {/* Upgrade Modal */}
       <UpgradeModal
         isOpen={showUpgradeModal}
