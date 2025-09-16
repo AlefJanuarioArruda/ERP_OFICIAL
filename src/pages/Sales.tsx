@@ -624,7 +624,7 @@ export const Sales: React.FC = () => {
                           placeholder="Buscar cliente ou selecionar venda direta"
                         />
                         
-                        {showCustomerDropdown && (
+                              onClick={() => addToCart(product.id)}
                           <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                             {/* Direct Sale Option */}
                             <button
