@@ -930,7 +930,7 @@ const product = products.find(p => p.id === productId);
                                           <div className="flex items-center justify-between mt-2">
                                             <span className="text-sm font-medium text-gray-900">{formatCurrency(variationPrice)}</span>
                                             <button
-                                              onClick={() => addItemToSale(product, variation)}
+                                              onClick={() => addItemToSale(product.id, variation.id)}
                                               disabled={variation.stock === 0}
                                               className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
