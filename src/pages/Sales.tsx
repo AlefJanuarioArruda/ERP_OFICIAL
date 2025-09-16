@@ -5,6 +5,7 @@ import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UpgradeModal } from '../components/UpgradeModal';
 import { UsageLimitBanner } from '../components/UsageLimitBanner';
 
+
 export const Sales: React.FC = () => {
  // Linha corrigida
 const { sales, customers, products, productVariations = [], getVariationsForProduct, addSale, loading } = useSupabaseData(); = useSupabaseData();
