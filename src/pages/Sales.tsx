@@ -516,372 +516,464 @@ export const Sales: React.FC = () => {
             <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={resetForm}></div>
             
             <div className="inline-block w-full max-w-5xl p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl rounded-xl">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Nova Venda</h3>
-                <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-2xl font-bold text-gray-900">Nova Venda</h3>
+                      <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
+                        <X className="w-6 h-6" />
+                      </button>
+                    </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Left Column - Customer and Payment */}
-                  <div className="space-y-6">
-                    {/* Customer Selection */}
-                    <div className="relative">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={customerSearchTerm}
-                          onChange={(e) => {
-                            setCustomerSearchTerm(e.target.value);
-                            setShowCustomerDropdown(true);
-                            if (!e.target.value) {
-                              setSelectedCustomer('');
-                            }
-                          }}
-                          onFocus={() => setShowCustomerDropdown(true)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="Buscar cliente ou selecionar venda direta"
-                        />
-                        
-                        {showCustomerDropdown && (
-                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                            {/* Direct Sale Option */}
-                            <button
-                              type="button"
-                              onClick={handleDirectSale}
-                              className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 flex items-center"
-                            >
-                              <ShoppingCart className="w-4 h-4 mr-3 text-blue-600" />
-                              <div>
-                                <div className="font-medium text-gray-900">Venda Direta (sem cliente)</div>
-                                <div className="text-sm text-gray-500">Venda anônima sem vínculo com cliente</div>
-                              </div>
-                            </button>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Left Column - Customer Selection */}
+                        <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+                          <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                            <User className="w-5 h-5 mr-2" />
+                            Cliente
+                          </h4>
+                          
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={customerSearchTerm}
+                              onChange={(e) => {
+                                setCustomerSearchTerm(e.target.value);
+                                setShowCustomerDropdown(true);
+                                if (!e.target.value) {
+                                  setSelectedCustomer('');
+                                }
+                              }}
+                              onFocus={() => setShowCustomerDropdown(true)}
+                              className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                              placeholder="Buscar cliente ou venda direta"
+                            />
                             
-                            {/* Customer List */}
-                            {filteredCustomers.length > 0 && (
-                              <>
-                                <div className="px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase">
-                                  Clientes Cadastrados
-                                </div>
-                                {filteredCustomers.map((customer) => (
-                                  <button
-                                    key={customer.id}
-                                    type="button"
-                                    onClick={() => handleCustomerSelect(customer.id, customer.name)}
-                                    className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center"
-                                  >
-                                    <User className="w-4 h-4 mr-3 text-gray-400" />
-                                    <div>
-                                      <div className="font-medium text-gray-900">{customer.name}</div>
-                                      <div className="text-sm text-gray-500">{customer.email}</div>
+                            {showCustomerDropdown && (
+                              <div className="absolute z-20 w-full mt-1 bg-white border border-blue-300 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                                {/* Direct Sale Option */}
+                                <button
+                                  type="button"
+                                  onClick={handleDirectSale}
+                                  className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-blue-100 flex items-center"
+                                >
+                                  <ShoppingCart className="w-4 h-4 mr-3 text-blue-600" />
+                                  <div>
+                                    <div className="font-medium text-gray-900">Venda Direta</div>
+                                    <div className="text-sm text-gray-500">Sem vínculo com cliente</div>
+                                  </div>
+                                </button>
+                                
+                                {/* Customer List */}
+                                {filteredCustomers.length > 0 && (
+                                  <>
+                                    <div className="px-4 py-2 bg-blue-50 text-xs font-medium text-blue-600 uppercase">
+                                      Clientes Cadastrados
                                     </div>
-                                  </button>
-                                ))}
-                              </>
-                            )}
-                            
-                            {filteredCustomers.length === 0 && customerSearchTerm && customerSearchTerm !== 'Venda Direta (sem cliente)' && (
-                              <div className="px-4 py-3 text-gray-500 text-sm">
-                                Nenhum cliente encontrado
+                                    {filteredCustomers.map((customer) => (
+                                      <button
+                                        key={customer.id}
+                                        type="button"
+                                        onClick={() => handleCustomerSelect(customer.id, customer.name)}
+                                        className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center"
+                                      >
+                                        <User className="w-4 h-4 mr-3 text-gray-400" />
+                                        <div>
+                                          <div className="font-medium text-gray-900">{customer.name}</div>
+                                          <div className="text-sm text-gray-500">{customer.email}</div>
+                                        </div>
+                                      </button>
+                                    ))}
+                                  </>
+                                )}
                               </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    </div>
 
-                    {/* Payment Method */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
-                      <select
-                        value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value as any)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="pix">PIX</option>
-                        <option value="card">Cartão</option>
-                        <option value="boleto">Boleto</option>
-                        <option value="cash">Dinheiro</option>
-                      </select>
-                    </div>
+                          {/* Payment Method */}
+                          <div className="mt-6">
+                            <label className="block text-sm font-medium text-blue-900 mb-2">Forma de Pagamento</label>
+                            <select
+                              value={paymentMethod}
+                              onChange={(e) => setPaymentMethod(e.target.value as any)}
+                              className="w-full px-4 py-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                            >
+                              <option value="pix">PIX</option>
+                              <option value="card">Cartão</option>
+                              <option value="boleto">Boleto</option>
+                              <option value="cash">Dinheiro</option>
+                            </select>
+                          </div>
 
-                    {/* Discount Section */}
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <h4 className="text-sm font-medium text-gray-700 mb-3">Desconto (Opcional)</h4>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-                          <select
-                            value={discountType}
-                            onChange={(e) => {
-                              setDiscountType(e.target.value as 'percentage' | 'fixed');
-                              setDiscountPercentage(0);
-                              setDiscountAmount(0);
-                            }}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          >
-                            <option value="percentage">Porcentagem (%)</option>
-                            <option value="fixed">Valor Fixo (R$)</option>
-                          </select>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            {discountType === 'percentage' ? 'Desconto (%)' : 'Desconto (R$)'}
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            max={discountType === 'percentage' ? "100" : undefined}
-                            step={discountType === 'percentage' ? "0.1" : "0.01"}
-                            value={discountType === 'percentage' ? 
-                              (discountPercentage === 0 ? '' : discountPercentage) : 
-                              (discountAmount === 0 ? '' : discountAmount)
-                            }
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === '') {
-                                if (discountType === 'percentage') {
-                                  setDiscountPercentage(0);
-                                } else {
-                                  setDiscountAmount(0);
-                                }
-                              } else {
-                                const numValue = parseFloat(value);
-                                if (!isNaN(numValue)) {
-                                  if (discountType === 'percentage') {
-                                    setDiscountPercentage(Math.min(100, Math.max(0, numValue)));
-                                  } else {
-                                    setDiscountAmount(Math.max(0, numValue));
+                          {/* Discount Section */}
+                          <div className="mt-6 bg-white rounded-lg p-4 border border-blue-200">
+                            <h5 className="text-sm font-medium text-blue-900 mb-3">Desconto (Opcional)</h5>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Tipo</label>
+                                <select
+                                  value={discountType}
+                                  onChange={(e) => {
+                                    setDiscountType(e.target.value as 'percentage' | 'fixed');
+                                    setDiscountPercentage(0);
+                                    setDiscountAmount(0);
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                >
+                                  <option value="percentage">%</option>
+                                  <option value="fixed">R$</option>
+                                </select>
+                              </div>
+                              
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Valor</label>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max={discountType === 'percentage' ? "100" : undefined}
+                                  step={discountType === 'percentage' ? "0.1" : "0.01"}
+                                  value={discountType === 'percentage' ? 
+                                    (discountPercentage === 0 ? '' : discountPercentage) : 
+                                    (discountAmount === 0 ? '' : discountAmount)
                                   }
-                                }
-                              }
-                            }}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            placeholder="0"
-                          />
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value === '') {
+                                      if (discountType === 'percentage') {
+                                        setDiscountPercentage(0);
+                                      } else {
+                                        setDiscountAmount(0);
+                                      }
+                                    } else {
+                                      const numValue = parseFloat(value);
+                                      if (!isNaN(numValue)) {
+                                        if (discountType === 'percentage') {
+                                          setDiscountPercentage(Math.min(100, Math.max(0, numValue)));
+                                        } else {
+                                          setDiscountAmount(Math.max(0, numValue));
+                                        }
+                                      }
+                                    }
+                                  }}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                  placeholder="0"
+                                />
+                              </div>
+                            </div>
+                            
+                            {(discountPercentage > 0 || discountAmount > 0) && (
+                              <div className="mt-3 p-2 bg-green-50 rounded border border-green-200">
+                                <p className="text-sm text-green-800">
+                                  Desconto: <strong>{formatCurrency(calculateDiscount())}</strong>
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      
-                      {(discountPercentage > 0 || discountAmount > 0) && (
-                        <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
-                          <p className="text-sm text-blue-800">
-                            Desconto aplicado: <strong>{formatCurrency(calculateDiscount())}</strong>
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Right Column - Products */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Selecionar Produtos</label>
-                    {products.length > 0 ? (
-                      <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg">
-                        {products.map((product) => {
-                          const isSelected = selectedItems.some(item => item.product_id === product.id);
-                          const selectedItem = selectedItems.find(item => item.product_id === product.id);
-                          const stockStatus = getStockStatus(product.stock, product.min_stock);
+                        {/* Middle Column - Products Selection */}
+                        <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+                          <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+                            <Package className="w-5 h-5 mr-2" />
+                            Produtos
+                          </h4>
                           
-                          return (
-                            <div key={product.id} className={`p-4 border-b border-gray-100 last:border-b-0 ${
-                              product.stock === 0 ? 'bg-red-50' : 'hover:bg-gray-50'
-                            }`}>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3 flex-1">
-                                  {/* Product Image */}
-                                  <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                                    {product.image_url ? (
-                                      <img
-                                        src={product.image_url}
-                                        alt={product.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                                        <Package className="w-6 h-6 text-gray-400" />
+                          {/* Product Search */}
+                          <div className="relative mb-4">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                              type="text"
+                              value={productSearchTerm}
+                              onChange={(e) => setProductSearchTerm(e.target.value)}
+                              className="w-full pl-10 pr-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                              placeholder="Buscar produtos..."
+                            />
+                          </div>
+
+                          {/* Products List */}
+                          {filteredProductsForSale.length > 0 ? (
+                            <div className="max-h-96 overflow-y-auto space-y-3">
+                              {filteredProductsForSale.map((product) => {
+                                const stockStatus = getStockStatus(product.stock, product.min_stock);
+                                const variations = getVariationsForProduct(product.id);
+                                const isExpanded = expandedProducts.has(product.id);
+                                
+                                return (
+                                  <div key={product.id} className="bg-white rounded-lg border border-green-200 overflow-hidden">
+                                    {/* Main Product */}
+                                    <div className="p-4">
+                                      <div className="flex items-center space-x-3">
+                                        {/* Product Image */}
+                                        <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                          {product.image_url ? (
+                                            <img
+                                              src={product.image_url}
+                                              alt={product.name}
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                              <Package className="w-8 h-8 text-gray-400" />
+                                            </div>
+                                          )}
+                                        </div>
+                                        
+                                        {/* Product Info */}
+                                        <div className="flex-1">
+                                          <div className="flex items-center space-x-2 mb-1">
+                                            <h5 className="font-semibold text-gray-900">{product.name}</h5>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${stockStatus.color}`}>
+                                              {stockStatus.label}
+                                            </span>
+                                          </div>
+                                          <p className="text-sm text-green-600 font-medium">{formatCurrency(product.price)}</p>
+                                          <p className="text-xs text-gray-500">
+                                            SKU: {product.sku} • Estoque: {product.stock}
+                                          </p>
+                                        </div>
+                                        
+                                        {/* Actions */}
+                                        <div className="flex items-center space-x-2">
+                                          {variations.length > 0 && (
+                                            <button
+                                              type="button"
+                                              onClick={() => toggleProductExpansion(product.id)}
+                                              className="p-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors"
+                                              title={`${variations.length} variações`}
+                                            >
+                                              <Grid className="w-4 h-4" />
+                                            </button>
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => addItemToSale(product.id)}
+                                            disabled={product.stock === 0}
+                                            className={`px-4 py-2 text-sm rounded-lg transition-colors ${
+                                              product.stock === 0
+                                                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                : 'bg-green-600 text-white hover:bg-green-700'
+                                            }`}
+                                          >
+                                            {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    {/* Variations */}
+                                    {variations.length > 0 && isExpanded && (
+                                      <div className="bg-purple-50 border-t border-purple-200 p-4">
+                                        <h6 className="text-sm font-medium text-purple-900 mb-3 flex items-center">
+                                          <Grid className="w-4 h-4 mr-2" />
+                                          Variações Disponíveis
+                                        </h6>
+                                        <div className="grid grid-cols-1 gap-2">
+                                          {variations.map((variation) => (
+                                            <div key={variation.id} className="bg-white rounded-lg p-3 border border-purple-200">
+                                              <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                  <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden">
+                                                    {variation.image_url ? (
+                                                      <img
+                                                        src={variation.image_url}
+                                                        alt={variation.variation_name}
+                                                        className="w-full h-full object-cover"
+                                                      />
+                                                    ) : (
+                                                      <div className="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                                                        <Grid className="w-4 h-4 text-purple-500" />
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
+                                                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                                      {variation.color && (
+                                                        <span className="flex items-center">
+                                                          <Palette className="w-3 h-3 mr-1" />
+                                                          {variation.color}
+                                                        </span>
+                                                      )}
+                                                      {variation.size && (
+                                                        <span className="flex items-center">
+                                                          <Ruler className="w-3 h-3 mr-1" />
+                                                          {variation.size}
+                                                        </span>
+                                                      )}
+                                                    </div>
+                                                    <p className="text-sm text-purple-600 font-medium">
+                                                      {variation.price ? formatCurrency(variation.price) : formatCurrency(product.price)}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500">Estoque: {variation.stock}</p>
+                                                  </div>
+                                                </div>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => addItemToSale(`${product.id}-${variation.id}`)}
+                                                  disabled={variation.stock === 0}
+                                                  className={`px-3 py-1 text-sm rounded-lg transition-colors ${
+                                                    variation.stock === 0
+                                                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                      : 'bg-purple-600 text-white hover:bg-purple-700'
+                                                  }`}
+                                                >
+                                                  {variation.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
                                       </div>
                                     )}
                                   </div>
-                                  
-                                  {/* Product Info */}
-                                  <div className="flex-1">
-                                    <div className="flex items-center space-x-2 mb-1">
-                                      <p className="font-medium text-gray-900">{product.name}</p>
-                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${stockStatus.color}`}>
-                                        {stockStatus.label}
-                                      </span>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 bg-white rounded-lg border border-green-200">
+                              <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                              <p className="text-gray-600">Nenhum produto encontrado</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Right Column - Shopping Cart */}
+                        <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-xl border border-amber-200">
+                          <h4 className="text-lg font-semibold text-amber-900 mb-4 flex items-center">
+                            <ShoppingCart className="w-5 h-5 mr-2" />
+                            Carrinho ({selectedItems.length})
+                          </h4>
+                          
+                          {selectedItems.length > 0 ? (
+                            <div className="space-y-3 mb-6">
+                              {selectedItems.map((item, index) => (
+                                <div key={item.product_id} className="bg-white rounded-lg p-4 border border-amber-200">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex-1">
+                                      <p className="font-medium text-gray-900 text-sm">{item.product_name}</p>
+                                      {item.is_variation && (
+                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-1">
+                                          <Grid className="w-3 h-3 mr-1" />
+                                          Variação
+                                        </span>
+                                      )}
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {formatCurrency(item.unit_price)} × {item.quantity}
+                                      </p>
                                     </div>
-                                    <p className="text-sm text-gray-600">{formatCurrency(product.price)}</p>
-                                    <p className="text-xs text-gray-500">
-                                      Estoque: {product.stock} • Custo: {formatCurrency(product.cost_price)}
-                                    </p>
+                                    <div className="text-right">
+                                      <p className="font-bold text-green-600">{formatCurrency(item.total)}</p>
+                                    </div>
                                   </div>
-                                </div>
-                                
-                                {/* Quantity Controls or Add Button */}
-                                <div className="flex items-center space-x-2">
-                                  {isSelected && selectedItem ? (
+                                  
+                                  <div className="flex items-center justify-between">
                                     <div className="flex items-center space-x-2">
                                       <button
                                         type="button"
-                                        onClick={() => updateItemQuantity(product.id, selectedItem.quantity - 1)}
-                                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-sm font-medium"
+                                        onClick={() => updateItemQuantity(item.product_id!, item.quantity - 1)}
+                                        className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
                                       >
                                         <Minus className="w-4 h-4" />
                                       </button>
-                                      <span className="w-8 text-center text-sm font-medium">{selectedItem.quantity}</span>
+                                      <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
                                       <button
                                         type="button"
-                                        onClick={() => updateItemQuantity(product.id, selectedItem.quantity + 1)}
-                                        disabled={selectedItem.quantity >= product.stock}
-                                        className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 flex items-center justify-center text-white text-sm font-medium"
+                                        onClick={() => updateItemQuantity(item.product_id!, item.quantity + 1)}
+                                        disabled={item.quantity >= item.available_stock}
+                                        className="w-8 h-8 rounded-full bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 flex items-center justify-center text-white"
                                       >
-                                        +
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => removeItemFromSale(product.id)}
-                                        className="ml-2 text-red-600 hover:text-red-800"
-                                      >
-                                        <X className="w-4 h-4" />
+                                        <Plus className="w-4 h-4" />
                                       </button>
                                     </div>
-                                  ) : (
                                     <button
                                       type="button"
-                                      onClick={() => addItemToSale(product.id)}
-                                      disabled={product.stock === 0}
-                                      className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-                                        product.stock === 0
-                                          ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                          : 'bg-blue-600 text-white hover:bg-blue-700'
-                                      }`}
+                                      onClick={() => removeItemFromSale(item.product_id!)}
+                                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     >
-                                      {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
+                                      <Trash2 className="w-4 h-4" />
                                     </button>
-                                  )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 bg-white rounded-lg border border-amber-200 mb-6">
+                              <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                              <p className="text-gray-600">Carrinho vazio</p>
+                              <p className="text-sm text-gray-500">Adicione produtos para começar</p>
+                            </div>
+                          )}
+                          
+                          {/* Totals */}
+                          <div className="bg-white rounded-lg p-4 border border-amber-200">
+                            <div className="space-y-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-gray-600">Subtotal:</span>
+                                <span className="text-sm font-medium text-gray-900">{formatCurrency(calculateSubtotal())}</span>
+                              </div>
+                              
+                              {(discountPercentage > 0 || discountAmount > 0) && (
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm text-gray-600">
+                                    Desconto {discountType === 'percentage' ? `(${discountPercentage}%)` : ''}:
+                                  </span>
+                                  <span className="text-sm font-medium text-red-600">
+                                    -{formatCurrency(calculateDiscount())}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              <div className="border-t border-amber-300 pt-2">
+                                <div className="flex justify-between items-center text-lg font-bold">
+                                  <span className="text-amber-900">Total:</span>
+                                  <span className="text-green-600">{formatCurrency(calculateTotal())}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm mt-1">
+                                  <span className="text-gray-600">Lucro Estimado:</span>
+                                  <span className={`font-medium ${
+                                    (calculateTotal() - calculateTotalCost()) > 0 ? 'text-green-600' : 'text-red-600'
+                                  }`}>
+                                    {formatCurrency(calculateTotal() - calculateTotalCost())}
+                                  </span>
                                 </div>
                               </div>
                             </div>
-                          );
-                        })}
+                          </div>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="text-center py-8 border border-gray-200 rounded-lg">
-                        <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                        <h4 className="text-lg font-medium text-gray-900 mb-2">Nenhum produto cadastrado</h4>
-                        <p className="text-gray-600 mb-6">
-                          Você precisa cadastrar produtos antes de fazer vendas
-                        </p>
+
+                      <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
                         <button
                           type="button"
-                          onClick={() => {
-                            resetForm();
-                            window.location.href = '/products';
-                          }}
-                          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          onClick={resetForm}
+                          className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                         >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Ir para Produtos
+                          Cancelar
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={selectedItems.length === 0}
+                          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-lg hover:from-blue-700 hover:to-green-700 transition-all duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
+                        >
+                          Finalizar Venda ({formatCurrency(calculateTotal())})
                         </button>
                       </div>
-                    )}
+                    </form>
                   </div>
                 </div>
+              </div>
+            )}
 
-                {/* Sale Summary */}
-                {selectedItems.length > 0 && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Resumo da Venda</h4>
-                    
-                    {/* Selected Items List */}
-                    <div className="space-y-3 mb-4">
-                      {selectedItems.map((item) => (
-                        <div key={item.product_id} className="flex items-center justify-between p-3 bg-white rounded-lg">
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900">{item.product_name}</p>
-                            <p className="text-sm text-gray-600">
-                              {item.quantity} × {formatCurrency(item.unit_price)}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium text-green-600">{formatCurrency(item.total)}</p>
-                            <p className="text-xs text-gray-500">
-                              Custo: {formatCurrency(item.cost_price * item.quantity)}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Totals */}
-                    <div className="space-y-2 border-t border-blue-200 pt-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Subtotal:</span>
-                        <span className="text-sm font-medium text-gray-900">{formatCurrency(calculateSubtotal())}</span>
-                      </div>
-                      
-                      {(discountPercentage > 0 || discountAmount > 0) && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">
-                            Desconto {discountType === 'percentage' ? `(${discountPercentage}%)` : ''}:
-                          </span>
-                          <span className="text-sm font-medium text-red-600">
-                            -{formatCurrency(calculateDiscount())}
-                          </span>
-                        </div>
-                      )}
-                      
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Custo Total dos Produtos:</span>
-                        <span className="text-sm font-medium text-orange-600">{formatCurrency(calculateTotalCost())}</span>
-                      </div>
-                      
-                      <div className="border-t border-blue-300 pt-2">
-                        <div className="flex justify-between items-center text-lg font-bold">
-                          <span>Total da Venda:</span>
-                          <span className="text-green-600">{formatCurrency(calculateTotal())}</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600">Lucro Estimado:</span>
-                          <span className={`font-medium ${
-                            (calculateTotal() - calculateTotalCost()) > 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {formatCurrency(calculateTotal() - calculateTotalCost())}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={selectedItems.length === 0}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  >
-                    Finalizar Venda ({formatCurrency(calculateTotal())})
-                  </button>
-                </div>
-              </form>
-            </div>
+            {/* Upgrade Modal */}
+            <UpgradeModal
+              isOpen={showUpgradeModal}
+              onClose={() => setShowUpgradeModal(false)}
+              title="Você atingiu o limite gratuito de 5 registros nesta seção"
+              message="Faça upgrade para o plano pago para continuar adicionando."
+            />
           </div>
-        </div>
-      )}
+        );
+      };
 
       {/* Upgrade Modal */}
       <UpgradeModal
