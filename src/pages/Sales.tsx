@@ -85,7 +85,7 @@ export const Sales: React.FC = () => {
     if (variationId) {
       // Adding a product variation
       const variation = productVariations.find(v => v.id === variationId);
-      const product = products.find(p => p.id === productId);
+const product = products.find(p => p.id === productId);
       
       if (!variation || !product) {
         showNotification('error', 'Variação não encontrada');
@@ -780,6 +780,7 @@ export const Sales: React.FC = () => {
                                           src={product.image_url}
                                           alt={product.name}
                                           className="w-full h-full object-cover"
+                                          onError={(e) => { e.currentTarget.src = '/placeholder-image.png'; }}
                                         />
                                       ) : (
                                         <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
@@ -793,7 +794,7 @@ export const Sales: React.FC = () => {
                                       <div className="flex items-center space-x-2 mb-1">
                                         <p className="font-medium text-gray-900">{product.name}</p>
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${stockStatus.color}`}>
-                                          {stockStatus.label}
+                                          {stockStatus.label} ({product.stock})
                                         </span>
                                         {variations.length > 0 && (
                                           <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
@@ -861,14 +862,14 @@ export const Sales: React.FC = () => {
                                           <button
                                             type="button"
                                             onClick={() => addItemToSale(product.id)}
-                                            disabled={product.stock === 0}
+                                            disabled={product.stock === 0 && variations.length === 0}
                                             className={`px-3 py-1 text-sm rounded-lg transition-colors ${
-                                              product.stock === 0
+                                              product.stock === 0 && variations.length === 0
                                                 ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                                 : 'bg-blue-600 text-white hover:bg-blue-700'
                                             }`}
                                           >
-                                            {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
+                                            {product.stock === 0 && variations.length === 0 ? 'Sem Estoque' : 'Adicionar'}
                                           </button>
                                         );
                                       }
@@ -887,117 +888,59 @@ export const Sales: React.FC = () => {
                                     </h5>
                                   </div>
                                   
-                                  {variations.map((variation) => {
-                                    const variationStockStatus = getStockStatus(variation.stock, product.min_stock);
-                                    const variationPrice = variation.price || product.price;
-                                    
-                                    return (
-                                      <div key={variation.id} className="p-4 border-b border-purple-200 last:border-b-0 hover:bg-purple-100">
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center space-x-3 flex-1">
-                                            {/* Variation Image */}
-                                            <div className="w-10 h-10 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                                              {variation.image_url ? (
-                                                <img
-                                                  src={variation.image_url}
-                                                  alt={variation.variation_name}
-                                                  className="w-full h-full object-cover"
-                                                />
-                                              ) : (
-                                                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+                                    {variations.map((variation) => {
+                                      const variationStockStatus = getStockStatus(variation.stock, product.min_stock);
+                                      const variationPrice = variation.price || product.price;
+                                      
+                                      return (
+                                        <div key={variation.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                          <div className="flex items-center justify-between mb-2">
+                                            <div className="flex items-center">
+                                              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-2">
+                                                {variation.image_url ? (
+                                                  <img src={variation.image_url} alt={variation.variation_name} className="w-full h-full object-cover rounded-lg" onError={(e) => { e.currentTarget.src = '/placeholder-image.png'; }} />
+                                                ) : (
                                                   <Package className="w-5 h-5 text-gray-400" />
+                                                )}
+                                              </div>
+                                              <div>
+                                                <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
+                                                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                                                  {variation.color && (
+                                                    <div className="flex items-center">
+                                                      <Palette className="w-3 h-3 mr-1" />
+                                                      {variation.color}
+                                                    </div>
+                                                  )}
+                                                  {variation.size && (
+                                                    <div className="flex items-center">
+                                                      <Ruler className="w-3 h-3 mr-1" />
+                                                      {variation.size}
+                                                    </div>
+                                                  )}
+                                                  <span>SKU: {variation.sku}</span>
                                                 </div>
-                                              )}
-                                            </div>
-                                            
-                                            {/* Variation Info */}
-                                            <div className="flex-1">
-                                              <div className="flex items-center space-x-2 mb-1">
-                                                <p className="font-medium text-gray-900">{variation.variation_name}</p>
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${variationStockStatus.color}`}>
-                                                  {variationStockStatus.label}
-                                                </span>
                                               </div>
-                                              
-                                              <div className="flex items-center space-x-3 text-xs text-gray-600">
-                                                {variation.color && (
-                                                  <div className="flex items-center">
-                                                    <Palette className="w-3 h-3 mr-1" />
-                                                    {variation.color}
-                                                  </div>
-                                                )}
-                                                {variation.size && (
-                                                  <div className="flex items-center">
-                                                    <Ruler className="w-3 h-3 mr-1" />
-                                                    {variation.size}
-                                                  </div>
-                                                )}
-                                              </div>
-                                              
-                                              <p className="text-sm text-gray-600">{formatCurrency(variationPrice)}</p>
-                                              <p className="text-xs text-gray-500">
-                                                Estoque: {variation.stock} • SKU: {variation.sku}
-                                              </p>
                                             </div>
+                                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${variationStockStatus.color} flex-shrink-0`}>
+                                              {variationStockStatus.label} ({variation.stock})
+                                            </span>
                                           </div>
-                                          
-                                          {/* Variation Actions */}
-                                          <div className="flex items-center space-x-2">
-                                            {(() => {
-                                              const existingItem = selectedItems.find(item => 
-                                                item.product_id === product.id && item.variation_id === variation.id
-                                              );
-                                              
-                                              if (existingItem) {
-                                                return (
-                                                  <div className="flex items-center space-x-2">
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => updateItemQuantity(product.id, existingItem.quantity - 1, variation.id)}
-                                                      className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-xs font-medium"
-                                                    >
-                                                      <Minus className="w-3 h-3" />
-                                                    </button>
-                                                    <span className="w-6 text-center text-xs font-medium">{existingItem.quantity}</span>
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => updateItemQuantity(product.id, existingItem.quantity + 1, variation.id)}
-                                                      disabled={existingItem.quantity >= variation.stock}
-                                                      className="w-6 h-6 rounded-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 flex items-center justify-center text-white text-xs font-medium"
-                                                    >
-                                                      +
-                                                    </button>
-                                                    <button
-                                                      type="button"
-                                                      onClick={() => removeItemFromSale(product.id, variation.id)}
-                                                      className="ml-1 text-red-600 hover:text-red-800"
-                                                    >
-                                                      <X className="w-3 h-3" />
-                                                    </button>
-                                                  </div>
-                                                );
-                                              } else {
-                                                return (
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => addItemToSale(product.id, variation.id)}
-                                                    disabled={variation.stock === 0}
-                                                    className={`px-2 py-1 text-xs rounded transition-colors ${
-                                                      variation.stock === 0
-                                                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                        : 'bg-purple-600 text-white hover:bg-purple-700'
-                                                    }`}
-                                                  >
-                                                    {variation.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
-                                                  </button>
-                                                );
-                                              }
-                                            })()}
+                                          <div className="flex items-center justify-between mt-2">
+                                            <span className="text-sm font-medium text-gray-900">{formatCurrency(variationPrice)}</span>
+                                            <button
+                                              onClick={() => addItemToSale(product.id, variation.id)}
+                                              disabled={variation.stock === 0}
+                                              className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                              Adicionar
+                                            </button>
                                           </div>
                                         </div>
-                                      </div>
-                                    );
-                                  })}
+                                      );
+                                    })}
+                                  </div>
                                 </div>
                               )}
                             </div>
