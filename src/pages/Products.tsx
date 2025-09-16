@@ -496,39 +496,46 @@ export const Products: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Stock and Margin Info */}
+          <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 sm:p-6 rounded-xl border-2 border-green-200 shadow-sm">
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Estoque Atual</p>
                       <p className="text-sm font-bold text-gray-900">{product.stock} unidades</p>
                       <p className="text-xs text-gray-500">Mín: {product.min_stock}</p>
                     </div>
-                    <div>
+            <div className="relative mb-4 w-full">
                       <p className="text-xs text-gray-500 mb-1">Margem de Lucro</p>
                       <p className={`text-sm font-bold ${profitMargin > 30 ? 'text-green-600' : profitMargin > 15 ? 'text-amber-600' : 'text-red-600'}`}>
                         {profitMargin.toFixed(1)}%
                       </p>
                     </div>
                   </div>
-
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm sm:text-base"
                   {/* Category and Supplier */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-xs text-gray-500">
                       <span>Categoria: {product.category}</span>
-                      {product.supplier && <span>Fornecedor: {product.supplier}</span>}
+            <div className="space-y-3 max-h-64 sm:max-h-96 overflow-y-auto">
                     </div>
                   </div>
-
-                  {/* Variations Section */}
+                  <div key={product.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-white rounded-lg border border-green-200 hover:bg-green-50 transition-colors gap-3 sm:gap-0">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
                   {getVariationsForProduct(product.id).length > 0 && (
                     <div className="mb-4">
                       <button
-                        onClick={() => toggleProductExpansion(product.id)}
-                        className="w-full flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
-                      >
-                        <div className="flex items-center">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{product.name}</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                          <p className="text-sm text-gray-600">R$ {product.price.toFixed(2)}</p>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="bg-amber-100 px-2 py-1 rounded">
+                              Estoque: {product.stock}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 truncate">SKU: {product.sku} | {product.category}</p>
                           <Grid className="w-4 h-4 mr-2 text-purple-600" />
-                          <span className="text-sm font-medium text-purple-900">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 mt-1 w-fit">
                             {getVariationsForProduct(product.id).length} Variações
                           </span>
                         </div>
@@ -539,7 +546,7 @@ export const Products: React.FC = () => {
                         )}
                       </button>
                       
-                      {expandedProducts.has(product.id) && (
+                    <div className="flex items-center justify-between sm:justify-end space-x-2 flex-shrink-0">
                         <div className="mt-3 space-y-2">
                           {getVariationsForProduct(product.id).map((variation) => (
                             <div key={variation.id} className="bg-white border border-purple-200 rounded-lg p-3">
@@ -623,8 +630,8 @@ export const Products: React.FC = () => {
                     <div className="mb-4">
                       <button
                         onClick={() => handleAddVariation(product.id)}
-                        className="w-full p-3 border-2 border-dashed border-purple-300 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
-                      >
+                        className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent w-16 sm:w-auto"
+                        className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed text-sm whitespace-nowrap"
                         <Grid className="w-4 h-4 mr-2 inline" />
                         Adicionar Variações (Cor, Tamanho, etc.)
                       </button>
