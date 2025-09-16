@@ -492,6 +492,7 @@ export const useSupabaseData = () => {
       product_id: string | null
       product_name: string
       quantity: number
+    variation_id?: string | null
       unit_price: number
       total: number
     }>
