@@ -57,7 +57,6 @@ export const Products: React.FC = () => {
     stock: '',
     price: '',
     cost_price: ''
-    cost_price: ''
   });
 
   // Effect to show limit banner when limit is reached
