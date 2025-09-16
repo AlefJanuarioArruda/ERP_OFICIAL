@@ -496,7 +496,6 @@ export const Products: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Stock and Margin Info */}
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="text-xs text-gray-500 mb-1">Estoque Atual</p>
@@ -513,22 +512,21 @@ export const Products: React.FC = () => {
 
                   {/* Category and Supplier */}
                   <div className="mb-4">
-                    <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div>
                       <span>Categoria: {product.category}</span>
-                      {product.supplier && <span>Fornecedor: {product.supplier}</span>}
                     </div>
                   </div>
 
-                  {/* Variations Section */}
+                  {/* Variations */}
                   {getVariationsForProduct(product.id).length > 0 && (
                     <div className="mb-4">
                       <button
                         onClick={() => toggleProductExpansion(product.id)}
-                        className="w-full flex items-center justify-between p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+                        className="flex items-center justify-between w-full p-2 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
                       >
                         <div className="flex items-center">
                           <Grid className="w-4 h-4 mr-2 text-purple-600" />
-                          <span className="text-sm font-medium text-purple-900">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800 mt-1 w-fit">
                             {getVariationsForProduct(product.id).length} Variações
                           </span>
                         </div>
@@ -623,7 +621,7 @@ export const Products: React.FC = () => {
                     <div className="mb-4">
                       <button
                         onClick={() => handleAddVariation(product.id)}
-                        className="w-full p-3 border-2 border-dashed border-purple-300 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
+                        className="w-full p-2 border-2 border-dashed border-purple-300 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
                       >
                         <Grid className="w-4 h-4 mr-2 inline" />
                         Adicionar Variações (Cor, Tamanho, etc.)
@@ -841,26 +839,18 @@ export const Products: React.FC = () => {
                 </div>
 
                 {/* Profit Margin Preview */}
-                {variationFormData.price && parseFloat(variationFormData.price) > 0 && showVariationForm && (
+                {formData.price && formData.cost_price && parseFloat(formData.price) > 0 && parseFloat(formData.cost_price) > 0 && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-blue-900">Margem de Lucro da Variação:</span>
+                      <span className="text-sm font-medium text-blue-900">Margem de Lucro:</span>
                       <span className="text-lg font-bold text-blue-600">
-                        {(() => {
-                          const effectiveCostPrice = variationFormData.cost_price ? parseFloat(variationFormData.cost_price) : (products.find(p => p.id === showVariationForm)?.cost_price || 0);
-                          const sellingPrice = parseFloat(variationFormData.price);
-                          return (((sellingPrice - effectiveCostPrice) / sellingPrice) * 100).toFixed(1);
-                        })()}%
+                        {(((parseFloat(formData.price) - parseFloat(formData.cost_price)) / parseFloat(formData.price)) * 100).toFixed(1)}%
                       </span>
                     </div>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-sm text-blue-700">Lucro por unidade:</span>
                       <span className="text-sm font-medium text-blue-700">
-                        {(() => {
-                          const effectiveCostPrice = variationFormData.cost_price ? parseFloat(variationFormData.cost_price) : (products.find(p => p.id === showVariationForm)?.cost_price || 0);
-                          const sellingPrice = parseFloat(variationFormData.price);
-                          return formatCurrency(sellingPrice - effectiveCostPrice);
-                        })()}
+                        {formatCurrency(parseFloat(formData.price) - parseFloat(formData.cost_price))}
                       </span>
                     </div>
                   </div>
@@ -908,44 +898,10 @@ export const Products: React.FC = () => {
                       {products.find(p => p.id === showVariationForm)?.name}
                     </p>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Custo Específico (opcional)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={variationFormData.cost_price}
-                      onChange={(e) => setVariationFormData({...variationFormData, cost_price: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="Deixe vazio para usar o custo do produto principal"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Se não informado, será usado o custo do produto principal: {
-                        showVariationForm ? formatCurrency(products.find(p => p.id === showVariationForm)?.cost_price || 0) : ''
-                      }
-                    </p>
-                  </div>
                 </div>
                 <button onClick={resetVariationForm} className="text-gray-400 hover:text-gray-600">
                   <X className="w-5 h-5" />
                 </button>
-              </div>
-
-              {/* Cost Price Specific for Variation */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Custo Específico (opcional)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={variationFormData.cost_price}
-                  onChange={(e) => setVariationFormData({...variationFormData, cost_price: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  placeholder="Deixe vazio para usar o custo do produto principal"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Se não informado, será usado o custo do produto principal: {
-                    showVariationForm ? formatCurrency(products.find(p => p.id === showVariationForm)?.cost_price || 0) : ''
-                  }
-                </p>
               </div>
 
               <form onSubmit={handleVariationSubmit} className="space-y-6">
@@ -1052,6 +1008,50 @@ export const Products: React.FC = () => {
                     }
                   </p>
                 </div>
+
+                {/* Cost Price Specific for Variation */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Custo Específico (opcional)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={variationFormData.cost_price}
+                    onChange={(e) => setVariationFormData({...variationFormData, cost_price: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Deixe vazio para usar o custo do produto principal"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Se não informado, será usado o custo do produto principal: {
+                      showVariationForm ? formatCurrency(products.find(p => p.id === showVariationForm)?.cost_price || 0) : ''
+                    }
+                  </p>
+                </div>
+
+                {/* Profit Margin Preview */}
+                {variationFormData.price && parseFloat(variationFormData.price) > 0 && showVariationForm && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-blue-900">Margem de Lucro da Variação:</span>
+                      <span className="text-lg font-bold text-blue-600">
+                        {(() => {
+                          const effectiveCostPrice = variationFormData.cost_price ? parseFloat(variationFormData.cost_price) : (products.find(p => p.id === showVariationForm)?.cost_price || 0);
+                          const sellingPrice = parseFloat(variationFormData.price);
+                          return (((sellingPrice - effectiveCostPrice) / sellingPrice) * 100).toFixed(1);
+                        })()}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-sm text-blue-700">Lucro por unidade:</span>
+                      <span className="text-sm font-medium text-blue-700">
+                        {(() => {
+                          const effectiveCostPrice = variationFormData.cost_price ? parseFloat(variationFormData.cost_price) : (products.find(p => p.id === showVariationForm)?.cost_price || 0);
+                          const sellingPrice = parseFloat(variationFormData.price);
+                          return formatCurrency(sellingPrice - effectiveCostPrice);
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
