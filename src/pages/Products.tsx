@@ -840,18 +840,24 @@ export const Products: React.FC = () => {
                 </div>
 
                 {/* Profit Margin Preview */}
-                {variationFormData.price && variationFormData.cost_price && (
+                {variationFormData.price && showVariationForm && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-blue-900">Margem de Lucro da Variação:</span>
                       <span className="text-lg font-bold text-blue-600">
-                        {(((parseFloat(variationFormData.price) - parseFloat(variationFormData.cost_price)) / parseFloat(variationFormData.price)) * 100).toFixed(1)}%
+                        {(() => {
+                          const productCost = products.find(p => p.id === showVariationForm)?.cost_price || 0;
+                          return (((parseFloat(variationFormData.price) - productCost) / parseFloat(variationFormData.price)) * 100).toFixed(1);
+                        })()}%
                       </span>
                     </div>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-sm text-blue-700">Lucro por unidade:</span>
                       <span className="text-sm font-medium text-blue-700">
-                        {formatCurrency(parseFloat(variationFormData.price) - parseFloat(variationFormData.cost_price))}
+                        {(() => {
+                          const productCost = products.find(p => p.id === showVariationForm)?.cost_price || 0;
+                          return formatCurrency(parseFloat(variationFormData.price) - productCost);
+                        })()}
                       </span>
                     </div>
                   </div>
