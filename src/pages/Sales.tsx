@@ -641,7 +641,7 @@ export const Sales: React.FC = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                   {/* Left Column - Customer Selection */}
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border-2 border-blue-200 shadow-sm">
                     <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
