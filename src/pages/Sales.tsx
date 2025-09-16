@@ -1106,6 +1106,9 @@ export const Sales: React.FC = () => {
                                 <p className="text-xs text-gray-500">Disponível: {item.available_stock}</p>
                               </div>
                             </div>
+                                <p className="text-xs text-gray-400">
+                                  Custo: {variation.cost_price ? formatCurrency(variation.cost_price) : formatCurrency(product.cost_price)}
+                                </p>
                           </div>
                         ))}
                       </div>
