@@ -848,44 +848,44 @@ export const Sales: React.FC = () => {
                       <div key={product.id} className="bg-white rounded-xl border-2 border-green-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
                         {/* Main Product */}
                         <div className="p-4">
-                          {/* MODIFICADO: Adicionado flex-col, sm:flex-row e gap-4 para responsividade */}
-                          <div className="flex flex-col sm:flex-row items-center gap-4">
-                            {/* Product Image */}
-                            <div className="w-20 h-20 sm:w-16 sm:h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200">
-                              {product.image_url ? (
-                                <img
-                                  src={product.image_url}
-                                  alt={product.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                                  <Package className="w-8 h-8 text-gray-400" />
+                          {/* CORRIGIDO: Container principal agora usa justify-between em telas maiores (sm) */}
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                            
+                            {/* Grupo: Imagem + Informações */}
+                            <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4">
+                              {/* Product Image */}
+                              <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200">
+                                {product.image_url ? (
+                                  <img
+                                    src={product.image_url}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                    <Package className="w-8 h-8 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Product Info */}
+                              <div>
+                                <div className="flex items-center justify-center sm:justify-start space-x-2 mb-2">
+                                  <h5 className="font-semibold text-gray-900 text-lg">{product.name}</h5>
+                                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${stockStatus.color}`}>
+                                    {stockStatus.label}
+                                  </span>
                                 </div>
-                              )}
-                            </div>
-                            
-                            {/* Product Info */}
-                            {/* MODIFICADO: Adicionado text-center sm:text-left para alinhamento */}
-                            <div className="flex-1 text-center sm:text-left">
-                              <div className="flex flex-col sm:flex-row items-center sm:space-x-2 mb-2 justify-center sm:justify-start">
-                                <h5 className="font-semibold text-gray-900 text-lg">{product.name}</h5>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium border ${stockStatus.color}`}>
-                                  {stockStatus.label}
-                                </span>
-                              </div>
-                              <p className="text-lg font-bold text-green-600 mb-1">{formatCurrency(product.price)}</p>
-                              {/* MODIFICADO: Detalhes do produto agora se empilham em telas pequenas */}
-                              <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:gap-4 text-sm text-gray-500 justify-center sm:justify-start">
-                                <span>SKU: {product.sku}</span>
-                                <span>Estoque: {product.stock}</span>
-                                <span>Categoria: {product.category}</span>
+                                <p className="text-lg font-bold text-green-600 mb-1">{formatCurrency(product.price)}</p>
+                                <div className="flex items-center justify-center sm:justify-start gap-4 text-sm text-gray-500">
+                                  <span>SKU: {product.sku}</span>
+                                  <span>Estoque: {product.stock}</span>
+                                </div>
                               </div>
                             </div>
                             
-                            {/* Actions */}
-                            {/* MODIFICADO: Botões com largura total no mobile */}
-                            <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
+                            {/* Actions (separado do grupo para alinhamento correto) */}
+                            <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end flex-shrink-0">
                               {variations.length > 0 && (
                                 <button
                                   type="button"
@@ -895,18 +895,13 @@ export const Sales: React.FC = () => {
                                 >
                                   <Grid className="w-4 h-4 mr-1" />
                                   {variations.length}
-                                  {isExpanded ? (
-                                    <ChevronUp className="w-4 h-4 ml-1" />
-                                  ) : (
-                                    <ChevronDown className="w-4 h-4 ml-1" />
-                                  )}
+                                  {isExpanded ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
                                 </button>
                               )}
                               <button
                                 type="button"
                                 onClick={() => addItemToSale(product.id)}
                                 disabled={product.stock === 0}
-                                // MODIFICADO: Adicionado w-full para preencher o espaço, sm:w-auto para voltar ao normal
                                 className={`w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                                   product.stock === 0
                                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
@@ -916,6 +911,7 @@ export const Sales: React.FC = () => {
                                 {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
                               </button>
                             </div>
+
                           </div>
                         </div>
 
@@ -931,63 +927,38 @@ export const Sales: React.FC = () => {
                                 const variationStockStatus = getStockStatus(variation.stock, 1);
                                 return (
                                   <div key={variation.id} className="bg-white rounded-lg p-3 border-2 border-purple-200 hover:border-purple-300 transition-colors">
-                                    {/* MODIFICADO: Aplicando a mesma lógica de responsividade para variações */}
-                                    <div className="flex flex-col sm:flex-row items-center gap-3">
-                                      {/* Variation Image */}
-                                      <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
-                                        {variation.image_url ? (
-                                          <img
-                                            src={variation.image_url}
-                                            alt={variation.variation_name}
-                                            className="w-full h-full object-cover"
-                                          />
-                                        ) : (
-                                          <div className="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
-                                            <Grid className="w-4 h-4 text-purple-500" />
+                                    <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3">
+                                      
+                                      {/* Grupo: Imagem + Informações da Variação */}
+                                      <div className="flex items-center gap-3 w-full">
+                                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                          {variation.image_url ? (
+                                            <img src={variation.image_url} alt={variation.variation_name} className="w-full h-full object-cover" />
+                                          ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                                              <Grid className="w-4 h-4 text-purple-500" />
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex-1 text-left">
+                                          <div className="flex items-center space-x-2 mb-1">
+                                            <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
                                           </div>
-                                        )}
-                                      </div>
-                                      
-                                      {/* Variation Info */}
-                                      <div className="flex-1 text-center sm:text-left">
-                                        <div className="flex items-center justify-center sm:justify-start space-x-2 mb-1">
-                                          <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
-                                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${variationStockStatus.color}`}>
-                                            {variationStockStatus.label}
-                                          </span>
-                                        </div>
-                                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs text-gray-500 mb-1">
-                                          {variation.color && (
-                                            <span className="flex items-center bg-gray-100 px-2 py-1 rounded">
-                                              <Palette className="w-3 h-3 mr-1" />
-                                              {variation.color}
-                                            </span>
-                                          )}
-                                          {variation.size && (
-                                            <span className="flex items-center bg-gray-100 px-2 py-1 rounded">
-                                              <Ruler className="w-3 h-3 mr-1" />
-                                              {variation.size}
-                                            </span>
-                                          )}
-                                          <span className="bg-gray-100 px-2 py-1 rounded">
-                                            SKU: {variation.sku}
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                          <p className="text-sm font-bold text-purple-600">
-                                            {formatCurrency(variation.price || product.price)}
-                                          </p>
-                                          <p className="text-xs text-gray-500">Estoque: {variation.stock}</p>
+                                          <div className="flex items-center justify-between">
+                                            <p className="text-sm font-bold text-purple-600">
+                                              {formatCurrency(variation.price || product.price)}
+                                            </p>
+                                            <p className="text-xs text-gray-500">Estoque: {variation.stock}</p>
+                                          </div>
                                         </div>
                                       </div>
-                                      
-                                      {/* Add Variation Button */}
+
+                                      {/* Botão Adicionar Variação */}
                                       <button
                                         type="button"
                                         onClick={() => addItemToSale(product.id, variation.id)}
                                         disabled={variation.stock <= 0}
-                                        // MODIFICADO: Botão da variação com w-full no mobile
-                                        className={`w-full sm:w-auto px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                        className={`w-full sm:w-auto flex-shrink-0 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                                           variation.stock <= 0
                                             ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                             : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm hover:shadow-md transform hover:scale-105'
