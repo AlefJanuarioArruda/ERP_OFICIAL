@@ -875,7 +875,7 @@ export const Sales: React.FC = () => {
                             </div>
 
                             {/* CORREÇÃO 1: Container dos botões agora é flex-col no mobile para empilhar os botões */}
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto flex-shrink-0">
+                            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto flex-shrink-0">
                               {variations.length > 0 && (
                                 <button
                                   type="button"
