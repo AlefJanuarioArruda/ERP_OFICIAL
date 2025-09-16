@@ -817,201 +817,179 @@ export const Sales: React.FC = () => {
                   </div>
 
                   {/* Middle Column - Products Selection */}
-<form onSubmit={handleSubmit} className="space-y-6">
-    {/* AQUI ESTÁ A PRIMEIRA ALTERAÇÃO: grid-cols-12 */}
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Left Column - Customer Selection - AGORA COM lg:col-span-3 */}
-        <div className="lg:col-span-3 bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border-2 border-blue-200 shadow-sm">
-            {/* ... todo o conteúdo da coluna de cliente permanece o mesmo ... */}
-            <h4 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
-                <User className="w-5 h-5 mr-2" />
-                Cliente
-            </h4>
-            
-            <div className="relative mb-6">
-                <input
-                    type="text"
-                    value={customerSearchTerm}
-                    onChange={(e) => {
-                        setCustomerSearchTerm(e.target.value);
-                        setShowCustomerDropdown(true);
-                        if (!e.target.value) {
-                            setSelectedCustomer('');
-                        }
-                    }}
-                    onFocus={() => setShowCustomerDropdown(true)}
-                    className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
-                    placeholder="Buscar cliente ou venda direta"
-                />
-                
-                {showCustomerDropdown && (
-                    <div className="absolute z-20 w-full mt-2 bg-white border-2 border-blue-300 rounded-xl shadow-xl max-h-60 overflow-y-auto">
-                        <button
-                            type="button"
-                            onClick={handleDirectSale}
-                            className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-blue-100 flex items-center transition-colors"
-                        >
-                            <ShoppingCart className="w-4 h-4 mr-3 text-blue-600" />
-                            <div>
-                                <div className="font-medium text-gray-900">Venda Direta</div>
-                                <div className="text-sm text-gray-500">Sem vínculo com cliente</div>
-                            </div>
-                        </button>
-                        
-                        {filteredCustomers.length > 0 && (
-                            <>
-                                <div className="px-4 py-2 bg-blue-50 text-xs font-medium text-blue-600 uppercase">
-                                    Clientes Cadastrados
-                                </div>
-                                {filteredCustomers.map((customer) => (
-                                    <button
-                                        key={customer.id}
-                                        type="button"
-                                        onClick={() => handleCustomerSelect(customer.id, customer.name)}
-                                        className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-center transition-colors"
-                                    >
-                                        <User className="w-4 h-4 mr-3 text-gray-400" />
-                                        <div>
-                                            <div className="font-medium text-gray-900">{customer.name}</div>
-                                            <div className="text-sm text-gray-500">{customer.email}</div>
-                                        </div>
-                                    </button>
-                                ))}
-                            </>
-                        )}
-                    </div>
-                )}
-            </div>
-            {/* ... o resto da coluna do cliente ... */}
-        </div>
-
-        {/* Middle Column - Products Selection - AGORA COM lg:col-span-5 */}
-        <div className="lg:col-span-5 bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border-2 border-green-200 shadow-sm">
-            <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+{/* Middle Column - Products Selection */}
+            <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border-2 border-green-200 shadow-sm">
+              <h4 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
                 <Package className="w-5 h-5 mr-2" />
                 Produtos Disponíveis
-            </h4>
-            
-            <div className="relative mb-4">
+              </h4>
+              
+              {/* Product Search */}
+              <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
-                    type="text"
-                    value={productSearchTerm}
-                    onChange={(e) => setProductSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
-                    placeholder="Buscar produtos..."
+                  type="text"
+                  value={productSearchTerm}
+                  onChange={(e) => setProductSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white shadow-sm"
+                  placeholder="Buscar produtos..."
                 />
-            </div>
+              </div>
 
-            {filteredProductsForSale.length > 0 ? (
+              {/* Products List */}
+              {filteredProductsForSale.length > 0 ? (
                 <div className="max-h-96 overflow-y-auto space-y-3">
-                    {filteredProductsForSale.map((product) => {
-                        const stockStatus = getStockStatus(product.stock, product.min_stock);
-                        const variations = getVariationsForProduct(product.id);
-                        const isExpanded = expandedProducts.has(product.id);
-                        
-                        return (
-                            <div key={product.id} className="bg-white rounded-xl border-2 border-green-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
-                                <div className="p-4">
-                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                                        <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4">
-                                            <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200">
-                                                {product.image_url ? (
-                                                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                                                        <Package className="w-8 h-8 text-gray-400" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <div className="flex items-center justify-center sm:justify-start space-x-2 mb-2">
-                                                    <h5 className="font-semibold text-gray-900 text-lg">{product.name}</h5>
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${stockStatus.color}`}>
-                                                        {stockStatus.label}
-                                                    </span>
-                                                </div>
-                                                <p className="text-lg font-bold text-green-600 mb-1">{formatCurrency(product.price)}</p>
-                                                <div className="flex items-center justify-center sm:justify-start gap-4 text-sm text-gray-500">
-                                                    <span>SKU: {product.sku}</span>
-                                                    <span>Estoque: {product.stock}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* AQUI ESTÁ A SEGUNDA ALTERAÇÃO: de sm: para md: */}
-                                        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto flex-shrink-0">
-                                            {variations.length > 0 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => toggleProductExpansion(product.id)}
-                                                    className="flex items-center justify-center px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors border border-purple-300"
-                                                    title={`${variations.length} variações disponíveis`}
-                                                >
-                                                    <Grid className="w-4 h-4 mr-1" />
-                                                    <span>{variations.length} Variações</span>
-                                                    {isExpanded ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
-                                                </button>
-                                            )}
-                                            <button
-                                                type="button"
-                                                onClick={() => addItemToSale(product.id)}
-                                                disabled={product.stock === 0}
-                                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                                                    product.stock === 0
-                                                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                        : 'bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md transform hover:scale-105'
-                                                }`}
-                                            >
-                                                {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
-                                            </button>
-                                        </div>
-                                    </div>
+                  {filteredProductsForSale.map((product) => {
+                    const stockStatus = getStockStatus(product.stock, product.min_stock);
+                    const variations = getVariationsForProduct(product.id);
+                    const isExpanded = expandedProducts.has(product.id);
+                    
+                    return (
+                      <div key={product.id} className="bg-white rounded-xl border-2 border-green-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
+                        {/* Main Product */}
+                        <div className="p-4">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                            <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4">
+                              <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200">
+                                {product.image_url ? (
+                                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                                    <Package className="w-8 h-8 text-gray-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <div className="flex items-center justify-center sm:justify-start space-x-2 mb-2">
+                                  <h5 className="font-semibold text-gray-900 text-lg">{product.name}</h5>
+                                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${stockStatus.color}`}>
+                                    {stockStatus.label}
+                                  </span>
                                 </div>
-                                {/* ... resto do código dos produtos e variações ... */}
+                                <p className="text-lg font-bold text-green-600 mb-1">{formatCurrency(product.price)}</p>
+                                <div className="flex items-center justify-center sm:justify-start gap-4 text-sm text-gray-500">
+                                  <span>SKU: {product.sku}</span>
+                                  <span>Estoque: {product.stock}</span>
+                                </div>
+                              </div>
                             </div>
-                        );
-                    })}
+
+                            {/* CORREÇÃO 1: Container dos botões agora é flex-col no mobile para empilhar os botões */}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto flex-shrink-0">
+                              {variations.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleProductExpansion(product.id)}
+                                  className="flex items-center justify-center px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors border border-purple-300"
+                                  title={`${variations.length} variações disponíveis`}
+                                >
+                                  <Grid className="w-4 h-4 mr-1" />
+                                  <span>{variations.length} Variações</span>
+                                  {isExpanded ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => addItemToSale(product.id)}
+                                disabled={product.stock === 0}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                  product.stock === 0
+                                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                    : 'bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md transform hover:scale-105'
+                                }`}
+                              >
+                                {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Variations */}
+                        {variations.length > 0 && isExpanded && (
+                          <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-t-2 border-purple-200 p-4">
+                            <h6 className="text-sm font-medium text-purple-900 mb-3 flex items-center">
+                              <Grid className="w-4 h-4 mr-2" />
+                              Variações Disponíveis ({variations.length})
+                            </h6>
+                            <div className="space-y-3">
+                              {variations.map((variation) => {
+                                const variationStockStatus = getStockStatus(variation.stock, 1);
+                                return (
+                                  <div key={variation.id} className="bg-white rounded-lg p-3 border-2 border-purple-200 hover:border-purple-300 transition-colors">
+                                    <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3">
+                                      <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-3 w-full">
+                                        <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                                          {variation.image_url ? (
+                                            <img src={variation.image_url} alt={variation.variation_name} className="w-full h-full object-cover" />
+                                          ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                                              <Grid className="w-4 h-4 text-purple-500" />
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="flex-1 w-full">
+                                          <div className="flex items-center justify-center sm:justify-start space-x-2">
+                                            <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
+                                          </div>
+
+                                          {/* CORREÇÃO 2: Reintroduzido Bloco de Informações (Cor, Tamanho, SKU) com flex-wrap */}
+                                          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs text-gray-500 my-2">
+                                            {variation.color && (
+                                              <span className="flex items-center bg-gray-100 px-2 py-1 rounded">
+                                                <Palette className="w-3 h-3 mr-1" /> {variation.color}
+                                              </span>
+                                            )}
+                                            {variation.size && (
+                                              <span className="flex items-center bg-gray-100 px-2 py-1 rounded">
+                                                <Ruler className="w-3 h-3 mr-1" /> {variation.size}
+                                              </span>
+                                            )}
+                                            {variation.sku && (
+                                              <span className="bg-gray-100 px-2 py-1 rounded">
+                                                SKU: {variation.sku}
+                                              </span>
+                                            )}
+                                          </div>
+
+                                          <div className="flex items-center justify-between">
+                                            <p className="text-sm font-bold text-purple-600">
+                                              {formatCurrency(variation.price || product.price)}
+                                            </p>
+                                            <p className="text-xs text-gray-500">Estoque: {variation.stock}</p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => addItemToSale(product.id, variation.id)}
+                                        disabled={variation.stock <= 0}
+                                        className={`w-full sm:w-auto flex-shrink-0 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                          variation.stock <= 0
+                                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                            : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm hover:shadow-md transform hover:scale-105'
+                                        }`}
+                                      >
+                                        {variation.stock <= 0 ? 'Sem Estoque' : 'Adicionar'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-            ) : (
+              ) : (
                 <div className="text-center py-8 bg-white rounded-xl border-2 border-green-200">
-                    <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p className="text-gray-600">Nenhum produto encontrado</p>
-                    <p className="text-sm text-gray-500">Tente ajustar sua busca</p>
+                  <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-gray-600">Nenhum produto encontrado</p>
+                  <p className="text-sm text-gray-500">Tente ajustar sua busca</p>
                 </div>
-            )}
-        </div>
-
-        {/* Right Column - Shopping Cart - AGORA COM lg:col-span-4 */}
-        <div className="lg:col-span-4 bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-xl border-2 border-amber-200 shadow-sm">
-            {/* ... todo o conteúdo da coluna do carrinho permanece o mesmo ... */}
-            <h4 className="text-lg font-semibold text-amber-900 mb-4 flex items-center">
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Carrinho de Compras ({selectedItems.length})
-            </h4>
-            {/* ... o resto da coluna do carrinho ... */}
-        </div>
-    </div>
-
-    {/* Action Buttons */}
-    <div className="flex justify-end space-x-4 pt-6 border-t-2 border-gray-200">
-        <button
-            type="button"
-            onClick={resetForm}
-            className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
-        >
-            Cancelar
-        </button>
-        <button
-            type="submit"
-            disabled={selectedItems.length === 0}
-            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-xl hover:from-blue-700 hover:to-green-700 transition-all duration-300 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
-        >
-            Finalizar Venda ({formatCurrency(calculateTotal())})
-        </button>
-    </div>
-</form>
+              )}
+            </div>
 
                   {/* Right Column - Shopping Cart */}
                   <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-6 rounded-xl border-2 border-amber-200 shadow-sm">
