@@ -848,27 +848,17 @@ export const Sales: React.FC = () => {
                       <div key={product.id} className="bg-white rounded-xl border-2 border-green-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
                         {/* Main Product */}
                         <div className="p-4">
-                          {/* CORRIGIDO: Container principal agora usa justify-between em telas maiores (sm) */}
                           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                            
-                            {/* Grupo: Imagem + Informações */}
                             <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-4">
-                              {/* Product Image */}
                               <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 border-2 border-gray-200">
                                 {product.image_url ? (
-                                  <img
-                                    src={product.image_url}
-                                    alt={product.name}
-                                    className="w-full h-full object-cover"
-                                  />
+                                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
                                 ) : (
                                   <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
                                     <Package className="w-8 h-8 text-gray-400" />
                                   </div>
                                 )}
                               </div>
-                              
-                              {/* Product Info */}
                               <div>
                                 <div className="flex items-center justify-center sm:justify-start space-x-2 mb-2">
                                   <h5 className="font-semibold text-gray-900 text-lg">{product.name}</h5>
@@ -883,8 +873,6 @@ export const Sales: React.FC = () => {
                                 </div>
                               </div>
                             </div>
-                            
-                            {/* Actions (separado do grupo para alinhamento correto) */}
                             <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end flex-shrink-0">
                               {variations.length > 0 && (
                                 <button
@@ -911,7 +899,6 @@ export const Sales: React.FC = () => {
                                 {product.stock === 0 ? 'Sem Estoque' : 'Adicionar'}
                               </button>
                             </div>
-
                           </div>
                         </div>
 
@@ -929,8 +916,8 @@ export const Sales: React.FC = () => {
                                   <div key={variation.id} className="bg-white rounded-lg p-3 border-2 border-purple-200 hover:border-purple-300 transition-colors">
                                     <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-3">
                                       
-                                      {/* Grupo: Imagem + Informações da Variação */}
-                                      <div className="flex items-center gap-3 w-full">
+                                      {/* CORREÇÃO FINAL: Este grupo agora é responsivo, empilhando imagem e info no mobile */}
+                                      <div className="flex flex-col sm:flex-row items-center text-center sm:text-left gap-3 w-full">
                                         <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
                                           {variation.image_url ? (
                                             <img src={variation.image_url} alt={variation.variation_name} className="w-full h-full object-cover" />
@@ -940,15 +927,15 @@ export const Sales: React.FC = () => {
                                             </div>
                                           )}
                                         </div>
-                                        <div className="flex-1 text-left">
-                                          <div className="flex items-center space-x-2 mb-1">
+                                        <div className="flex-1">
+                                          <div className="flex items-center justify-center sm:justify-start space-x-2 mb-1">
                                             <p className="text-sm font-medium text-gray-900">{variation.variation_name}</p>
                                           </div>
-                                          <div className="flex items-center justify-between">
+                                          <div className="sm:flex sm:items-center sm:justify-between">
                                             <p className="text-sm font-bold text-purple-600">
                                               {formatCurrency(variation.price || product.price)}
                                             </p>
-                                            <p className="text-xs text-gray-500">Estoque: {variation.stock}</p>
+                                            <p className="text-xs text-gray-500 mt-1 sm:mt-0">Estoque: {variation.stock}</p>
                                           </div>
                                         </div>
                                       </div>
