@@ -510,9 +510,6 @@ export const useSupabaseData = () => {
   }) => {
     if (!user) return
 
-    // Refresh all user data to ensure we have the latest products and variations
-    await fetchUserData()
-
     console.log('🚀 Iniciando processo de venda:', {
       customer: saleData.customer_name,
       items_count: saleData.items.length,
