@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowRight, Brain, BarChart3, Users, Zap, Shield, Clock, TrendingUp, CheckCircle, Star, Award, Target, Package, DollarSign, PieChart, Calculator, Wallet, CreditCard, AlertTriangle, Eye, Play, ChevronRight, Sparkles, TrendingDown, Activity, FileText, Layers, Database, Lock, Globe, Smartphone } from 'lucide-react'
+import { ArrowRight, Brain, BarChart3, Users, Zap, Shield, Clock, TrendingUp, CheckCircle, Star, Award, Target, Package, DollarSign, PieChart, Calculator, Wallet, CreditCard, AlertTriangle, Eye, Play, ChevronRight, Sparkles, TrendingDown, Activity, FileText, Layers, Database, Lock, Globe, Smartphone, Building, Crown } from 'lucide-react'
 
 interface OnboardingScreenProps {
   onGetStarted: () => void
