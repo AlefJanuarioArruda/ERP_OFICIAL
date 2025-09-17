@@ -7,6 +7,7 @@ import { formatPrice } from '../stripe-config';
 import { supabase } from '../lib/supabase';
 
 export const Settings: React.FC = () => {
+  const navigate = useNavigate();
   const { user, updateProfile } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
