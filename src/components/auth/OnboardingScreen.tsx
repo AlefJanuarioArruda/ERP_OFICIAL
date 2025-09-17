@@ -240,11 +240,12 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
                 <Sparkles className="w-5 h-5 text-emerald-400 mr-2 animate-pulse" />
                 <span className="text-emerald-300 font-semibold">Sistema #1 em Gestão Financeira e Estoque</span>
               </div>
+
               
               <h2 className="text-6xl md:text-7xl font-bold text-white mb-8 leading-tight">
                 Transforme Seu
                 <span className="bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 bg-clip-text text-transparent block mt-4 animate-pulse">
-                  Controle Financeiro e Estoque
+                  Controle Financeiro
                 </span>
                 <span className="text-5xl md:text-6xl block mt-4">
                   em Máquina de Lucro
