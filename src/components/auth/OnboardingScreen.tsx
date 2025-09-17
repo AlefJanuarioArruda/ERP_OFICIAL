@@ -294,7 +294,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
                   </div>
                   <div className="text-left">
                     <div className="font-semibold">Ver Demonstração</div>
-                    <div className="text-sm text-blue-200">2 min de vídeo</div>
+                    <div className="text-sm text-blue-200">35 segundos de vídeo</div>
                   </div>
                 </button>
               </div>
@@ -303,7 +303,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
               <div className="flex flex-wrap justify-center gap-8 text-blue-200">
                 <div className="flex items-center">
                   <CheckCircle className="w-5 h-5 text-emerald-400 mr-2" />
-                  <span>Teste 14 dias grátis</span>
+                  <span>Teste grátis</span>
                 </div>
                 <div className="flex items-center">
                   <Shield className="w-5 h-5 text-blue-400 mr-2" />
