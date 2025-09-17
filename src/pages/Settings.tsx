@@ -809,7 +809,7 @@ const BillingSection: React.FC = () => {
             }}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            !!Clique em Planos no Menu para ver Planos Disponíveis!!
+            !!Clique em Planos no Menu para ver os Planos Disponíveis!!
           </button>
         </div>
       </div>
