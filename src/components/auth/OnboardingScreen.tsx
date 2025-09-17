@@ -244,7 +244,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
               <h2 className="text-6xl md:text-7xl font-bold text-white mb-8 leading-tight">
                 Transforme Seu
                 <span className="bg-gradient-to-r from-emerald-400 via-blue-400 to-purple-400 bg-clip-text text-transparent block mt-4 animate-pulse">
-                  Controle Financeiro
+                  Negocio
                 </span>
                 <span className="text-5xl md:text-6xl block mt-4">
                   em Máquina de Lucro
