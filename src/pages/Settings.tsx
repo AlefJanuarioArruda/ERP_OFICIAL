@@ -805,7 +805,7 @@ const BillingSection: React.FC = () => {
             onClick={() => navigate('/pricing')}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Ver Planos Disponíveis
+           Clique em Planos no Menu para ver Planos Disponíveis
           </button>
         </div>
       </div>
