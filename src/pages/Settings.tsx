@@ -802,10 +802,14 @@ const BillingSection: React.FC = () => {
             Você não possui um plano ativo no momento. Escolha um plano para começar a usar todas as funcionalidades.
           </p>
           <button
-            onClick={() => navigate('/pricing')}
+            onClick={() => {
+              // Navigate to pricing page using the parent component's navigation
+              const event = new CustomEvent('navigate-to-pricing');
+              window.dispatchEvent(event);
+            }}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
-           Clique em Planos no Menu para ver Planos Disponíveis
+            > Clique em Planos no Menu para ver Planos Disponíveis !!
           </button>
         </div>
       </div>
