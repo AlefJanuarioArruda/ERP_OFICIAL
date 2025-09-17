@@ -803,7 +803,7 @@ const BillingSection: React.FC = () => {
           <button
             onClick={() => {
               // Navigate to pricing page using the parent component's navigation
-              const event = new CustomEvent('pricing');
+              const event = new CustomEvent('/pricing');
               window.dispatchEvent(event);
             }}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
