@@ -6,6 +6,10 @@ interface OnboardingScreenProps {
 }
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted }) => {
+  const [isVideoOpen, setIsVideoOpen] = useState(false);
+
+  const openVideo = () => setIsVideoOpen(true);
+  const closeVideo = () => setIsVideoOpen(false);
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
   const [animatedNumbers, setAnimatedNumbers] = useState({
@@ -283,7 +287,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
                   <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
                 </button>
                 
-                <button className="group flex items-center text-white hover:text-emerald-400 transition-colors duration-300">
+                <button onClick={openVideo}
+                  className="group flex items-center text-white hover:text-emerald-400 transition-colors duration-300">
                   <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center mr-4 group-hover:bg-emerald-500/20 transition-all duration-300">
                     <Play className="w-5 h-5 ml-1" />
                   </div>
@@ -803,6 +808,36 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
           </div>
         </div>
       </div>
+            {/* Video Modal */}
+      {isVideoOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm"
+          onClick={closeVideo}
+        >
+          <div 
+            className="relative w-full max-w-4xl p-4 bg-black rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()} // Impede que o clique no vídeo feche o modal
+          >
+            {/* Close Button */}
+            <button 
+              onClick={closeVideo}
+              className="absolute -top-4 -right-4 w-10 h-10 bg-white rounded-full text-black flex items-center justify-center text-2xl font-bold z-10"
+            >
+              &times;
+            </button>
+            <div className="aspect-w-16 aspect-h-9">
+              <iframe
+                className="w-full h-full"
+                src="https://www.youtube.com/embed/fgTqKT-l7rs?autoplay=1"
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
