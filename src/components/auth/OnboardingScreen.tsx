@@ -18,24 +18,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
     efficiency: 0
   })
 
-  useEffect(() => {
-    setIsVisible(true)
-    
-    // Animate numbers
-    const timer = setTimeout(() => {
-      const interval = setInterval(() => {
-        setAnimatedNumbers(prev => ({
-          revenue: Math.min(prev.revenue + 2, 47),
-          savings: Math.min(prev.savings + 1.5, 35),
-          efficiency: Math.min(prev.efficiency + 3, 85)
-        }))
-      }, 50)
-      
-      setTimeout(() => clearInterval(interval), 2000)
-    }, 1000)
-
-    return () => clearTimeout(timer)
-  }, [])
+ 
 
   const heroFeatures = [
     {
