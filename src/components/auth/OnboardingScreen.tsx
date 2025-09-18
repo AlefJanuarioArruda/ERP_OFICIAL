@@ -197,7 +197,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 overflow-hidden">
       {/* Animated Background Elements */}
-     
+      <div className="absolute inset-0 overflow-hidden">
+        
         
         {/* Floating Icons */}
         <div className="absolute top-20 left-1/4 animate-bounce" style={{ animationDelay: '0.5s' }}>
