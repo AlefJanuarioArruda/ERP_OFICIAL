@@ -480,7 +480,7 @@ export const Products: React.FC = () => {
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900 mb-1">{product.name}</h3>
                       <p className="text-sm text-gray-600 mb-2">{product.description}</p>
-                      <p className="text-xs text-gray-500">SKU: {product.sku}</p>
+                      <p className="text-xs text-gray-500">SKU/Numero Produto: {product.sku}</p>
                     </div>
                   </div>
 
@@ -744,7 +744,7 @@ export const Products: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">SKU/Numero Produto</label>
                     <input
                       type="text"
                       value={formData.sku}
