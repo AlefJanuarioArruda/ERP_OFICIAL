@@ -17,6 +17,8 @@ import { LoginScreen } from './components/auth/LoginScreen'
 import { SignUpScreen } from './components/auth/SignUpScreen'
 import { ForgotPasswordScreen } from './components/auth/ForgotPasswordScreen'
 import { PasswordResetPage } from './components/auth/PasswordResetPage'
+import { LandingLogin } from './pages/LandingLogin'
+import { LandingSignUp } from './pages/LandingSignUp'
 import { useAuth } from './hooks/useAuth'
 import { useStripe } from './hooks/useStripe'
 
@@ -149,6 +151,8 @@ function AppContent() {
   // Auth screens for non-authenticated users
   return (
     <Routes>
+      <Route path="/login" element={<LandingLogin />} />
+      <Route path="/cadastro" element={<LandingSignUp />} />
       <Route path="/reset-password" element={
         <PasswordResetPage
           onBack={() => {
