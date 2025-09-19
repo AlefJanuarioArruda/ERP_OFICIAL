@@ -285,7 +285,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <Calculator className="mr-3 w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
-                  Começar Análise Gratuita
+                  Entre Agora
                   <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" />
                 </button>
                 
