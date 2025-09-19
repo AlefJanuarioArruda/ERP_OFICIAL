@@ -43,9 +43,10 @@ function AppContent() {
     }
   }, [isAuthenticated, user, refetch])
 
-  // Check for password reset hash
+  // Check for password reset hash and set initial auth screen based on URL
   React.useEffect(() => {
     const hash = window.location.hash
+    const pathname = location.pathname
     
     // Check if it's a password reset link
     if (hash && hash.includes('#/reset-password')) {
@@ -53,9 +54,21 @@ function AppContent() {
       const hashParams = hash.split('?')[1] || hash.split('#')[2]
       if (hashParams && hashParams.includes('type=recovery') && hashParams.includes('access_token')) {
         setAuthScreen('reset-password')
+        return
       }
     }
-  }, [])
+    
+    // Set auth screen based on current pathname
+    if (pathname === '/login') {
+      setAuthScreen('login')
+    } else if (pathname === '/cadastro') {
+      setAuthScreen('signup')
+    } else if (pathname === '/esqueci-senha') {
+      setAuthScreen('forgot-password')
+    } else {
+      setAuthScreen('onboarding')
+    }
+  }, [location.pathname])
 
   // Show loading spinner while checking authentication
   if (loading) {
@@ -85,45 +98,38 @@ function AppContent() {
 
   // Show auth screens if user is not authenticated
   if (!isAuthenticated) {
-    switch (authScreen) {
-      case 'onboarding':
-        return (
-          <OnboardingScreen
-            onGetStarted={() => setAuthScreen('login')}
-          />
-        )
-      
-      case 'login':
-        return (
+    return (
+      <Routes>
+        <Route path="/login" element={
           <LoginScreen
-            onBack={() => setAuthScreen('onboarding')}
-            onSignUp={() => setAuthScreen('signup')}
-            onForgotPassword={() => setAuthScreen('forgot-password')}
+            onBack={() => navigate('/')}
+            onSignUp={() => navigate('/cadastro')}
+            onForgotPassword={() => navigate('/esqueci-senha')}
           />
-        )
-      
-      case 'signup':
-        return (
+        } />
+        <Route path="/cadastro" element={
           <SignUpScreen
-            onBack={() => setAuthScreen('login')}
-            onLogin={() => setAuthScreen('login')}
+            onBack={() => navigate('/login')}
+            onLogin={() => navigate('/login')}
           />
-        )
-      
-      case 'forgot-password':
-        return (
+        } />
+        <Route path="/esqueci-senha" element={
           <ForgotPasswordScreen
-            onBack={() => setAuthScreen('login')}
+            onBack={() => navigate('/login')}
           />
-        )
-      
-      default:
-        return (
+        } />
+        <Route path="/reset-password" element={
+          <PasswordResetPage
+            onBack={() => navigate('/login')}
+          />
+        } />
+        <Route path="*" element={
           <OnboardingScreen
-            onGetStarted={() => setAuthScreen('login')}
+            onGetStarted={() => navigate('/login')}
           />
-        )
-    }
+        } />
+      </Routes>
+    )
   }
 
   // Main application for authenticated users
@@ -148,51 +154,8 @@ function AppContent() {
     )
   }
 
-  // Auth screens for non-authenticated users
-  return (
-    <Routes>
-      <Route path="/login" element={<LandingLogin />} />
-      <Route path="/cadastro" element={<LandingSignUp />} />
-      <Route path="/reset-password" element={
-        <PasswordResetPage
-          onBack={() => {
-            setAuthScreen('login')
-            navigate('/')
-          }}
-        />
-      } />
-      <Route path="*" element={
-        <>
-          {authScreen === 'onboarding' && (
-            <OnboardingScreen
-              onGetStarted={() => setAuthScreen('login')}
-            />
-          )}
-          
-          {authScreen === 'login' && (
-            <LoginScreen
-              onBack={() => setAuthScreen('onboarding')}
-              onSignUp={() => setAuthScreen('signup')}
-              onForgotPassword={() => setAuthScreen('forgot-password')}
-            />
-          )}
-          
-          {authScreen === 'signup' && (
-            <SignUpScreen
-              onBack={() => setAuthScreen('login')}
-              onLogin={() => setAuthScreen('login')}
-            />
-          )}
-          
-          {authScreen === 'forgot-password' && (
-            <ForgotPasswordScreen
-              onBack={() => setAuthScreen('login')}
-            />
-          )}
-        </>
-      } />
-    </Routes>
-  )
+  // This should never be reached due to the logic above
+  return null
 }
 
 function App() {
