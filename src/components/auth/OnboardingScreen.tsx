@@ -828,16 +828,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
               &times;
             </button>
             <div className="aspect-w-16 aspect-h-9">
-            <iframe 
-    src="https://www.youtube.com/embed/r3rS52FDgTA" 
-    title="YouTube video player" 
-    frameborder="0" 
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-    referrerpolicy="strict-origin-when-cross-origin" 
-    allowfullscreen
-    style="width: 100%; max-width: 360px; height: auto; aspect-ratio: 360/640; border: none;">
-</iframe>
-
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/r3rS52FDgTA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
               
             </div>
           </div>
