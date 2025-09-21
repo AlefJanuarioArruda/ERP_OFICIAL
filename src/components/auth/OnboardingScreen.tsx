@@ -812,29 +812,33 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
       </div>
             {/* Video Modal */}
       {isVideoOpen && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm"
-          onClick={closeVideo}
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 backdrop-blur-sm"
+    onClick={closeVideo}
+  >
+    {/* 💡 MUDANÇA: A largura máxima foi reduzida para se adequar ao formato vertical */}
+    <div
+      className="relative w-full max-w-sm bg-black rounded-lg shadow-2xl"
+      onClick={(e) => e.stopPropagation()} 
+    >
+      <button
+        onClick={closeVideo}
+        className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full text-black flex items-center justify-center text-xl font-bold z-10"
+      >
+        &times;
+      </button>
+
+      {/* 🔄 MUDANÇA: As classes de proporção foram invertidas para 9:16 */}
+      <div className="aspect-w-9 aspect-h-16 rounded-lg overflow-hidden">
+        <iframe
+          className="w-full h-full" // Adicionado para garantir o preenchimento
+          src="https://www.youtube.com/embed/r3rS52FDgTA"
+          title="YouTube video player"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
         >
-          <div 
-            className="relative w-full max-w-4xl p-4 bg-black rounded-lg shadow-2xl"
-            onClick={(e) => e.stopPropagation()} // Impede que o clique no vídeo feche o modal
-          >
-            {/* Close Button */}
-            <button 
-              onClick={closeVideo}
-              className="absolute -top-4 -right-4 w-10 h-10 bg-white rounded-full text-black flex items-center justify-center text-2xl font-bold z-10"
-            >
-              &times;
-            </button>
-            <div className="aspect-w-16 aspect-h-9">
-            <iframe 
-    src="https://www.youtube.com/embed/r3rS52FDgTA" 
-    title="YouTube video player" 
-    frameborder="0" 
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-    allowfullscreen>
-  </iframe>
+        </iframe>
               
             </div>
           </div>
