@@ -457,11 +457,19 @@ export const Products: React.FC = () => {
                 {/* Product Image */}
                 <div className="h-48 bg-gray-100 relative overflow-hidden">
                   {product.image_url ? (
-                    <img
-                      src={product.image_url}
-                      alt={product.name}
-                      className="w-full h-full object-contain"
-                    />
+                    {/* Imagem de Fundo (Covering the space) */}
+      <img
+        src={product.image_url}
+        alt={`${product.name} background`}
+        className="absolute inset-0 w-full h-full object-cover blur-sm opacity-50" // Borrar e opacificar para o fundo
+      />
+      {/* Imagem Principal (Showing everything) */}
+      <img
+        src={product.image_url}
+        alt={product.name}
+        className="relative z-10 w-full h-full object-contain p-4" // Adicionei um padding para a imagem principal não colar nas bordas
+      />
+    </>
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
                       <Package className="w-16 h-16 text-gray-400" />
