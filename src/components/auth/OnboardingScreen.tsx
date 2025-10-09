@@ -3,17 +3,9 @@ import { ArrowRight, Brain, BarChart3, Users, Zap, Shield, Clock, TrendingUp, Ch
 
 interface OnboardingScreenProps {
   onGetStarted: () => void
-  onSignUp?: () => void
 }
 
-export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted, onSignUp }) => {
-  const handleSignUpClick = () => {
-    if (onSignUp) {
-      onSignUp()
-    } else {
-      onGetStarted()
-    }
-  }
+export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted }) => {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
 
   const openVideo = () => setIsVideoOpen(true);
@@ -288,7 +280,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
                 <button
-                  onClick={handleSignUpClick}
+                  onClick={onGetStarted}
                   className="group relative inline-flex items-center px-12 py-5 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-xl font-bold rounded-2xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 transform hover:scale-110 shadow-2xl hover:shadow-emerald-500/25 overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -665,7 +657,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
 
               {/* CTA Button */}
               <button
-                onClick={handleSignUpClick}
+                onClick={onGetStarted}
                 className="group w-full py-5 bg-gradient-to-r from-emerald-500 to-green-600 text-white text-xl font-bold rounded-2xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-emerald-500/25 relative overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -741,7 +733,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
           
           <div className="space-y-8">
             <button
-              onClick={handleSignUpClick}
+              onClick={onGetStarted}
               className="group relative inline-flex items-center px-16 py-6 bg-gradient-to-r from-emerald-500 via-green-500 to-blue-500 text-white text-2xl font-bold rounded-3xl hover:from-emerald-600 hover:via-green-600 hover:to-blue-600 transition-all duration-500 transform hover:scale-110 shadow-2xl hover:shadow-emerald-500/30 overflow-hidden"
             >
               {/* Animated Background */}

@@ -5,16 +5,14 @@ import { useAuth } from '../../hooks/useAuth'
 interface SignUpScreenProps {
   onBack: () => void
   onLogin: () => void
-  skipConversion?: boolean
 }
 
-export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin, skipConversion = false }) => {
+export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) => {
   const { signUp } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [step, setStep] = useState<1 | 2>(skipConversion ? 2 : 1)
 
   const [formData, setFormData] = useState({
     name: '',

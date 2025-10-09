@@ -111,7 +111,6 @@ function AppContent() {
           <SignUpScreen
             onBack={() => navigate('/login')}
             onLogin={() => navigate('/login')}
-            skipConversion={new URLSearchParams(location.search).get('direct') === 'true'}
           />
         } />
         <Route path="/esqueci-senha" element={
@@ -127,7 +126,6 @@ function AppContent() {
         <Route path="*" element={
           <OnboardingScreen
             onGetStarted={() => navigate('/login')}
-            onSignUp={() => navigate('/cadastro?direct=true')}
           />
         } />
       </Routes>
