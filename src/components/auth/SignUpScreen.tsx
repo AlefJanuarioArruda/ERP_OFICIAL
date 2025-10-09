@@ -13,6 +13,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [step, setStep] = useState<1 | 2>(1)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -71,13 +72,164 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
 
   const isUserExistsError = error.includes('já está cadastrado')
 
+  // Step 1: Scarcity and Copy
+  if (step === 1) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute w-96 h-96 bg-blue-500 rounded-full blur-3xl opacity-20 -top-48 -left-48 animate-pulse"></div>
+          <div className="absolute w-96 h-96 bg-cyan-500 rounded-full blur-3xl opacity-20 -bottom-48 -right-48 animate-pulse delay-1000"></div>
+        </div>
+
+        <div className="w-full max-w-4xl relative z-10">
+          {/* Back Button */}
+          <button
+            onClick={onBack}
+            className="flex items-center text-gray-300 hover:text-white mb-8 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </button>
+
+          <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-gray-200 p-8 md:p-12">
+            {/* Urgency Badge */}
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 border-2 border-red-200 rounded-full">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-red-600 font-semibold text-sm">Oferta por tempo limitado</span>
+              </div>
+            </div>
+
+            {/* Logo */}
+            <div className="flex items-center justify-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center shadow-xl">
+                <Brain className="w-8 h-8 text-white" />
+              </div>
+            </div>
+
+            {/* Main Headline */}
+            <div className="text-center mb-8">
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+                Apenas <span className="text-blue-600">27 vagas</span> restantes para teste gratuito
+              </h1>
+              <p className="text-xl text-gray-600 mb-2">
+                Empresas que começaram hoje já estão economizando 15h por semana
+              </p>
+              <p className="text-lg text-red-600 font-semibold">
+                Esta oferta expira em breve
+              </p>
+            </div>
+
+            {/* Benefits Grid */}
+            <div className="grid md:grid-cols-2 gap-4 mb-8">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-1">Acesso Completo Grátis</h3>
+                    <p className="text-gray-600 text-sm">Todas as funcionalidades premium liberadas por 30 dias</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border border-blue-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Brain className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-1">IA Avançada Incluída</h3>
+                    <p className="text-gray-600 text-sm">Insights e previsões inteligentes para seu negócio</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-1">Sem Cartão de Crédito</h3>
+                    <p className="text-gray-600 text-sm">Zero compromisso. Cancele quando quiser</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-6 rounded-xl border border-orange-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-900 mb-1">Suporte Prioritário</h3>
+                    <p className="text-gray-600 text-sm">Equipe dedicada para ajudar você a começar</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Social Proof */}
+            <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <div className="flex -space-x-2">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-white"></div>
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 border-2 border-white"></div>
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-white"></div>
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-2 border-white"></div>
+                </div>
+                <span className="font-bold text-gray-900">+2.847 empresas</span>
+              </div>
+              <p className="text-center text-gray-700 italic font-medium">
+                "O melhor investimento que fizemos em 2024. Recuperamos o tempo em menos de uma semana."
+              </p>
+              <p className="text-center text-blue-600 font-semibold mt-2 text-sm">
+                ⭐⭐⭐⭐⭐ 4.9/5.0 - Baseado em 1.284 avaliações
+              </p>
+            </div>
+
+            {/* CTA Button */}
+            <div className="text-center">
+              <button
+                onClick={() => setStep(2)}
+                className="w-full md:w-auto px-12 py-5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-lg font-bold rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-3xl"
+              >
+                Garantir Minha Vaga Agora
+              </button>
+              <p className="text-sm text-gray-500 mt-4">
+                ✓ Configuração em 30 segundos • ✓ Sem taxa de setup • ✓ Cancele quando quiser
+              </p>
+            </div>
+
+            {/* Login Link */}
+            <div className="mt-8 text-center pt-6 border-t border-gray-200">
+              <p className="text-gray-600">
+                Já tem uma conta?{' '}
+                <button
+                  onClick={onLogin}
+                  className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                >
+                  Faça login
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Step 2: Registration Form
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl flex items-center gap-8">
         {/* Left Side - Benefits & Copy */}
         <div className="hidden lg:flex flex-col flex-1 space-y-8">
           <button
-            onClick={onBack}
+            onClick={() => setStep(1)}
             className="flex items-center text-gray-600 hover:text-gray-900 transition-colors self-start"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -159,7 +311,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
         <div className="w-full lg:w-[460px] flex-shrink-0">
           {/* Mobile Back Button */}
           <button
-            onClick={onBack}
+            onClick={() => setStep(1)}
             className="flex lg:hidden items-center text-gray-600 hover:text-gray-900 mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
