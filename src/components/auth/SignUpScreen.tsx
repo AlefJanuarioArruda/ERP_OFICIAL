@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Brain, User, AlertCircle, CheckCircle } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -9,12 +10,16 @@ interface SignUpScreenProps {
 
 export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) => {
   const { signUp } = useAuth()
+  const location = useLocation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  //const location = useLocation()
-  const initialStep = location.state?.step === 2 ? 2 : 1
+
+  // Check URL search params for step
+  const searchParams = new URLSearchParams(location.search)
+  const urlStep = searchParams.get('step')
+  const initialStep = urlStep === '2' ? 2 : 1
   const [step, setStep] = useState<1 | 2>(initialStep)
 
   const [formData, setFormData] = useState({
