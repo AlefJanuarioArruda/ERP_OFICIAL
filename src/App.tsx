@@ -103,7 +103,7 @@ function AppContent() {
         <Route path="/login" element={
           <LoginScreen
             onBack={() => navigate('/')}
-            onSignUp={() => navigate('/cadastro?step=2')}
+            onSignUp={() => navigate('/cadastro')}
             onForgotPassword={() => navigate('/esqueci-senha')}
           />
         } />
