@@ -209,7 +209,7 @@ export const LandingLogin: React.FC = () => {
               <p className="text-gray-600">
                 Não tem uma conta?{' '}
                 <button
-                  onClick={() => navigate('/cadastro?step=2')}
+                  onClick={() => navigate('/cadastro')}
                   className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
                 >
                   Cadastre-se grátis

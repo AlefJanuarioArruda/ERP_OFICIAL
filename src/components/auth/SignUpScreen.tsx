@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Brain, User, AlertCircle, CheckCircle } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
-import { useSearchParams } from 'react-router-dom'
 
 interface SignUpScreenProps {
   onBack: () => void
@@ -10,13 +9,11 @@ interface SignUpScreenProps {
 
 export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) => {
   const { signUp } = useAuth()
-  const [searchParams] = useSearchParams()
-  const initialStep = searchParams.get('step') === '2' ? 2 : 1
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [step, setStep] = useState<1 | 2>(initialStep)
+  const [step, setStep] = useState<1 | 2>(1)
 
   const [formData, setFormData] = useState({
     name: '',
