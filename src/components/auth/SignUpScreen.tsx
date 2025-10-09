@@ -97,7 +97,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
 
             <div className="space-y-4 mt-8">
               <h2 className="text-3xl font-bold text-gray-900 leading-tight">
-                Transforme dados em decisões inteligentes
+                Transforme seu négocio em decisões inteligentes
               </h2>
               <p className="text-lg text-gray-600">
                 Junte-se a milhares de empresas que já automatizaram sua gestão e aumentaram a produtividade em até 300%
