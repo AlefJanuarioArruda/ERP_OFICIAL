@@ -14,7 +14,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   //const location = useLocation()
-  ///const initialStep = location.state?.step === 2 ? 2 : 1
+  const initialStep = location.state?.step === 2 ? 2 : 1
   const [step, setStep] = useState<1 | 2>(1)
 
   const [formData, setFormData] = useState({
