@@ -164,8 +164,32 @@ export const useSupabaseData = () => {
   const addProduct = async (productData: Omit<Product, 'id' | 'user_id' | 'created_at' | 'updated_at'>, imageFile?: File) => {
     if (!user) return
 
+    // Check if SKU already exists
+    const { data: existingProducts } = await supabase
+      .from('products')
+      .select('id, sku')
+      .eq('user_id', user.id)
+      .eq('sku', productData.sku)
+      .maybeSingle()
+
+    if (existingProducts) {
+      return { data: null, error: `O SKU "${productData.sku}" já está em uso. Por favor, utilize um SKU diferente.` }
+    }
+
+    // Check if SKU exists in product variations
+    const { data: existingVariations } = await supabase
+      .from('product_variations')
+      .select('id, sku')
+      .eq('user_id', user.id)
+      .eq('sku', productData.sku)
+      .maybeSingle()
+
+    if (existingVariations) {
+      return { data: null, error: `O SKU "${productData.sku}" já está em uso em uma variação de produto. Por favor, utilize um SKU diferente.` }
+    }
+
     let imageUrl = null
-    
+
     // Upload image if provided
     if (imageFile) {
       const uploadResult = await uploadProductImage(imageFile)
@@ -187,7 +211,7 @@ export const useSupabaseData = () => {
 
     if (!error && data) {
       setProducts(prev => [data, ...prev])
-      
+
       // Generate AI insight for new product
       await generateProductInsight(data)
     }
@@ -203,6 +227,34 @@ export const useSupabaseData = () => {
       user_id: user.id,
       updates: updates
     })
+
+    // Check if SKU is being updated and if it already exists
+    if (updates.sku) {
+      // Check if SKU exists in other products
+      const { data: existingProducts } = await supabase
+        .from('products')
+        .select('id, sku')
+        .eq('user_id', user.id)
+        .eq('sku', updates.sku)
+        .neq('id', id)
+        .maybeSingle()
+
+      if (existingProducts) {
+        return { data: null, error: `O SKU "${updates.sku}" já está em uso. Por favor, utilize um SKU diferente.` }
+      }
+
+      // Check if SKU exists in product variations
+      const { data: existingVariations } = await supabase
+        .from('product_variations')
+        .select('id, sku')
+        .eq('user_id', user.id)
+        .eq('sku', updates.sku)
+        .maybeSingle()
+
+      if (existingVariations) {
+        return { data: null, error: `O SKU "${updates.sku}" já está em uso em uma variação de produto. Por favor, utilize um SKU diferente.` }
+      }
+    }
 
     let imageUrl = updates.image_url
     
@@ -298,8 +350,32 @@ export const useSupabaseData = () => {
   const addProductVariation = async (variationData: Omit<ProductVariation, 'id' | 'user_id' | 'created_at' | 'updated_at'>, imageFile?: File) => {
     if (!user) return
 
+    // Check if SKU already exists in products
+    const { data: existingProducts } = await supabase
+      .from('products')
+      .select('id, sku')
+      .eq('user_id', user.id)
+      .eq('sku', variationData.sku)
+      .maybeSingle()
+
+    if (existingProducts) {
+      return { data: null, error: `O SKU "${variationData.sku}" já está em uso em um produto. Por favor, utilize um SKU diferente.` }
+    }
+
+    // Check if SKU exists in other product variations
+    const { data: existingVariations } = await supabase
+      .from('product_variations')
+      .select('id, sku')
+      .eq('user_id', user.id)
+      .eq('sku', variationData.sku)
+      .maybeSingle()
+
+    if (existingVariations) {
+      return { data: null, error: `O SKU "${variationData.sku}" já está em uso em outra variação. Por favor, utilize um SKU diferente.` }
+    }
+
     let imageUrl = variationData.image_url || null
-    
+
     // Upload image if provided
     if (imageFile) {
       const uploadResult = await uploadProductImage(imageFile, `variation-${variationData.product_id}-${Date.now()}`)
@@ -334,6 +410,34 @@ export const useSupabaseData = () => {
       user_id: user.id,
       updates: updates
     })
+
+    // Check if SKU is being updated and if it already exists
+    if (updates.sku) {
+      // Check if SKU exists in products
+      const { data: existingProducts } = await supabase
+        .from('products')
+        .select('id, sku')
+        .eq('user_id', user.id)
+        .eq('sku', updates.sku)
+        .maybeSingle()
+
+      if (existingProducts) {
+        return { data: null, error: `O SKU "${updates.sku}" já está em uso em um produto. Por favor, utilize um SKU diferente.` }
+      }
+
+      // Check if SKU exists in other product variations
+      const { data: existingVariations } = await supabase
+        .from('product_variations')
+        .select('id, sku')
+        .eq('user_id', user.id)
+        .eq('sku', updates.sku)
+        .neq('id', id)
+        .maybeSingle()
+
+      if (existingVariations) {
+        return { data: null, error: `O SKU "${updates.sku}" já está em uso em outra variação. Por favor, utilize um SKU diferente.` }
+      }
+    }
 
     let imageUrl = updates.image_url
     
