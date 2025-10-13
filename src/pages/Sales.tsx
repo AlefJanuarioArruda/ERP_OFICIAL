@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { Plus, Search, ShoppingCart, FileText, CreditCard, Clock, CheckCircle, XCircle, User, Crown, X, Package, AlertTriangle, Minus, Trash2, Grid, Palette, Ruler, ChevronDown, ChevronUp, Eye, Camera } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
+import { useAuth } from '../hooks/useAuth';
 import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UpgradeModal } from '../components/UpgradeModal';
 import { UsageLimitBanner } from '../components/UsageLimitBanner';
 
 export const Sales: React.FC = () => {
   const { sales, customers, products, productVariations, getVariationsForProduct, addSale, loading } = useSupabaseData();
+  const { user } = useAuth();
   const usageStatus = useUsageLimits();
+  const hideCostPrices = user?.user_metadata?.hide_cost_prices ?? false;
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -1148,20 +1151,24 @@ export const Sales: React.FC = () => {
                             <span className="text-amber-900">Total:</span>
                             <span className="text-green-600">{formatCurrency(calculateTotal())}</span>
                           </div>
+                          {!hideCostPrices && (
+                            <>
                               <div className="flex justify-between items-center text-sm mt-2">
                                 <span className="text-gray-600">Custo dos Produtos:</span>
                                 <span className="font-medium text-red-600">
-                                {formatCurrency(calculateTotalCost())}
+                                  {formatCurrency(calculateTotalCost())}
                                 </span>
-                            </div>
-                          <div className="flex justify-between items-center text-sm mt-2">
-                            <span className="text-gray-600">Lucro Estimado:</span>
-                            <span className={`font-medium ${
-                              (calculateTotal() - calculateTotalCost()) > 0 ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {formatCurrency(calculateTotal() - calculateTotalCost())}
-                            </span>
-                          </div>
+                              </div>
+                              <div className="flex justify-between items-center text-sm mt-2">
+                                <span className="text-gray-600">Lucro Estimado:</span>
+                                <span className={`font-medium ${
+                                  (calculateTotal() - calculateTotalCost()) > 0 ? 'text-green-600' : 'text-red-600'
+                                }`}>
+                                  {formatCurrency(calculateTotal() - calculateTotalCost())}
+                                </span>
+                              </div>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>

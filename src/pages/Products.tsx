@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { Plus, Search, Package, Edit, Trash2, AlertTriangle, Crown, X, Upload, Camera, Save, Eye, Grid, Palette, Ruler, Hash, ChevronDown, ChevronUp } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
+import { useAuth } from '../hooks/useAuth';
 import { useUsageLimits } from '../hooks/useUsageLimits';
 import { UpgradeModal } from '../components/UpgradeModal';
 import { UsageLimitBanner } from '../components/UsageLimitBanner';
 
 export const Products: React.FC = () => {
-  const { 
-    products, 
+  const {
+    products,
     productVariations,
     getVariationsForProduct,
-    addProduct, 
-    updateProduct, 
-    deleteProduct, 
+    addProduct,
+    updateProduct,
+    deleteProduct,
     addProductVariation,
     updateProductVariation,
     deleteProductVariation,
@@ -20,8 +21,10 @@ export const Products: React.FC = () => {
     loading,
     dataFetchError
   } = useSupabaseData();
-  
+
+  const { user } = useAuth();
   const usageStatus = useUsageLimits();
+  const hideCostPrices = user?.user_metadata?.hide_cost_prices ?? false;
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -499,10 +502,12 @@ export const Products: React.FC = () => {
                       <p className="text-xs text-gray-500 mb-1">Preço de Venda</p>
                       <p className="text-lg font-bold text-green-600">{formatCurrency(product.price)}</p>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500 mb-1">Custo</p>
-                      <p className="text-sm font-medium text-gray-700">{formatCurrency(product.cost_price)}</p>
-                    </div>
+                    {!hideCostPrices && (
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Custo</p>
+                        <p className="text-sm font-medium text-gray-700">{formatCurrency(product.cost_price)}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
@@ -593,9 +598,11 @@ export const Products: React.FC = () => {
                                       {variation.price ? formatCurrency(variation.price) : formatCurrency(product.price)}
                                     </p>
                                     <p className="text-xs text-gray-500">Estoque: {variation.stock}</p>
-                                    <p className="text-xs text-gray-400">
-                                      Custo: {variation.cost_price ? formatCurrency(variation.cost_price) : formatCurrency(product.cost_price)}
-                                    </p>
+                                    {!hideCostPrices && (
+                                      <p className="text-xs text-gray-400">
+                                        Custo: {variation.cost_price ? formatCurrency(variation.cost_price) : formatCurrency(product.cost_price)}
+                                      </p>
+                                    )}
                                   </div>
                                   <button
                                     onClick={() => handleEditVariation(variation)}

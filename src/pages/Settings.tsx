@@ -43,7 +43,8 @@ export const Settings: React.FC = () => {
     lowStock: user?.user_metadata?.notifications_low_stock ?? true,
     sales: user?.user_metadata?.notifications_sales ?? true,
     financial: user?.user_metadata?.notifications_financial ?? false,
-    reports: user?.user_metadata?.notifications_reports ?? true
+    reports: user?.user_metadata?.notifications_reports ?? true,
+    hideCostPrices: user?.user_metadata?.hide_cost_prices ?? false
   });
 
   const tabs = [
@@ -134,7 +135,7 @@ export const Settings: React.FC = () => {
 
   const handleNotificationsSave = async () => {
     setLoading(true);
-    
+
     try {
       const updates = {
         notifications_email: notifications.email,
@@ -142,12 +143,15 @@ export const Settings: React.FC = () => {
         notifications_low_stock: notifications.lowStock,
         notifications_sales: notifications.sales,
         notifications_financial: notifications.financial,
-        notifications_reports: notifications.reports
+        notifications_reports: notifications.reports,
+        hide_cost_prices: notifications.hideCostPrices
       };
-      
+
       const result = await updateProfile(updates);
       if (result.success) {
         showNotification('success', 'Preferências de notificação atualizadas com sucesso!');
+        // Reload page to apply the hide cost prices setting
+        window.location.reload();
       } else {
         showNotification('error', result.error || 'Erro ao atualizar preferências');
       }
@@ -705,6 +709,22 @@ export const Settings: React.FC = () => {
                         className="sr-only peer"
                       />
                       <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-purple-50 border-purple-200">
+                    <div>
+                      <h4 className="font-medium text-gray-900">Esconder Custos dos Produtos</h4>
+                      <p className="text-sm text-gray-600">Oculta os valores de custo nas páginas de Produtos e Vendas</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={notifications.hideCostPrices}
+                        onChange={(e) => setNotifications({...notifications, hideCostPrices: e.target.checked})}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                     </label>
                   </div>
                 </div>
