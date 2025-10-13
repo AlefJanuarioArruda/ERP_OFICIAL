@@ -365,9 +365,9 @@ export const Products: React.FC = () => {
     <div className="space-y-6">
       {/* Notification */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
-          notification.type === 'success' 
-            ? 'bg-green-100 border border-green-200 text-green-800' 
+        <div className={`fixed top-4 right-4 z-[60] p-4 rounded-lg shadow-lg transition-all duration-300 ${
+          notification.type === 'success'
+            ? 'bg-green-100 border border-green-200 text-green-800'
             : 'bg-red-100 border border-red-200 text-red-800'
         }`}>
           <div className="flex items-center">
