@@ -50,7 +50,7 @@ export const Settings: React.FC = () => {
   const tabs = [
     { id: 'profile', name: 'Perfil', icon: User },
     { id: 'company', name: 'Empresa', icon: Building },
-    { id: 'notifications', name: 'Notificações', icon: Bell },
+    { id: 'notifications', name: 'Permissões', icon: Bell },
     { id: 'billing', name: 'Faturamento', icon: CreditCard },
     { id: 'integrations', name: 'Integrações', icon: Globe }
   ];
