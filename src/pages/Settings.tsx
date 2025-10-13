@@ -149,7 +149,7 @@ export const Settings: React.FC = () => {
 
       const result = await updateProfile(updates);
       if (result.success) {
-        showNotification('success', 'Preferências de notificação atualizadas com sucesso!');
+        showNotification('success', 'Preferências atualizadas com sucesso!');
         // Reload page to apply the hide cost prices setting
         window.location.reload();
       } else {
@@ -613,7 +613,7 @@ export const Settings: React.FC = () => {
             {/* Notifications Tab */}
             {activeTab === 'notifications' && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900">Preferências de Notificação</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Preferências</h3>
                 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
