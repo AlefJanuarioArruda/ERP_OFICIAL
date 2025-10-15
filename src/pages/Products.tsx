@@ -69,11 +69,17 @@ export const Products: React.FC = () => {
     }
   }, [usageStatus.isLimitReached.products, usageStatus.isSubscriptionActive]);
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products.filter(product => {
+    const search = searchTerm.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(search) ||
+      product.description.toLowerCase().includes(search) ||
+      product.sku.toLowerCase().includes(search) ||
+      product.category.toLowerCase().includes(search) ||
+      product.cost_price.toString().includes(search) ||
+      product.price.toString().includes(search)
+    );
+  });
 
   const resetForm = () => {
     setFormData({
@@ -441,7 +447,7 @@ export const Products: React.FC = () => {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <input
           type="text"
-          placeholder="Buscar produtos..."
+          placeholder="Buscar por nome, descrição, SKU, custo ou preço..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
