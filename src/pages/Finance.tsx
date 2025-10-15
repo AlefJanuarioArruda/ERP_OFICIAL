@@ -881,8 +881,8 @@ export const Finance: React.FC = () => {
                       onChange={(e) => setEditFormData({...editFormData, category: e.target.value})}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="Vendas">Receita</option>
-                      <option value="Fornecedores">Despesa</option>
+                      <option value="Vendas">Receitas Recebidas</option>
+                      <option value="Fornecedores">Despesas Pagas</option>
                       <option value="A Receber">A Receber</option>
                       <option value="A Pagar">A Pagar</option>
                     </select>
