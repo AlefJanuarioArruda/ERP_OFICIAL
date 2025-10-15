@@ -583,24 +583,24 @@ export const Finance: React.FC = () => {
                     {editingRecord === record.id ? (
                       // Edit Mode Row
                       <>
-                        <td className="px-6 py-4" colSpan={6}>
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <td className="px-2 sm:px-6 py-4" colSpan={6}>
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
                             <div className="flex items-center mb-4">
                               <Edit className="w-5 h-5 text-blue-600 mr-2" />
                               <h4 className="font-medium text-blue-900">Editando Transação</h4>
                             </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
                                 <input
                                   type="text"
                                   value={editFormData.category}
                                   onChange={(e) => setEditFormData({...editFormData, category: e.target.value})}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                 />
                               </div>
-                              
+
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Valor</label>
                                 <input
@@ -608,50 +608,50 @@ export const Finance: React.FC = () => {
                                   step="0.01"
                                   value={editFormData.amount}
                                   onChange={(e) => setEditFormData({...editFormData, amount: e.target.value})}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                 />
                               </div>
-                              
-                              <div>
+
+                              <div className="sm:col-span-2 lg:col-span-1">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                                 <select
                                   value={editFormData.status}
                                   onChange={(e) => setEditFormData({...editFormData, status: e.target.value as any})}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                 >
                                   <option value="pending">Pendente</option>
                                   <option value="paid">Pago</option>
                                   <option value="overdue">Vencido</option>
                                 </select>
                               </div>
-                              
-                              <div className="md:col-span-2">
+
+                              <div className="sm:col-span-2 lg:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
                                 <input
                                   type="text"
                                   value={editFormData.description}
                                   onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                 />
                               </div>
-                              
-                              <div>
+
+                              <div className="sm:col-span-2 lg:col-span-1">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Vencimento</label>
                                 <input
                                   type="date"
                                   value={editFormData.due_date}
                                   onChange={(e) => setEditFormData({...editFormData, due_date: e.target.value})}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                 />
                               </div>
 
                               {record.type === 'income' && (
-                                <div className="md:col-span-3">
+                                <div className="sm:col-span-2 lg:col-span-3">
                                   <label className="block text-sm font-medium text-gray-700 mb-1">Cliente (opcional)</label>
                                   <select
                                     value={editFormData.customer_id}
                                     onChange={(e) => setEditFormData({...editFormData, customer_id: e.target.value})}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                                   >
                                     <option value="">Nenhum cliente</option>
                                     {customers.map((customer) => (
@@ -663,19 +663,19 @@ export const Finance: React.FC = () => {
                                 </div>
                               )}
                             </div>
-                            
-                            <div className="flex justify-end space-x-3 mt-4">
+
+                            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 mt-4">
                               <button
                                 type="button"
                                 onClick={resetEditForm}
-                                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                className="w-full sm:w-auto px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                               >
                                 Cancelar
                               </button>
                               <button
                                 type="button"
                                 onClick={handleSaveEdit}
-                                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                               >
                                 <Save className="w-4 h-4 mr-2" />
                                 Salvar
