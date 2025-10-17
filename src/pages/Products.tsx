@@ -71,7 +71,9 @@ export const Products: React.FC = () => {
 
   const filteredProducts = products.filter(product => {
     const search = searchTerm.toLowerCase();
-    return (
+
+    // Buscar nas propriedades do produto principal
+    const mainProductMatch = (
       product.name.toLowerCase().includes(search) ||
       product.description.toLowerCase().includes(search) ||
       product.sku.toLowerCase().includes(search) ||
@@ -79,6 +81,17 @@ export const Products: React.FC = () => {
       product.cost_price.toString().includes(search) ||
       product.price.toString().includes(search)
     );
+
+    // Buscar nas variações do produto
+    const variations = getVariationsForProduct(product.id);
+    const variationMatch = variations.some(variation =>
+      variation.variation_name.toLowerCase().includes(search) ||
+      variation.sku.toLowerCase().includes(search) ||
+      (variation.color && variation.color.toLowerCase().includes(search)) ||
+      (variation.size && variation.size.toLowerCase().includes(search))
+    );
+
+    return mainProductMatch || variationMatch;
   });
 
   const resetForm = () => {
@@ -447,7 +460,7 @@ export const Products: React.FC = () => {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
         <input
           type="text"
-          placeholder="Buscar por nome, descrição, SKU, custo ou preço..."
+          placeholder="Buscar por nome, descrição, SKU, custo, preço, variação ou SKU da variação..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
