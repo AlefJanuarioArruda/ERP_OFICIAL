@@ -3,6 +3,17 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
 import type { Product, Customer, Sale, SaleItem, FinancialRecord, AIInsight, ProductVariation } from '../lib/supabase'
 
+interface Appointment {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export const useSupabaseData = () => {
   const { user } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
@@ -12,6 +23,7 @@ export const useSupabaseData = () => {
   const [financialRecords, setFinancialRecords] = useState<FinancialRecord[]>([])
   const [productVariations, setProductVariations] = useState<ProductVariation[]>([])
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([])
+  const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [dataFetchError, setDataFetchError] = useState<string | null>(null)
 
@@ -76,6 +88,13 @@ export const useSupabaseData = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
+      // Fetch appointments
+      const { data: appointmentsData } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: true })
+
       setProducts(productsData || [])
       setCustomers(customersData || [])
       setSales(salesData || [])
@@ -83,6 +102,7 @@ export const useSupabaseData = () => {
       setFinancialRecords(financialData || [])
       setProductVariations(productVariationsData || [])
       setAiInsights(insightsData || [])
+      setAppointments(appointmentsData || [])
     } catch (error) {
       console.error('Error fetching user data:', error)
       setDataFetchError('Erro ao carregar dados. Tente novamente.')
@@ -1240,6 +1260,68 @@ export const useSupabaseData = () => {
     }))
   }
 
+  // Appointment operations
+  const addAppointment = async (appointmentData: Omit<Appointment, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    if (!user) return { data: null, error: 'User not authenticated' }
+
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert({
+        ...appointmentData,
+        user_id: user.id
+      })
+      .select()
+      .single()
+
+    if (!error && data) {
+      setAppointments(prev => [...prev, data].sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date)
+        if (dateCompare !== 0) return dateCompare
+        return a.time.localeCompare(b.time)
+      }))
+    }
+
+    return { data, error }
+  }
+
+  const updateAppointment = async (id: string, updates: Partial<Appointment>) => {
+    if (!user) return { data: null, error: 'User not authenticated' }
+
+    const { data, error } = await supabase
+      .from('appointments')
+      .update(updates)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (!error && data) {
+      setAppointments(prev => prev.map(a => a.id === id ? data : a).sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date)
+        if (dateCompare !== 0) return dateCompare
+        return a.time.localeCompare(b.time)
+      }))
+    }
+
+    return { data, error }
+  }
+
+  const deleteAppointment = async (id: string) => {
+    if (!user) return { error: 'User not authenticated' }
+
+    const { error } = await supabase
+      .from('appointments')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+
+    if (!error) {
+      setAppointments(prev => prev.filter(a => a.id !== id))
+    }
+
+    return { error }
+  }
+
   return {
     // Data
     products,
@@ -1247,9 +1329,10 @@ export const useSupabaseData = () => {
     sales: getSalesWithItems(),
     financialRecords,
     aiInsights,
+    appointments,
     loading,
     dataFetchError,
-    
+
     // Operations
     addProduct,
     updateProduct,
@@ -1268,10 +1351,13 @@ export const useSupabaseData = () => {
     updateFinancialRecord,
     deleteFinancialRecord,
     markInsightAsRead,
-    
+    addAppointment,
+    updateAppointment,
+    deleteAppointment,
+
     // Computed data
     dashboardMetrics: getDashboardMetrics(),
-    
+
     // Refresh
     refetch: fetchUserData
   }

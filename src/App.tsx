@@ -12,6 +12,8 @@ import { AIInsights } from './pages/AIInsights'
 import { Settings } from './pages/Settings'
 import { Pricing } from './pages/Pricing'
 import { Success } from './pages/Success'
+import { CostSimulator } from './pages/CostSimulator'
+import { Appointments } from './pages/Appointments'
 import { OnboardingScreen } from './components/auth/OnboardingScreen'
 import { LoginScreen } from './components/auth/LoginScreen'
 import { SignUpScreen } from './components/auth/SignUpScreen'
@@ -145,6 +147,8 @@ function AppContent() {
           <Route path="/finance" element={<Finance />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/ai-insights" element={<AIInsights />} />
+          <Route path="/cost-simulator" element={<CostSimulator />} />
+          <Route path="/appointments" element={<Appointments />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/success" element={<Success />} />

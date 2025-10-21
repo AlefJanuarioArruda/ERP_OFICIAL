@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Menu, 
-  X, 
-  Home, 
-  Package, 
-  Users, 
-  ShoppingCart, 
-  DollarSign, 
-  BarChart3, 
-  Settings, 
+import {
+  Menu,
+  X,
+  Home,
+  Package,
+  Users,
+  ShoppingCart,
+  DollarSign,
+  BarChart3,
+  Settings,
   Brain,
   User,
   LogOut,
@@ -18,7 +18,10 @@ import {
   Lock,
   ChevronDown,
   CreditCard,
-  Crown
+  Crown,
+  Wrench,
+  Calculator,
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useStripe } from '../hooks/useStripe';
@@ -36,6 +39,15 @@ const navigationItems = [
   { id: 'finance', label: 'Financeiro', icon: DollarSign },
   { id: 'reports', label: 'Relatórios', icon: BarChart3 },
   { id: 'ai-insights', label: 'IA Insights', icon: Brain },
+  {
+    id: 'ferramentas',
+    label: 'Ferramentas',
+    icon: Wrench,
+    submenu: [
+      { id: 'cost-simulator', label: 'Simulador de Custo', icon: Calculator },
+      { id: 'appointments', label: 'Agendamentos', icon: Calendar }
+    ]
+  },
   { id: 'pricing', label: 'Planos', icon: CreditCard },
   { id: 'settings', label: 'Configurações', icon: Settings },
 ];
@@ -43,6 +55,7 @@ const navigationItems = [
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [ferramentasOpen, setFerramentasOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { getCurrentPlan, isSubscriptionActive } = useStripe();
   const location = useLocation();
@@ -92,6 +105,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const currentPage = getCurrentPage();
+
+  // Check if current page is in Ferramentas submenu
+  const isFerramentasPage = currentPage === 'cost-simulator' || currentPage === 'appointments';
   return (
     <div className="h-screen bg-gray-50 flex overflow-hidden">
       {/* Mobile sidebar overlay */}
@@ -125,29 +141,71 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             {navigationItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentPage === item.id;
-              
+              const hasSubmenu = 'submenu' in item && item.submenu;
+              const isSubmenuOpen = hasSubmenu && (ferramentasOpen || isFerramentasPage);
+
               return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    navigate(`/${item.id === 'dashboard' ? 'dashboard' : item.id}`);
-                    setSidebarOpen(false);
-                  }}
-                  className={`
-                    w-full flex items-center px-3 py-2.5 rounded-lg text-left transition-colors duration-200
-                    ${isActive 
-                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700' 
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                    }
-                  `}
-                >
-                  <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-700' : 'text-gray-400'}`} />
-                  <span className="font-medium text-sm sm:text-base">{item.label}</span>
-                </button>
+                <div key={item.id}>
+                  <button
+                    onClick={() => {
+                      if (hasSubmenu) {
+                        setFerramentasOpen(!ferramentasOpen);
+                      } else {
+                        navigate(`/${item.id === 'dashboard' ? 'dashboard' : item.id}`);
+                        setSidebarOpen(false);
+                      }
+                    }}
+                    className={`
+                      w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors duration-200
+                      ${isActive || (hasSubmenu && isFerramentasPage)
+                        ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center">
+                      <Icon className={`w-5 h-5 mr-3 ${isActive || (hasSubmenu && isFerramentasPage) ? 'text-blue-700' : 'text-gray-400'}`} />
+                      <span className="font-medium text-sm sm:text-base">{item.label}</span>
+                    </div>
+                    {hasSubmenu && (
+                      <ChevronDown className={`w-4 h-4 transition-transform ${isSubmenuOpen ? 'rotate-180' : ''}`} />
+                    )}
+                  </button>
+
+                  {/* Submenu */}
+                  {hasSubmenu && isSubmenuOpen && (
+                    <div className="ml-4 mt-1 space-y-1">
+                      {item.submenu.map((subItem: any) => {
+                        const SubIcon = subItem.icon;
+                        const isSubActive = currentPage === subItem.id;
+
+                        return (
+                          <button
+                            key={subItem.id}
+                            onClick={() => {
+                              navigate(`/${subItem.id}`);
+                              setSidebarOpen(false);
+                            }}
+                            className={`
+                              w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors duration-200
+                              ${isSubActive
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                              }
+                            `}
+                          >
+                            <SubIcon className={`w-4 h-4 mr-3 ${isSubActive ? 'text-blue-700' : 'text-gray-400'}`} />
+                            <span className="font-medium text-sm">{subItem.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </nav>
@@ -202,7 +260,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Menu className="w-5 h-5" />
             </button>
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900 capitalize">
-              {navigationItems.find(item => item.id === currentPage)?.label || 'Dashboard'}
+              {(() => {
+                const mainItem = navigationItems.find(item => item.id === currentPage);
+                if (mainItem) return mainItem.label;
+
+                // Check submenu items
+                for (const item of navigationItems) {
+                  if ('submenu' in item && item.submenu) {
+                    const subItem = item.submenu.find((sub: any) => sub.id === currentPage);
+                    if (subItem) return subItem.label;
+                  }
+                }
+                return 'Dashboard';
+              })()}
             </h1>
           </div>
 
