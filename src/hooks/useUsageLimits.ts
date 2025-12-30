@@ -38,7 +38,7 @@ export interface UsageStatus {
 const FREE_TIER_LIMITS: UsageLimits = {
   products: 12,
   customers: 12,
-  sales: 12
+  sales: 25
 };
 
 export const useUsageLimits = (): UsageStatus => {
