@@ -829,18 +829,19 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onGetStarted
       </button>
 
       {/* 🔄 MUDANÇA: As classes de proporção foram invertidas para 9:16 */}
-      <div className="aspect-w-20 aspect-h-50 rounded-lg overflow-hidden">
-        <iframe
-          className="w-full h-full" // Adicionado para garantir o preenchimento
-          src="https://www.youtube.com/embed/r3rS52FDgTA"
-          title="YouTube video player"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowfullscreen
-        >
-        </iframe>
-              
-            </div>
+       <div className="mt-8 flex justify-center">
+    <div className="w-full max-w-4xl aspect-video rounded-xl overflow-hidden shadow-lg">
+      <iframe
+        className="w-full h-full"
+        src="https://www.youtube.com/embed/r3rS52FDgTA"
+        title="Apresentação da Plataforma"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        
+      />
+    </div>
+  </div>
           </div>
         </div>
       )}
