@@ -118,14 +118,26 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
             {/* Main Headline */}
             <div className="text-center mb-8">
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-                Apenas <span className="text-blue-600">27 vagas</span> restantes para teste gratuito
+                Tenha controle real da sua <span className="text-blue-600">Produção</span> 
               </h1>
-              <p className="text-xl text-gray-600 mb-2">
-                Empresas que começaram hoje já estão economizando 15h por semana
+              
+              <p className="text-xl text-gray-600 mb-6 mt-10">
+                Chega de planilhas confusas e produções atrasadas. Veja o que está sendo feito, o que atrasou e quanto vai custar cada etapa. Tudo isso em um único lugar.
               </p>
-              <p className="text-lg text-red-600 font-semibold">
-                Esta oferta expira em breve
-              </p>
+             {/* Video YouTube */}
+  <div className="mt-8 flex justify-center">
+    <div className="w-full max-w-4xl aspect-video rounded-xl overflow-hidden shadow-lg">
+      <iframe
+        className="w-full h-full"
+        src="https://www.youtube.com/embed/r3rS52FDgTA"
+        title="Apresentação da Plataforma"
+        frameBorder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        
+      />
+    </div>
+  </div>
             </div>
 
             {/* Benefits Grid */}
@@ -188,13 +200,13 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-white"></div>
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-2 border-white"></div>
                 </div>
-                <span className="font-bold text-gray-900">+2.847 empresas</span>
+                <span className="font-bold text-gray-900">+300 empresas</span>
               </div>
               <p className="text-center text-gray-700 italic font-medium">
-                "O melhor investimento que fizemos em 2024. Recuperamos o tempo em menos de uma semana."
+                "O melhor investimento que fizemos em 2025. Em menos de uma semana, o tempo economizado já pagou o investimento."
               </p>
               <p className="text-center text-blue-600 font-semibold mt-2 text-sm">
-                ⭐⭐⭐⭐⭐ 4.9/5.0 - Baseado em 1.284 avaliações
+                ⭐⭐⭐⭐⭐ 4.9/5.0 - Baseado em 310 avaliações
               </p>
             </div>
 
@@ -204,7 +216,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
                 onClick={() => setStep(2)}
                 className="w-full md:w-auto px-12 py-5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-lg font-bold rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all duration-300 transform hover:scale-105 shadow-2xl hover:shadow-3xl"
               >
-                Garantir Minha Vaga Agora
+                Cadastre Gratuitamente Agora
               </button>
               <p className="text-sm text-gray-500 mt-4">
                 ✓ Configuração em 30 segundos • ✓ Sem taxa de setup • ✓ Cancele quando quiser
