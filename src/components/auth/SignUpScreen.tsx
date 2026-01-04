@@ -103,7 +103,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
   href="https://wa.me/5531991227789?text=Olá!%20Gostaria%20de%20falar%20com%20um%20consultor%20sobre%20a%20plataforma."
   target="_blank"
   rel="noopener noreferrer"
-  className="fixed bottom-6 right-6 z-50 flex items-center justify-center w-16 h-16 bg-green-500 hover:bg-green-600 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110"
+  className="fixed bottom-35 right-6 z-50 flex items-center justify-center w-16 h-16 bg-green-500 hover:bg-green-600 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110"
   aria-label="Falar com consultor no WhatsApp"
 >
   <svg
