@@ -379,7 +379,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
                 </div>
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Crie sua conta grátis</h1>
-              <p className="text-gray-600">Sem cartão de crédito. Pronto em 30 segundos.</p>
+              <p className="text-gray-600">Controle seu estoque e faturamento,Cadastre-se gratuitamente.</p>
             </div>
 
           {/* Error Message */}
