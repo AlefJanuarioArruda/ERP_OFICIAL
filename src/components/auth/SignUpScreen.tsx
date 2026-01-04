@@ -271,7 +271,18 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
           </button>
-   {/* Floating WhatsApp Button */}
+  
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <Brain className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold text-gray-900">ERP Smart</h1>
+                <p className="text-gray-600 text-sm">Inteligência para o seu negócio</p>
+              </div>
+            </div>
+             {/* Floating WhatsApp Button */}
 <a
   href="https://wa.me/5531991227789?text=Olá!%20Gostaria%20de%20falar%20com%20um%20consultor%20sobre%20a%20plataforma."
   target="_blank"
@@ -288,17 +299,6 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({ onBack, onLogin }) =
     <path d="M16 2.67c-7.36 0-13.33 5.97-13.33 13.33 0 2.35.61 4.64 1.77 6.66L2.67 29.33l6.86-1.8c1.95 1.06 4.14 1.62 6.47 1.62 7.36 0 13.33-5.97 13.33-13.33S23.36 2.67 16 2.67zm0 23.11c-2.08 0-4.11-.56-5.87-1.62l-.42-.25-4.07 1.07 1.09-3.97-.27-.43a10.47 10.47 0 0 1-1.62-5.64c0-5.77 4.7-10.47 10.47-10.47s10.47 4.7 10.47 10.47-4.7 10.47-10.47 10.47z"/>
   </svg>
 </a>
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <Brain className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold text-gray-900">ERP Smart</h1>
-                <p className="text-gray-600 text-sm">Inteligência para o seu negócio</p>
-              </div>
-            </div>
-
             <div className="space-y-4 mt-8">
               <h2 className="text-3xl font-bold text-gray-900 leading-tight">
                 Transforme seu négocio em decisões inteligentes
